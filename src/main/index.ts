@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow } from 'electron';
 import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
+import { initDb } from './db/database';
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -34,12 +35,20 @@ function createWindow(): void {
   }
 }
 
+
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.ai-task-planner');
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window);
   });
+
+  try {
+    initDb();
+  } catch (err) {
+    console.error('Failed to initialize application database. The app will not function correctly.', err);
+    // You could show an error dialog here before quitting
+  }
 
   createWindow();
 
