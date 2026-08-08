@@ -176,6 +176,7 @@ This file serves as the core rules and principles guide. For detailed domain spe
 
 ### Technical Docs
 - [`TECHNICAL_STACK.md`](./TECHNICAL_STACK.md) — Full engineering stack: desktop shell, frontend (React/Tailwind/Zustand/TipTap), SQLite, DeepSeek AI engine, safeStorage security, IPC channels, and QA toolchain.
+- [`spec/`](./spec/) — Detailed feature specifications: 27 feature files across 7 phases, each covering requirements, data models, UI/UX, error handling, and acceptance criteria.
 
 ### Skills
 - [`git-cli`](./.opencode/skills/git-cli/SKILL.md) — Conventional Commits v1.0.0 rules, commit formatting, scopes, breaking changes, and approval-first workflow for git commits.
