@@ -175,13 +175,16 @@ npm run test:coverage
 This file serves as the core rules and principles guide. For detailed domain specs, architecture designs, and workflow execution files, refer to the linked documents below:
 
 ### Technical Docs
+- [`DESIGN.md`](./DESIGN.md) — UI design system & component guidelines: dual-theme color tokens, typography scale, shell wireframe layout, Lucide React icon system, and component standards.
 - [`TECHNICAL_STACK.md`](./TECHNICAL_STACK.md) — Full engineering stack: desktop shell, frontend (React/Tailwind/Zustand/TipTap), SQLite, DeepSeek AI engine, safeStorage security, IPC channels, and QA toolchain.
 - [`spec/`](./spec/) — Detailed feature specifications: 27 feature files across 7 phases, each covering requirements, data models, UI/UX, error handling, and acceptance criteria.
 
-### Skills
-- [`git-cli`](./.opencode/skills/git-cli/SKILL.md) — Conventional Commits v1.0.0 rules, commit formatting, scopes, breaking changes, and approval-first workflow for git commits.
-- [`ipc-bridge-protocol`](./.opencode/skills/ipc-bridge-protocol/SKILL.md) — Type-safe IPC bridge: typed channel map, preload contextBridge exposure, and standardized IpcResult error handling.
-- [`electron-main-process`](./.opencode/skills/electron-main-process/SKILL.md) — Main process engineering: backend boundaries, better-sqlite3 standards, safeStorage keychain security, and DeepSeek API client guidelines.
-- [`react-renderer-ui`](./.opencode/skills/react-renderer-ui/SKILL.md) — Renderer engineering: sandboxed web boundary, React component standards, Zustand state management, and TipTap markdown editing.
+
+### Skills (OpenCode & Antigravity)
+- [`electron-main-process`](./.agents/skills/electron-main-process/SKILL.md) ([OpenCode](./.opencode/skills/electron-main-process/SKILL.md)) — Main process engineering: backend boundaries, better-sqlite3 standards, safeStorage keychain security, and DeepSeek API client guidelines.
+- [`git-cli`](./.agents/skills/git-cli/SKILL.md) ([OpenCode](./.opencode/skills/git-cli/SKILL.md)) — Conventional Commits v1.0.0 rules, commit formatting, scopes, breaking changes, and approval-first workflow for git commits.
+- [`ipc-bridge-protocol`](./.agents/skills/ipc-bridge-protocol/SKILL.md) ([OpenCode](./.opencode/skills/ipc-bridge-protocol/SKILL.md)) — Type-safe IPC bridge: typed channel map, preload contextBridge exposure, and standardized IpcResult error handling.
+- [`react-renderer-ui`](./.agents/skills/react-renderer-ui/SKILL.md) ([OpenCode](./.opencode/skills/react-renderer-ui/SKILL.md)) — Renderer engineering: sandboxed web boundary, React component standards, Zustand state management, and TipTap markdown editing.
+
 
 
