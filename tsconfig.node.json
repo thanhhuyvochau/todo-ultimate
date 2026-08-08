@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "composite": true
+  },
+  "include": [
+    "vite.config.ts",
+    "electron-builder.json5",
+    "src/main/**/*.ts",
+    "src/preload/**/*.ts",
+    "src/preload/**/*.d.ts"
+  ]
+}

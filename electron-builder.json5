@@ -1,0 +1,27 @@
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  "appId": "com.ai-task-planner.app",
+  "productName": "AI Task Planner",
+  "directories": {
+    "output": "dist"
+  },
+  "files": [
+    "out/**/*"
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ]
+  },
+  "mac": {
+    "target": ["dmg"],
+    "category": "public.app-category.productivity"
+  },
+  "linux": {
+    "target": ["AppImage", "deb"],
+    "category": "Office"
+  }
+}
