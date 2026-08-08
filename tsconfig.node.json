@@ -11,13 +11,19 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "composite": true
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": [
-    "vite.config.ts",
+    "electron.vite.config.ts",
     "electron-builder.json5",
     "src/main/**/*.ts",
     "src/preload/**/*.ts",
-    "src/preload/**/*.d.ts"
+    "src/preload/**/*.d.ts",
+    "src/shared/**/*.ts",
+    "src/shared/**/*.d.ts"
   ]
 }

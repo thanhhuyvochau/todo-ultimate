@@ -1,5 +1,18 @@
-import { contextBridge } from 'electron';
+import { contextBridge, ipcRenderer } from "electron";
+import type { RendererApi } from "../shared/api";
 
-contextBridge.exposeInMainWorld('api', {
-  // TODO: Add typed IPC channels here per IpcChannelMap
-});
+const api: RendererApi = {
+  getTasks: (params) => ipcRenderer.invoke("tasks:getAll", params),
+  createTask: (data) => ipcRenderer.invoke("tasks:create", data),
+  updateTask: (data) => ipcRenderer.invoke("tasks:update", data),
+  deleteTask: (params) => ipcRenderer.invoke("tasks:delete", params),
+  startTimer: (params) => ipcRenderer.invoke("timer:start", params),
+  pauseTimer: (params) => ipcRenderer.invoke("timer:pause", params),
+  generatePlan: (input) => ipcRenderer.invoke("ai:generatePlan", input),
+  generateReport: (params) => ipcRenderer.invoke("ai:generateReport", params),
+  setApiKey: (params) => ipcRenderer.invoke("key:set", params),
+  getApiKey: () => ipcRenderer.invoke("key:get", {}),
+  deleteApiKey: () => ipcRenderer.invoke("key:delete", {}),
+};
+
+contextBridge.exposeInMainWorld("api", api);

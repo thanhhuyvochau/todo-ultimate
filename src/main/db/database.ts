@@ -1,7 +1,7 @@
-import Database, { type Database as DatabaseType } from 'better-sqlite3';
-import { app } from 'electron';
-import { join } from 'path';
-import { runMigrations } from './migration-runner';
+import Database, { type Database as DatabaseType } from "better-sqlite3";
+import { app } from "electron";
+import { join } from "path";
+import { runMigrations } from "./migration-runner";
 
 let dbInstance: DatabaseType | null = null;
 
@@ -10,29 +10,26 @@ export function initDb(): DatabaseType {
     return dbInstance;
   }
 
-  const userDataPath = app.getPath('userData');
-  const dbPath = join(userDataPath, 'ai-task-planner.sqlite');
+  const userDataPath = app.getPath("userData");
+  const dbPath = join(userDataPath, "ai-task-planner.sqlite");
 
   try {
     dbInstance = new Database(dbPath);
-    console.log('AFTER DB');
-    
-    // Enable WAL mode for better concurrency (per requirements)
-    // dbInstance.pragma('journal_mode = WAL');
-    
-    // Run migrations
-    // runMigrations(dbInstance);
-    
+
+    dbInstance.pragma("journal_mode = WAL");
+
+    runMigrations(dbInstance);
+
     return dbInstance;
   } catch (error) {
-    console.error('Failed to initialize database:', error);
+    console.error("Failed to initialize database:", error);
     throw error;
   }
 }
 
 export function getDb(): DatabaseType {
   if (!dbInstance) {
-    throw new Error('Database has not been initialized. Call initDb first.');
+    throw new Error("Database has not been initialized. Call initDb first.");
   }
   return dbInstance;
 }

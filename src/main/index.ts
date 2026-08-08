@@ -1,7 +1,9 @@
-import { app, shell, BrowserWindow } from 'electron';
-import { join } from 'path';
-import { electronApp, optimizer, is } from '@electron-toolkit/utils';
-import { initDb } from './db/database';
+import { app, shell, BrowserWindow } from "electron";
+import { join } from "path";
+import { electronApp, optimizer, is } from "@electron-toolkit/utils";
+import { initDb } from "./db/database";
+import { registerIpcHandlers } from "./ipc/register-ipc";
+import { handlers } from "./ipc/handlers";
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -12,53 +14,56 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, "../preload/index.js"),
       sandbox: true,
       contextIsolation: true,
-      nodeIntegration: false
-    }
+      nodeIntegration: false,
+    },
   });
 
-  mainWindow.on('ready-to-show', () => {
+  mainWindow.on("ready-to-show", () => {
     mainWindow.show();
   });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url);
-    return { action: 'deny' };
+    return { action: "deny" };
   });
 
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
+  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+    mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+    mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
   }
 }
 
-
 app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.ai-task-planner');
+  electronApp.setAppUserModelId("com.ai-task-planner");
 
-  app.on('browser-window-created', (_, window) => {
+  app.on("browser-window-created", (_, window) => {
     optimizer.watchWindowShortcuts(window);
   });
 
   try {
     initDb();
   } catch (err) {
-    console.error('Failed to initialize application database. The app will not function correctly.', err);
-    // You could show an error dialog here before quitting
+    console.error(
+      "Failed to initialize application database. The app will not function correctly.",
+      err,
+    );
   }
+
+  registerIpcHandlers(handlers);
 
   createWindow();
 
-  app.on('activate', () => {
+  app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
     app.quit();
   }
 });
