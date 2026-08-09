@@ -1,0 +1,27 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "deepseek/deepseek-v4-pro",
+  "small_model": "opencode/deepseek-v4-flash-free",
+  "provider": {
+    "deepseek": {
+      "whitelist": ["deepseek-v4-pro"]
+    },
+    "opencode": {
+      "whitelist": ["deepseek-v4-flash-free"]
+    }
+  },
+  "agent": {
+    "explore": {
+      "model": "opencode/deepseek-v4-flash-free"
+    },
+    "scout": {
+      "model": "opencode/deepseek-v4-flash-free"
+    },
+    "plan": {
+      "model": "deepseek/deepseek-v4-pro"
+    },
+    "build": {
+      "model": "deepseek/deepseek-v4-pro"
+    }
+  }
+}
