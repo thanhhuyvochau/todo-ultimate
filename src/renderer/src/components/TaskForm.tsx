@@ -1,6 +1,19 @@
-import { useState, useEffect, useRef } from "react";
-import { Loader2, X } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  Loader2,
+  X,
+  Eye,
+  EyeOff,
+  Check,
+  RefreshCw,
+  AlertTriangle,
+} from "lucide-react";
 import type { Task, TaskPriority } from "@shared/models";
+import { useTaskStore } from "../stores/taskStore";
+import { MarkdownEditor } from "./MarkdownEditor";
+
+const DESCRIPTION_MAX_LENGTH = 100000;
+const AUTO_SAVE_DELAY = 1500;
 
 const PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
   { value: "low", label: "Low" },
@@ -35,6 +48,15 @@ function validateEstimatedMinutes(value: string): string | null {
   return null;
 }
 
+function getRelativeTime(ms: number): string {
+  const seconds = Math.floor((Date.now() - ms) / 1000);
+  if (seconds < 5) return "Saved just now";
+  if (seconds < 60) return `Saved ${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes === 1) return "Saved 1 min ago";
+  return `Saved ${minutes} min ago`;
+}
+
 export function TaskForm({
   isOpen,
   onClose,
@@ -48,9 +70,26 @@ export function TaskForm({
   const [titleError, setTitleError] = useState<string | null>(null);
   const [minutesError, setMinutesError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [isPreview, setIsPreview] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [descriptionDirty, setDescriptionDirty] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const [autoSaveError, setAutoSaveError] = useState<string | null>(null);
+
   const titleRef = useRef<HTMLInputElement>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasInitiallyLoadedRef = useRef(false);
+  const updateTask = useTaskStore((s) => s.updateTask);
 
   const isEditing = !!initialData;
+
+  const clearAutoSaveTimer = useCallback(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -69,14 +108,61 @@ export function TaskForm({
     setTitleError(null);
     setMinutesError(null);
     setIsSubmitting(false);
+    setIsPreview(false);
+    setLastSavedAt(null);
+    setDescriptionDirty(false);
+    setShowUnsavedWarning(false);
+    setAutoSaveError(null);
+    hasInitiallyLoadedRef.current = false;
     titleRef.current?.focus();
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleCloseRequest();
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, initialData, onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialData]);
+
+  useEffect(() => {
+    return () => {
+      clearAutoSaveTimer();
+    };
+  }, [clearAutoSaveTimer]);
+
+  useEffect(() => {
+    if (!isEditing || !initialData || !isOpen) return;
+    if (!hasInitiallyLoadedRef.current) {
+      hasInitiallyLoadedRef.current = true;
+      return;
+    }
+
+    clearAutoSaveTimer();
+
+    autoSaveTimerRef.current = setTimeout(async () => {
+      const success = await updateTask(initialData.id, {
+        description: description || null,
+      });
+      if (success) {
+        setLastSavedAt(Date.now());
+        setDescriptionDirty(false);
+        setAutoSaveError(null);
+      } else {
+        setAutoSaveError("Auto-save failed. Click to retry.");
+      }
+    }, AUTO_SAVE_DELAY);
+
+    return () => {
+      clearAutoSaveTimer();
+    };
+  }, [
+    description,
+    isEditing,
+    initialData,
+    isOpen,
+    updateTask,
+    clearAutoSaveTimer,
+  ]);
 
   if (!isOpen) return null;
 
@@ -90,6 +176,41 @@ export function TaskForm({
     setMinutesError(validateEstimatedMinutes(value));
   };
 
+  const handleDescriptionChange = (html: string) => {
+    setDescription(html);
+    setDescriptionDirty(true);
+    setAutoSaveError(null);
+  };
+
+  const handleRetryAutoSave = async () => {
+    if (!initialData) return;
+    setAutoSaveError(null);
+    const success = await updateTask(initialData.id, {
+      description: description || null,
+    });
+    if (success) {
+      setLastSavedAt(Date.now());
+      setDescriptionDirty(false);
+      setAutoSaveError(null);
+    } else {
+      setAutoSaveError("Save failed. Try again.");
+    }
+  };
+
+  const handleCloseRequest = () => {
+    if (descriptionDirty && isEditing) {
+      setShowUnsavedWarning(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleDiscardUnsaved = () => {
+    setShowUnsavedWarning(false);
+    setDescriptionDirty(false);
+    onClose();
+  };
+
   const handleSubmit = async () => {
     const tError = validateTitle(title);
     const mError = validateEstimatedMinutes(estimatedMinutes);
@@ -97,14 +218,17 @@ export function TaskForm({
     setMinutesError(mError);
     if (tError || mError) return;
 
+    clearAutoSaveTimer();
     setIsSubmitting(true);
     const success = await onSubmit({
       title: title.trim(),
       priority,
       estimatedMinutes: Number(estimatedMinutes),
-      description: description.trim() || "",
+      description: description || "",
     });
     if (success) {
+      setDescriptionDirty(false);
+      setLastSavedAt(Date.now());
       onClose();
     } else {
       setIsSubmitting(false);
@@ -126,7 +250,7 @@ export function TaskForm({
             {isEditing ? "Edit Task" : "New Task"}
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleCloseRequest}
             className="rounded-md p-1 text-text-muted transition-colors hover:text-text-primary"
             aria-label="Close form"
           >
@@ -202,27 +326,63 @@ export function TaskForm({
           </div>
 
           <div>
-            <label
-              className="mb-1 block text-sm font-medium text-text-primary"
-              htmlFor="task-description"
-            >
-              Description
-              <span className="ml-1 text-xs text-text-muted">(optional)</span>
-            </label>
-            <textarea
-              id="task-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-              placeholder="Add notes or context..."
-              className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary"
+            <div className="mb-1 flex items-center justify-between">
+              <label className="text-sm font-medium text-text-primary">
+                Description
+                <span className="ml-1 text-xs text-text-muted">(optional)</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsPreview((p) => !p)}
+                className="inline-flex items-center gap-1 rounded p-0.5 text-xs text-text-muted transition-colors hover:text-text-primary"
+                title={isPreview ? "Switch to edit mode" : "Preview"}
+              >
+                {isPreview ? (
+                  <>
+                    <EyeOff className="h-3.5 w-3.5" />
+                    Edit
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-3.5 w-3.5" />
+                    Preview
+                  </>
+                )}
+              </button>
+            </div>
+            <MarkdownEditor
+              key={initialData?.id ?? "new"}
+              initialContent={description}
+              onChange={handleDescriptionChange}
+              editable={!isPreview}
+              minHeight={150}
+              maxLength={DESCRIPTION_MAX_LENGTH}
             />
+            {isEditing && lastSavedAt !== null && !descriptionDirty && (
+              <div className="mt-1 flex items-center gap-1 text-xs text-success">
+                <Check className="h-3 w-3" />
+                <span>{getRelativeTime(lastSavedAt)}</span>
+              </div>
+            )}
+            {autoSaveError && (
+              <div className="mt-1 flex items-center gap-1 text-xs text-danger">
+                <span>{autoSaveError}</span>
+                <button
+                  type="button"
+                  onClick={handleRetryAutoSave}
+                  className="inline-flex items-center gap-0.5 font-medium underline hover:text-red-500"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Retry
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
           <button
-            onClick={onClose}
+            onClick={handleCloseRequest}
             disabled={isSubmitting}
             className="rounded-md bg-bg-tertiary px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-border focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary"
           >
@@ -237,6 +397,40 @@ export function TaskForm({
             {isEditing ? "Save" : "Create"}
           </button>
         </div>
+
+        {showUnsavedWarning && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-bg-surface/95">
+            <div className="mx-6 w-full max-w-xs rounded-lg border border-border bg-bg-elevated p-5 shadow-lg">
+              <div className="mb-3 flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-warning-subtle">
+                  <AlertTriangle className="h-5 w-5 text-warning" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-text-primary">
+                    Unsaved Changes
+                  </h3>
+                  <p className="mt-1 text-xs text-text-secondary">
+                    You have unsaved description changes. Discard them?
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowUnsavedWarning(false)}
+                  className="rounded-md bg-bg-tertiary px-3 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-border focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary"
+                >
+                  Keep Editing
+                </button>
+                <button
+                  onClick={handleDiscardUnsaved}
+                  className="rounded-md bg-warning px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary"
+                >
+                  Discard
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
