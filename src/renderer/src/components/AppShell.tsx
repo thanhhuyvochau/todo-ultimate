@@ -4,6 +4,7 @@ import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { BacklogView } from "./BacklogView";
 import { TodayView } from "./TodayView";
+import { SettingsView } from "./SettingsView";
 import { StatusFooter } from "./StatusFooter";
 
 const ENABLED_VIEWS: ViewName[] = ["backlog", "today"];
@@ -50,11 +51,7 @@ export function AppShell() {
               <p className="text-sm text-text-muted">Reports — coming soon</p>
             </div>
           )}
-          {activeView === "settings" && (
-            <div className="flex h-full items-center justify-center">
-              <p className="text-sm text-text-muted">Settings — coming soon</p>
-            </div>
-          )}
+          {activeView === "settings" && <SettingsView />}
         </main>
       </div>
       <StatusFooter />

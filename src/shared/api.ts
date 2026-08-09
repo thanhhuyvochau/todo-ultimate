@@ -33,4 +33,19 @@ export interface RendererApi {
   deleteApiKey: () => Promise<
     IpcResult<IpcChannelMap["key:delete"]["response"]>
   >;
+  getRecurringRules: () => Promise<
+    IpcResult<IpcChannelMap["recurring:getAll"]["response"]>
+  >;
+  createRecurringRule: (
+    data: IpcChannelMap["recurring:create"]["request"],
+  ) => Promise<IpcResult<IpcChannelMap["recurring:create"]["response"]>>;
+  updateRecurringRule: (
+    data: IpcChannelMap["recurring:update"]["request"],
+  ) => Promise<IpcResult<IpcChannelMap["recurring:update"]["response"]>>;
+  deleteRecurringRule: (
+    id: IpcChannelMap["recurring:delete"]["request"],
+  ) => Promise<IpcResult<IpcChannelMap["recurring:delete"]["response"]>>;
+  toggleRecurringRule: (
+    id: IpcChannelMap["recurring:toggle"]["request"],
+  ) => Promise<IpcResult<IpcChannelMap["recurring:toggle"]["response"]>>;
 }

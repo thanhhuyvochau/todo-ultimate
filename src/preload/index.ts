@@ -13,6 +13,13 @@ const api: RendererApi = {
   setApiKey: (params) => ipcRenderer.invoke("key:set", params),
   getApiKey: () => ipcRenderer.invoke("key:get", {}),
   deleteApiKey: () => ipcRenderer.invoke("key:delete", {}),
+  getRecurringRules: () => ipcRenderer.invoke("recurring:getAll", {}),
+  createRecurringRule: (data) => ipcRenderer.invoke("recurring:create", data),
+  updateRecurringRule: (data) => ipcRenderer.invoke("recurring:update", data),
+  deleteRecurringRule: (params) =>
+    ipcRenderer.invoke("recurring:delete", params),
+  toggleRecurringRule: (params) =>
+    ipcRenderer.invoke("recurring:toggle", params),
 };
 
 contextBridge.exposeInMainWorld("api", api);

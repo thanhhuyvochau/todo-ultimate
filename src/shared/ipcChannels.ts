@@ -5,6 +5,7 @@ import type {
   DailyPlan,
   PerformanceReport,
   AIScheduleInput,
+  RecurringRule,
 } from "./models";
 
 export interface IpcChannelMap {
@@ -28,6 +29,23 @@ export interface IpcChannelMap {
   "key:set": { request: { apiKey: string }; response: { success: boolean } };
   "key:get": { request: object; response: { hasKey: boolean } };
   "key:delete": { request: object; response: { success: boolean } };
+  "recurring:getAll": { request: object; response: RecurringRule[] };
+  "recurring:create": {
+    request: Omit<RecurringRule, "id">;
+    response: RecurringRule;
+  };
+  "recurring:update": {
+    request: Partial<RecurringRule> & { id: string };
+    response: RecurringRule;
+  };
+  "recurring:delete": {
+    request: { id: string };
+    response: { success: boolean };
+  };
+  "recurring:toggle": {
+    request: { id: string };
+    response: RecurringRule;
+  };
 }
 
 export type IpcChannelName = keyof IpcChannelMap;

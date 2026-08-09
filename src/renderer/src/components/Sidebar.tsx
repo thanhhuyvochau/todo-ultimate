@@ -15,7 +15,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "today", label: "Today", icon: Calendar, enabled: true },
   { id: "plan", label: "Daily Plan", icon: Lightbulb, enabled: false },
   { id: "reports", label: "Reports", icon: BarChart3, enabled: false },
-  { id: "settings", label: "Settings", icon: Settings, enabled: false },
+  { id: "settings", label: "Settings", icon: Settings, enabled: true },
 ];
 
 interface SidebarProps {

@@ -2,6 +2,7 @@ import type { IpcChannelMap } from "@/shared/ipcChannels";
 import type { IpcResult } from "@/shared/ipcResult";
 import { ok, fail } from "@/shared/ipcResult";
 import * as taskRepo from "@/main/db/task-repository";
+import * as recurringRuleRepo from "@/main/db/recurring-rule-repository";
 import * as keychainService from "@/main/services/keychain-service";
 
 type HandlerMap = {
@@ -143,6 +144,76 @@ export const handlers: HandlerMap = {
         );
       }
       return fail("INTERNAL_ERROR", "Failed to delete API key.");
+    }
+  },
+
+  "recurring:getAll": () => {
+    try {
+      const rules = recurringRuleRepo.getAllRules();
+      return ok(rules);
+    } catch (err) {
+      return fail("DB_READ_FAILED", "Failed to fetch recurring rules.");
+    }
+  },
+
+  "recurring:create": (data) => {
+    try {
+      const rule = recurringRuleRepo.createRule(data);
+      return ok(rule);
+    } catch (err) {
+      const error = err as { code?: string; message?: string };
+      if (error.code === "VALIDATION_ERROR") {
+        return fail(
+          "VALIDATION_ERROR",
+          error.message ?? "Invalid recurring rule data.",
+        );
+      }
+      return fail("DB_WRITE_FAILED", "Failed to create recurring rule.");
+    }
+  },
+
+  "recurring:update": (data) => {
+    try {
+      const rule = recurringRuleRepo.updateRule(data);
+      return ok(rule);
+    } catch (err) {
+      const error = err as { code?: string; message?: string };
+      if (error.code === "NOT_FOUND") {
+        return fail("NOT_FOUND", error.message ?? "Recurring rule not found.");
+      }
+      if (error.code === "VALIDATION_ERROR") {
+        return fail(
+          "VALIDATION_ERROR",
+          error.message ?? "Invalid recurring rule data.",
+        );
+      }
+      return fail("DB_WRITE_FAILED", "Failed to update recurring rule.");
+    }
+  },
+
+  "recurring:delete": ({ id }) => {
+    try {
+      const result = recurringRuleRepo.deleteRule(id);
+      return ok(result);
+    } catch (err) {
+      const error = err as { code?: string; message?: string };
+      if (error.code === "NOT_FOUND") {
+        return fail("NOT_FOUND", error.message ?? "Recurring rule not found.");
+      }
+      return fail("DB_WRITE_FAILED", "Failed to delete recurring rule.");
+    }
+  },
+
+  "recurring:toggle": ({ id }) => {
+    try {
+      const rule = recurringRuleRepo.toggleActive(id);
+      return ok(rule);
+    } catch (err) {
+      const error = err as { code?: string; message?: string };
+      if (error.code === "NOT_FOUND") {
+        return fail("NOT_FOUND", error.message ?? "Recurring rule not found.");
+      }
+      return fail("DB_WRITE_FAILED", "Failed to toggle recurring rule.");
     }
   },
 };

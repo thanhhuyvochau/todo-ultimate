@@ -25,7 +25,7 @@ export interface TimeLog {
   durationMinutes: number | null;
 }
 
-export type RecurringFrequency = "daily" | "weekdays" | "weekly" | "monthly";
+export type RecurringFrequency = "daily" | "weekly" | "monthly";
 
 export interface RecurringRule {
   id: string;
@@ -35,6 +35,8 @@ export interface RecurringRule {
   estimatedMinutes: number;
   frequency: RecurringFrequency;
   timeAnchor: number | null;
+  daysOfWeek: number[] | null;
+  dayOfMonth: number | null;
   isActive: boolean;
   lastInstantiatedDate: number | null;
   createdAt: number;

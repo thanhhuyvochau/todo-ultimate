@@ -38,6 +38,21 @@ beforeEach(() => {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS recurring_rules (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT,
+      priority TEXT NOT NULL,
+      estimated_minutes INTEGER NOT NULL,
+      frequency TEXT NOT NULL,
+      time_anchor INTEGER,
+      days_of_week TEXT,
+      day_of_month INTEGER,
+      is_active INTEGER DEFAULT 1,
+      last_instantiated_date INTEGER,
+      created_at INTEGER NOT NULL
+    );
   `);
 
   testDbReady.mockReturnValue(db);
@@ -518,6 +533,240 @@ describe("key handlers", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data.success).toBe(true);
+    }
+  });
+});
+
+describe("recurring rule handlers", () => {
+  it("recurring:getAll returns empty array initially", () => {
+    const result = handlers["recurring:getAll"]({});
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data).toEqual([]);
+    }
+  });
+
+  it("recurring:create creates a daily rule", () => {
+    const result = handlers["recurring:create"]({
+      title: "Morning Standup",
+      description: null,
+      priority: "high",
+      estimatedMinutes: 30,
+      frequency: "daily",
+      timeAnchor: null,
+      daysOfWeek: null,
+      dayOfMonth: null,
+      isActive: true,
+      lastInstantiatedDate: null,
+      createdAt: Date.now(),
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.title).toBe("Morning Standup");
+      expect(result.data.frequency).toBe("daily");
+      expect(typeof result.data.id).toBe("string");
+    }
+  });
+
+  it("recurring:create creates a weekly rule with days", () => {
+    const result = handlers["recurring:create"]({
+      title: "Gym",
+      description: null,
+      priority: "medium",
+      estimatedMinutes: 60,
+      frequency: "weekly",
+      timeAnchor: null,
+      daysOfWeek: [1, 3, 5],
+      dayOfMonth: null,
+      isActive: true,
+      lastInstantiatedDate: null,
+      createdAt: Date.now(),
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.frequency).toBe("weekly");
+      expect(result.data.daysOfWeek).toEqual([1, 3, 5]);
+    }
+  });
+
+  it("recurring:create creates a monthly rule", () => {
+    const result = handlers["recurring:create"]({
+      title: "Rent",
+      description: null,
+      priority: "high",
+      estimatedMinutes: 5,
+      frequency: "monthly",
+      timeAnchor: null,
+      daysOfWeek: null,
+      dayOfMonth: 15,
+      isActive: true,
+      lastInstantiatedDate: null,
+      createdAt: Date.now(),
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.frequency).toBe("monthly");
+      expect(result.data.dayOfMonth).toBe(15);
+    }
+  });
+
+  it("recurring:create rejects empty title", () => {
+    const result = handlers["recurring:create"]({
+      title: "",
+      description: null,
+      priority: "medium",
+      estimatedMinutes: 10,
+      frequency: "daily",
+      timeAnchor: null,
+      daysOfWeek: null,
+      dayOfMonth: null,
+      isActive: true,
+      lastInstantiatedDate: null,
+      createdAt: Date.now(),
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("VALIDATION_ERROR");
+    }
+  });
+
+  it("recurring:create rejects weekly without days", () => {
+    const result = handlers["recurring:create"]({
+      title: "Weekender",
+      description: null,
+      priority: "low",
+      estimatedMinutes: 20,
+      frequency: "weekly",
+      timeAnchor: null,
+      daysOfWeek: [],
+      dayOfMonth: null,
+      isActive: true,
+      lastInstantiatedDate: null,
+      createdAt: Date.now(),
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("VALIDATION_ERROR");
+    }
+  });
+
+  it("recurring:update updates a rule", () => {
+    const create = handlers["recurring:create"]({
+      title: "Original",
+      description: null,
+      priority: "low",
+      estimatedMinutes: 15,
+      frequency: "daily",
+      timeAnchor: null,
+      daysOfWeek: null,
+      dayOfMonth: null,
+      isActive: true,
+      lastInstantiatedDate: null,
+      createdAt: Date.now(),
+    });
+    expect(create.ok).toBe(true);
+    if (!create.ok) return;
+
+    const result = handlers["recurring:update"]({
+      id: create.data.id,
+      title: "Updated",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.title).toBe("Updated");
+    }
+  });
+
+  it("recurring:update returns NOT_FOUND for missing id", () => {
+    const result = handlers["recurring:update"]({
+      id: "nonexistent",
+      title: "Nope",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("NOT_FOUND");
+    }
+  });
+
+  it("recurring:delete deletes a rule", () => {
+    const create = handlers["recurring:create"]({
+      title: "To Delete",
+      description: null,
+      priority: "medium",
+      estimatedMinutes: 5,
+      frequency: "daily",
+      timeAnchor: null,
+      daysOfWeek: null,
+      dayOfMonth: null,
+      isActive: true,
+      lastInstantiatedDate: null,
+      createdAt: Date.now(),
+    });
+    expect(create.ok).toBe(true);
+    if (!create.ok) return;
+
+    const result = handlers["recurring:delete"]({ id: create.data.id });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.success).toBe(true);
+    }
+
+    const getAll = handlers["recurring:getAll"]({});
+    expect(getAll.ok).toBe(true);
+    if (getAll.ok) {
+      expect(getAll.data).toHaveLength(0);
+    }
+  });
+
+  it("recurring:delete returns NOT_FOUND for missing id", () => {
+    const result = handlers["recurring:delete"]({ id: "nonexistent" });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("NOT_FOUND");
+    }
+  });
+
+  it("recurring:toggle toggles active state", () => {
+    const create = handlers["recurring:create"]({
+      title: "Toggle Me",
+      description: null,
+      priority: "medium",
+      estimatedMinutes: 10,
+      frequency: "daily",
+      timeAnchor: null,
+      daysOfWeek: null,
+      dayOfMonth: null,
+      isActive: true,
+      lastInstantiatedDate: null,
+      createdAt: Date.now(),
+    });
+    expect(create.ok).toBe(true);
+    if (!create.ok) return;
+    expect(create.data.isActive).toBe(true);
+
+    const toggle = handlers["recurring:toggle"]({ id: create.data.id });
+    expect(toggle.ok).toBe(true);
+    if (toggle.ok) {
+      expect(toggle.data.isActive).toBe(false);
+    }
+
+    const toggleBack = handlers["recurring:toggle"]({ id: create.data.id });
+    expect(toggleBack.ok).toBe(true);
+    if (toggleBack.ok) {
+      expect(toggleBack.data.isActive).toBe(true);
+    }
+  });
+
+  it("recurring:toggle returns NOT_FOUND for missing id", () => {
+    const result = handlers["recurring:toggle"]({ id: "nonexistent" });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("NOT_FOUND");
     }
   });
 });

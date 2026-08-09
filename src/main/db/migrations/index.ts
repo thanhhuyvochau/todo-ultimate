@@ -1,8 +1,12 @@
 import initSql from "./001_init.sql?raw";
+import recurringConfigSql from "./002_recurring_config.sql?raw";
 
 export interface Migration {
   version: number;
   sql: string;
 }
 
-export const MIGRATIONS: Migration[] = [{ version: 1, sql: initSql }];
+export const MIGRATIONS: Migration[] = [
+  { version: 1, sql: initSql },
+  { version: 2, sql: recurringConfigSql },
+];
