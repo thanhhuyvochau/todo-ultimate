@@ -5,6 +5,7 @@ import { initDb } from "./db/database";
 import { registerIpcHandlers } from "./ipc/register-ipc";
 import { handlers } from "./ipc/handlers";
 import { isEncryptionAvailable } from "./services/keychain-service";
+import { instantiateDailyTasks } from "./services/recurring-engine";
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -55,6 +56,7 @@ app.whenReady().then(() => {
 
   try {
     initDb();
+    instantiateDailyTasks();
   } catch (err) {
     console.error(
       "Failed to initialize application database. The app will not function correctly.",
@@ -65,6 +67,15 @@ app.whenReady().then(() => {
   registerIpcHandlers(handlers);
 
   createWindow();
+
+  let lastCheckDate = new Date().toDateString();
+  setInterval(() => {
+    const today = new Date().toDateString();
+    if (today !== lastCheckDate) {
+      lastCheckDate = today;
+      instantiateDailyTasks();
+    }
+  }, 60_000);
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

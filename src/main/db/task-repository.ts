@@ -136,6 +136,51 @@ export function createTask(input: Omit<Task, "id">): Task {
   return rowToTask(row);
 }
 
+export function createRecurringChildTask(rule: {
+  id: string;
+  title: string;
+  description: string | null;
+  priority: TaskPriority;
+  estimatedMinutes: number;
+  timeAnchor: number | null;
+  startOfDay: number;
+}): Task {
+  const db = getDb();
+  const now = Date.now();
+  const id = randomUUID();
+
+  const scheduledDate =
+    rule.timeAnchor !== null
+      ? applyTimeAnchor(rule.startOfDay, rule.timeAnchor)
+      : null;
+
+  const stmt = db.prepare(`
+    INSERT INTO tasks (id, title, description, priority, status, estimated_minutes, actual_minutes, is_recurring_child, recurring_rule_id, scheduled_date, created_at, updated_at)
+    VALUES (?, ?, ?, ?, 'todo', ?, null, 1, ?, ?, ?, ?)
+  `);
+  stmt.run(
+    id,
+    rule.title.trim(),
+    rule.description ?? null,
+    rule.priority,
+    rule.estimatedMinutes,
+    rule.id,
+    scheduledDate,
+    now,
+    now,
+  );
+
+  const row = db.prepare("SELECT * FROM tasks WHERE id = ?").get(id) as TaskRow;
+  return rowToTask(row);
+}
+
+function applyTimeAnchor(startOfDay: number, timeAnchor: number): number {
+  const anchor = new Date(timeAnchor);
+  const result = new Date(startOfDay);
+  result.setHours(anchor.getHours(), anchor.getMinutes(), 0, 0);
+  return result.getTime();
+}
+
 function validateStatusTransition(
   currentStatus: string,
   newStatus: string,

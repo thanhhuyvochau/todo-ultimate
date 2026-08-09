@@ -114,14 +114,15 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
   - Templates are saved separately from active tasks.
 - **INVEST Check**: Independent (standalone CRUD), Valuable (avoids manual recreation), Small (backlog CRUD pattern reused).
 
-### TKT-009: Build Daily Instantiation Engine ❌ Not Started
+### TKT-009: Build Daily Instantiation Engine ✅ Done
 
 **As a** system, **I want to** automatically instantiate today's recurring tasks on startup or date-rollover **so that** the user's daily habits are ready to go.
 
-- **Status**: No engine/service code exists. No startup date-rollover check.
+- **Status**: `src/main/services/recurring-engine.ts` (background service with `instantiateDailyTasks`, `getStartOfDay`, `matchesTodayFrequency`), `src/main/index.ts` (hooks engine on startup + 60s midnight-check interval), `src/main/db/task-repository.ts` (added `createRecurringChildTask` for rule→task instantiation), `src/main/services/__tests__/recurring-engine.test.ts` (11 tests: daily/weekly/monthly creation, dedup, inactive skip, time anchor, multi-rule count).
 - **Acceptance Criteria**:
   - Background check runs on app launch or at midnight.
   - Active recurring rules generate standard Tasks in the "Today" view.
+- **INVEST Check**: Independent (standalone service, depends on existing repos), Valuable (automatic task generation), Small (single service + hook).
 
 ### TKT-010: Implement Fixed-Time Blocking ❌ Not Started
 
