@@ -226,6 +226,7 @@ export function BacklogView() {
       <DeleteConfirmationDialog
         isOpen={!!deletingTask}
         taskTitle={deletingTask?.title ?? ""}
+        itemType="task"
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeletingTask(null)}
       />

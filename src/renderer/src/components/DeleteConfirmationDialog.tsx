@@ -1,9 +1,12 @@
 import { useEffect, useRef } from "react";
 import { AlertTriangle, X } from "lucide-react";
 
+type DeleteItemType = "task" | "rule";
+
 interface DeleteConfirmationDialogProps {
   isOpen: boolean;
   taskTitle: string;
+  itemType?: DeleteItemType;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -11,6 +14,7 @@ interface DeleteConfirmationDialogProps {
 export function DeleteConfirmationDialog({
   isOpen,
   taskTitle,
+  itemType = "task",
   onConfirm,
   onCancel,
 }: DeleteConfirmationDialogProps) {
@@ -40,11 +44,13 @@ export function DeleteConfirmationDialog({
           </div>
           <div className="flex-1">
             <h2 className="text-xl font-semibold text-text-primary">
-              Delete Task?
+              {itemType === "rule" ? "Delete Rule?" : "Delete Task?"}
             </h2>
             <p className="mt-2 text-sm text-text-secondary">
-              Are you sure you want to delete &lsquo;{taskTitle}&rsquo;? This
-              action cannot be undone.
+              Are you sure you want to delete &lsquo;{taskTitle}&rsquo;?{" "}
+              {itemType === "rule"
+                ? "This won't remove already-generated tasks."
+                : "This action cannot be undone."}
             </p>
           </div>
           <button

@@ -123,6 +123,7 @@ export function RecurringRulesPanel() {
       <DeleteConfirmationDialog
         isOpen={deletingRule !== null}
         taskTitle={deletingRule?.title ?? ""}
+        itemType="rule"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeletingRule(null)}
       />

@@ -104,14 +104,15 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ## Phase 3: Recurring Tasks
 
-### TKT-008: Define Recurring Task Templates ❌ Not Started
+### TKT-008: Define Recurring Task Templates ✅ Done
 
 **As a** user, **I want to** create task templates that repeat on a schedule (e.g., daily at 8 PM) **so that** I don't have to recreate habits manually.
 
-- **Status**: `recurring_rules` table + `RecurringRule`/`RecurringFrequency` types exist in schema and shared models. No repository, no IPC handlers, no UI.
+- **Status**: `src/main/db/recurring-rule-repository.ts` (full CRUD + toggle + validation), `src/main/ipc/handlers.ts` (5 recurring handlers), `src/main/ipc/__tests__/handlers.test.ts` (9 test cases), `src/renderer/src/stores/recurringRuleStore.ts` (Zustand store), `src/renderer/src/components/RecurringRuleForm.tsx` (create/edit form with frequency, days, time anchor), `src/renderer/src/components/RecurringRuleCard.tsx` (card with toggle/edit/delete), `src/renderer/src/components/RecurringRulesPanel.tsx` (list panel with empty state), `src/renderer/src/components/SettingsView.tsx` (integrated panel), `src/renderer/src/components/DeleteConfirmationDialog.tsx` (updated for rule deletion wording).
 - **Acceptance Criteria**:
   - UI to define a rule (CRON or daily/weekly selection).
   - Templates are saved separately from active tasks.
+- **INVEST Check**: Independent (standalone CRUD), Valuable (avoids manual recreation), Small (backlog CRUD pattern reused).
 
 ### TKT-009: Build Daily Instantiation Engine ❌ Not Started
 

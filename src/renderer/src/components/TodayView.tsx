@@ -312,6 +312,7 @@ export function TodayView() {
       <DeleteConfirmationDialog
         isOpen={!!deletingTask}
         taskTitle={deletingTask?.title ?? ""}
+        itemType="task"
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeletingTask(null)}
       />
