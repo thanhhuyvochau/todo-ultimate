@@ -6,6 +6,7 @@ import { registerIpcHandlers } from "./ipc/register-ipc";
 import { handlers } from "./ipc/handlers";
 import { isEncryptionAvailable } from "./services/keychain-service";
 import { instantiateDailyTasks } from "./services/recurring-engine";
+import { getActiveTimer, stopTimerEngine } from "./services/timer-service";
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -57,6 +58,7 @@ app.whenReady().then(() => {
   try {
     initDb();
     instantiateDailyTasks();
+    getActiveTimer(); // Restore timer state if unclosed log exists
   } catch (err) {
     console.error(
       "Failed to initialize application database. The app will not function correctly.",
@@ -80,6 +82,10 @@ app.whenReady().then(() => {
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+});
+
+app.on("before-quit", () => {
+  stopTimerEngine();
 });
 
 app.on("window-all-closed", () => {

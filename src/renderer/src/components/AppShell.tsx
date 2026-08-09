@@ -6,11 +6,16 @@ import { BacklogView } from './BacklogView';
 import { TodayView } from './TodayView';
 import { SettingsView } from './SettingsView';
 import { StatusFooter } from './StatusFooter';
+import { useTimerStore } from '../stores/timerStore';
 
 const ENABLED_VIEWS: ViewName[] = ['backlog', 'today'];
 
 export function AppShell() {
   const [activeView, setActiveView] = useState<ViewName>('backlog');
+
+  useEffect(() => {
+    useTimerStore.getState().initTimer();
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

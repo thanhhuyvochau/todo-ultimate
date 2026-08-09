@@ -39,6 +39,15 @@ beforeEach(() => {
       updated_at INTEGER NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS task_time_logs (
+      id TEXT PRIMARY KEY,
+      task_id TEXT NOT NULL,
+      started_at INTEGER NOT NULL,
+      paused_at INTEGER,
+      duration_minutes INTEGER,
+      FOREIGN KEY (task_id) REFERENCES tasks(id)
+    );
+
     CREATE TABLE IF NOT EXISTS recurring_rules (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -770,3 +779,67 @@ describe("recurring rule handlers", () => {
     }
   });
 });
+
+describe("timer IPC handlers", () => {
+  it("timer:start starts timer and timer:getActive returns active state", () => {
+    const taskRes = handlers["tasks:create"]({
+      title: "Timer Task",
+      description: null,
+      priority: "high",
+      status: "todo",
+      estimatedMinutes: 20,
+      actualMinutes: null,
+      isRecurringChild: false,
+      recurringRuleId: null,
+      scheduledDate: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    expect(taskRes.ok).toBe(true);
+    if (!taskRes.ok) return;
+
+    const startRes = handlers["timer:start"]({ taskId: taskRes.data.id });
+    expect(startRes.ok).toBe(true);
+    if (startRes.ok) {
+      expect(startRes.data.logId).toBeDefined();
+    }
+
+    const activeRes = handlers["timer:getActive"]({});
+    expect(activeRes.ok).toBe(true);
+    if (activeRes.ok) {
+      expect(activeRes.data?.taskId).toBe(taskRes.data.id);
+    }
+  });
+
+  it("timer:pause pauses current timer", () => {
+    const taskRes = handlers["tasks:create"]({
+      title: "Pause Task",
+      description: null,
+      priority: "low",
+      status: "todo",
+      estimatedMinutes: 15,
+      actualMinutes: null,
+      isRecurringChild: false,
+      recurringRuleId: null,
+      scheduledDate: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    if (!taskRes.ok) return;
+
+    handlers["timer:start"]({ taskId: taskRes.data.id });
+
+    const pauseRes = handlers["timer:pause"]({ taskId: taskRes.data.id });
+    expect(pauseRes.ok).toBe(true);
+    if (pauseRes.ok) {
+      expect(pauseRes.data.durationMinutes).toBeDefined();
+    }
+
+    const activeRes = handlers["timer:getActive"]({});
+    expect(activeRes.ok).toBe(true);
+    if (activeRes.ok) {
+      expect(activeRes.data).toBeNull();
+    }
+  });
+});
+

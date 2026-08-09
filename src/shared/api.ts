@@ -15,11 +15,17 @@ export interface RendererApi {
     id: IpcChannelMap["tasks:delete"]["request"],
   ) => Promise<IpcResult<IpcChannelMap["tasks:delete"]["response"]>>;
   startTimer: (
-    taskId: IpcChannelMap["timer:start"]["request"],
+    params: IpcChannelMap["timer:start"]["request"],
   ) => Promise<IpcResult<IpcChannelMap["timer:start"]["response"]>>;
   pauseTimer: (
-    taskId: IpcChannelMap["timer:pause"]["request"],
+    params: IpcChannelMap["timer:pause"]["request"],
   ) => Promise<IpcResult<IpcChannelMap["timer:pause"]["response"]>>;
+  getActiveTimer: () => Promise<
+    IpcResult<IpcChannelMap["timer:getActive"]["response"]>
+  >;
+  onTimerTick: (
+    callback: (data: { taskId: string; elapsedSeconds: number }) => void,
+  ) => () => void;
   generatePlan: (
     input: IpcChannelMap["ai:generatePlan"]["request"],
   ) => Promise<IpcResult<IpcChannelMap["ai:generatePlan"]["response"]>>;

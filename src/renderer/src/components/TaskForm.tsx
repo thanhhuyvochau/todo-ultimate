@@ -285,7 +285,7 @@ export function TaskForm({
               className="mb-1 block text-xs font-medium text-text-muted"
               htmlFor="task-minutes"
             >
-              Estimated time (minutes)
+              Estimated Time (minutes)
             </label>
             <input
               id="task-minutes"
@@ -401,7 +401,7 @@ export function TaskForm({
         {showUnsavedWarning && (
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-bg-elevated/95 backdrop-blur-[1px]">
             <div className="w-full max-w-xs rounded-md border border-border bg-bg-elevated p-4 shadow-xl">
-              <p className="text-sm font-medium text-text-primary">Unsaved changes</p>
+              <p className="text-sm font-medium text-text-primary">Unsaved Changes</p>
               <p className="mt-1 text-xs text-text-muted">
                 Description has unsaved edits. Discard them?
               </p>
@@ -410,7 +410,7 @@ export function TaskForm({
                   onClick={() => setShowUnsavedWarning(false)}
                   className="rounded px-3 py-1.5 text-xs font-medium text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
                 >
-                  Keep editing
+                  Keep Editing
                 </button>
                 <button
                   onClick={handleDiscardUnsaved}

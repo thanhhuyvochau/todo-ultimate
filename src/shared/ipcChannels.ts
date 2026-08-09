@@ -18,8 +18,17 @@ export interface IpcChannelMap {
   "tasks:delete": { request: { id: string }; response: { success: boolean } };
   "timer:start": { request: { taskId: string }; response: { logId: string } };
   "timer:pause": {
-    request: { taskId: string };
+    request: { taskId?: string };
     response: { durationMinutes: number };
+  };
+  "timer:getActive": {
+    request: object;
+    response: {
+      taskId: string;
+      logId: string;
+      startedAt: number;
+      elapsedSeconds: number;
+    } | null;
   };
   "ai:generatePlan": { request: AIScheduleInput; response: DailyPlan };
   "ai:generateReport": {

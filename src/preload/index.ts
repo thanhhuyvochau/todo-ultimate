@@ -8,6 +8,17 @@ const api: RendererApi = {
   deleteTask: (params) => ipcRenderer.invoke("tasks:delete", params),
   startTimer: (params) => ipcRenderer.invoke("timer:start", params),
   pauseTimer: (params) => ipcRenderer.invoke("timer:pause", params),
+  getActiveTimer: () => ipcRenderer.invoke("timer:getActive", {}),
+  onTimerTick: (callback) => {
+    const listener = (
+      _event: unknown,
+      data: { taskId: string; elapsedSeconds: number },
+    ) => callback(data);
+    ipcRenderer.on("timer:tick", listener);
+    return () => {
+      ipcRenderer.removeListener("timer:tick", listener);
+    };
+  },
   generatePlan: (input) => ipcRenderer.invoke("ai:generatePlan", input),
   generateReport: (params) => ipcRenderer.invoke("ai:generateReport", params),
   setApiKey: (params) => ipcRenderer.invoke("key:set", params),

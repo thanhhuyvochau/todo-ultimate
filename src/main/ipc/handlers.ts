@@ -4,6 +4,7 @@ import { ok, fail } from "@/shared/ipcResult";
 import * as taskRepo from "@/main/db/task-repository";
 import * as recurringRuleRepo from "@/main/db/recurring-rule-repository";
 import * as keychainService from "@/main/services/keychain-service";
+import * as timerService from "@/main/services/timer-service";
 
 type HandlerMap = {
   [K in keyof IpcChannelMap]: (
@@ -75,12 +76,39 @@ export const handlers: HandlerMap = {
     }
   },
 
-  "timer:start": () => {
-    return fail("NOT_IMPLEMENTED", "Timer service is not yet implemented.");
+  "timer:start": ({ taskId }) => {
+    try {
+      const result = timerService.startTimer(taskId);
+      return ok(result);
+    } catch (err) {
+      const error = err as { code?: string; message?: string };
+      if (error.code === "NOT_FOUND") {
+        return fail("NOT_FOUND", error.message ?? "Task not found.");
+      }
+      return fail("TIMER_START_FAILED", "Failed to start timer.");
+    }
   },
 
-  "timer:pause": () => {
-    return fail("NOT_IMPLEMENTED", "Timer service is not yet implemented.");
+  "timer:pause": ({ taskId }) => {
+    try {
+      const result = timerService.pauseTimer(taskId);
+      return ok(result);
+    } catch (err) {
+      const error = err as { code?: string; message?: string };
+      if (error.code === "NOT_FOUND") {
+        return fail("NOT_FOUND", error.message ?? "No active timer found.");
+      }
+      return fail("TIMER_PAUSE_FAILED", "Failed to pause timer.");
+    }
+  },
+
+  "timer:getActive": () => {
+    try {
+      const active = timerService.getActiveTimer();
+      return ok(active);
+    } catch (err) {
+      return fail("TIMER_READ_FAILED", "Failed to fetch active timer.");
+    }
   },
 
   "ai:generatePlan": () => {

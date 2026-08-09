@@ -4,7 +4,7 @@
   "description": "AI Task & Performance Planner - Local-first desktop productivity environment",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "npm run postinstall && electron-vite dev",
+    "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "start": "electron-vite dev",

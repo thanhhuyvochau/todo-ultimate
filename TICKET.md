@@ -148,23 +148,26 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ## Phase 4: Precision Time Tracking
 
-### TKT-011: Implement Start/Pause Task Timer ❌ Not Started
+### TKT-011: Implement Start/Pause Task Timer ✅ Done
 
 **As a** user, **I want to** start and pause a timer on my active task **so that** I can track exactly how much time I spend on it.
 
-- **Status**: `timer:start` and `timer:pause` channels are defined in `ipcChannels.ts` + preload, but handlers return `fail("NOT_IMPLEMENTED")`. `task_time_logs` table exists in schema. No timer service, no `timer:tick` event, no `timer:getActive` channel.
+- **Status**: Complete — `src/main/db/time-log-repository.ts` (time log CRUD + duration calculations), `src/main/services/timer-service.ts` (background-safe 1s tick loop, recovery on startup, auto-pausing previous task timer, cleanup on app quit), `src/shared/ipcChannels.ts` (`timer:start`, `timer:pause`, `timer:getActive`), `src/preload/index.ts` (`onTimerTick` subscription bridge), `src/renderer/src/stores/timerStore.ts` (Zustand store), `src/renderer/src/components/Header.tsx` (live active timer readout with pulsing indicator and pause control).
 - **Acceptance Criteria**:
-  - "In Progress" triggers a background-safe timer.
-  - Minimizing or closing the app does not cause drift (uses absolute timestamps).
+  - ✅ "In Progress" triggers a background-safe timer.
+  - ✅ Minimizing or closing the app does not cause drift (uses absolute timestamps).
+  - ✅ Live tick updates rendered in Header UI bar.
+  - ✅ Only one task timer active at a time (starting another auto-pauses previous).
+- **Tests**: `src/main/db/__tests__/time-log-repository.test.ts`, `src/main/services/__tests__/timer-service.test.ts`, `src/main/ipc/__tests__/handlers.test.ts`.
 
-### TKT-012: Calculate Actual Task Duration ❌ Not Started
+### TKT-012: Calculate Actual Task Duration ✅ Done
 
 **As a** user, **I want** the system to aggregate my start/pause intervals **so that** I get an accurate total time spent when completing a task.
 
-- **Status**: No logic computing durations from `task_time_logs` intervals. No `time-log-repository`.
+- **Status**: Complete — `src/main/db/time-log-repository.ts` (`pauseTimeLog` calculates interval duration and aggregates total minutes onto `tasks.actual_minutes`).
 - **Acceptance Criteria**:
-  - `task_time_logs` table records intervals.
-  - Total duration is computed accurately upon task completion.
+  - ✅ `task_time_logs` table records intervals.
+  - ✅ Total duration is computed accurately and persisted to `tasks.actual_minutes`.
 
 ### TKT-013: Calculate & Store Variance Metrics ❌ Not Started
 
@@ -231,11 +234,11 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 **As a** developer, **I want to** manage frontend state with Zustand **so that** UI components stay perfectly in sync without deep prop drilling.
 
-- **Status**: Partially complete — `src/renderer/src/stores/taskStore.ts` (task CRUD + filters), `src/renderer/src/stores/recurringRuleStore.ts` (recurring rule CRUD + toggle). Both stores are used by `BacklogView`, `TodayView`, `RecurringRulesPanel` etc. No timer store or user-settings store yet.
+- **Status**: Partially complete — `src/renderer/src/stores/taskStore.ts` (task CRUD + filters), `src/renderer/src/stores/recurringRuleStore.ts` (recurring rule CRUD + toggle), `src/renderer/src/stores/timerStore.ts` (timer state + tick subscriptions). No user-settings store yet.
 - **Acceptance Criteria**:
   - ✅ Task store created and in use.
   - ✅ Recurring rule store created and in use.
-  - ❌ Timer store (depends on TKT-011).
+  - ✅ Timer store created and in use.
   - ❌ User Settings store (theme preference, API key status).
 
 ### TKT-020: Build Main Dashboard Layout ✅ Done
