@@ -178,6 +178,12 @@ This file serves as the core rules and principles guide. For detailed domain spe
 - [`DESIGN.md`](./DESIGN.md) — UI design system & component guidelines: dual-theme color tokens, typography scale, shell wireframe layout, Lucide React icon system, and component standards.
 - [`TECHNICAL_STACK.md`](./TECHNICAL_STACK.md) — Full engineering stack: desktop shell, frontend (React/Tailwind/Zustand/TipTap), SQLite, DeepSeek AI engine, safeStorage security, IPC channels, and QA toolchain.
 - [`spec/`](./spec/) — Detailed feature specifications: 27 feature files across 7 phases, each covering requirements, data models, UI/UX, error handling, and acceptance criteria.
+- [`docs/design/TKT-004-backlog-crud/`](./docs/design/TKT-004-backlog-crud/) — UI component designs for Task Backlog CRUD:
+  - [`BacklogView.md`](./docs/design/TKT-004-backlog-crud/BacklogView.md) — Backlog list view design.
+  - [`DeleteConfirmationDialog.md`](./docs/design/TKT-004-backlog-crud/DeleteConfirmationDialog.md) — Destructive action safety dialog design.
+  - [`PriorityBadge.md`](./docs/design/TKT-004-backlog-crud/PriorityBadge.md) — Priority pill badge design.
+  - [`TaskForm.md`](./docs/design/TKT-004-backlog-crud/TaskForm.md) — Create/Edit task form design.
+  - [`TaskItem.md`](./docs/design/TKT-004-backlog-crud/TaskItem.md) — Task list item row design.
 
 
 ### Skills (OpenCode & Antigravity)
