@@ -1,22 +1,21 @@
-import { useState, useRef, useEffect, type KeyboardEvent } from "react";
+import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import {
-  GripVertical,
   Pencil,
   Trash2,
   ChevronDown,
-  ArrowRightCircle,
-  ArrowLeftCircle,
+  ArrowUpRight,
+  ArrowDownLeft,
   CheckCircle2,
-  Calendar,
-  Square,
   Check,
   X,
-} from "lucide-react";
-import type { Task, TaskStatus, TaskPriority } from "@shared/models";
-import { PriorityBadge } from "./PriorityBadge";
-import { StatusBadge } from "./StatusBadge";
+  Circle,
+  CircleDot,
+  CircleCheck,
+} from 'lucide-react';
+import type { Task, TaskStatus, TaskPriority } from '@shared/models';
+import { PriorityBadge } from './PriorityBadge';
 
-const PRIORITY_CYCLE: TaskPriority[] = ["low", "medium", "high"];
+const PRIORITY_CYCLE: TaskPriority[] = ['low', 'medium', 'high'];
 
 function formatMinutes(minutes: number): string {
   const hours = Math.floor(minutes / 60);
@@ -29,30 +28,21 @@ function formatMinutes(minutes: number): string {
 interface StatusAction {
   nextStatus: TaskStatus;
   label: string;
-  icon: JSX.Element;
 }
 
 const STATUS_ACTIONS: Record<TaskStatus, StatusAction[]> = {
-  todo: [
-    {
-      nextStatus: "in_progress",
-      label: "Start",
-      icon: <ArrowRightCircle className="h-4 w-4" />,
-    },
-  ],
+  todo: [{ nextStatus: 'in_progress', label: 'Start' }],
   in_progress: [
-    {
-      nextStatus: "todo",
-      label: "Return to Backlog",
-      icon: <ArrowLeftCircle className="h-4 w-4" />,
-    },
-    {
-      nextStatus: "completed",
-      label: "Complete",
-      icon: <CheckCircle2 className="h-4 w-4" />,
-    },
+    { nextStatus: 'todo',      label: 'Pause' },
+    { nextStatus: 'completed', label: 'Complete' },
   ],
   completed: [],
+};
+
+const CheckIcon: Record<TaskStatus, typeof Circle> = {
+  todo:        Circle,
+  in_progress: CircleDot,
+  completed:   CircleCheck,
 };
 
 interface InlineEditValues {
@@ -88,25 +78,23 @@ export function TaskItem({
   const menuRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const actions = STATUS_ACTIONS[task.status];
+  const CheckMark = CheckIcon[task.status];
 
   useEffect(() => {
     if (!statusOpen) return;
-
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setStatusOpen(false);
       }
     };
-
     const handleKeyDown = (e: globalThis.KeyboardEvent) => {
-      if (e.key === "Escape") setStatusOpen(false);
+      if (e.key === 'Escape') setStatusOpen(false);
     };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [statusOpen]);
 
@@ -126,18 +114,8 @@ export function TaskItem({
   }, [task.title, task.priority, task.estimatedMinutes, isEditing]);
 
   const handleStartEdit = () => {
-    if (!onInlineSave) {
-      onEdit(task);
-      return;
-    }
+    if (!onInlineSave) { onEdit(task); return; }
     setIsEditing(true);
-    setEditTitle(task.title);
-    setEditPriority(task.priority);
-    setEditMinutes(String(task.estimatedMinutes));
-  };
-
-  const handleTitleDblClick = () => {
-    handleStartEdit();
   };
 
   const handleSave = () => {
@@ -145,11 +123,7 @@ export function TaskItem({
     if (!trimmed || trimmed.length > 200) return;
     const minutes = parseInt(editMinutes, 10);
     if (isNaN(minutes) || minutes < 1 || minutes > 1440) return;
-    onInlineSave!(task, {
-      title: trimmed,
-      priority: editPriority,
-      estimatedMinutes: minutes,
-    });
+    onInlineSave!(task, { title: trimmed, priority: editPriority, estimatedMinutes: minutes });
     setIsEditing(false);
   };
 
@@ -161,13 +135,8 @@ export function TaskItem({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleSave();
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      handleCancel();
-    }
+    if (e.key === 'Enter') { e.preventDefault(); handleSave(); }
+    else if (e.key === 'Escape') { e.preventDefault(); handleCancel(); }
   };
 
   const cyclePriority = () => {
@@ -175,25 +144,45 @@ export function TaskItem({
     setEditPriority(PRIORITY_CYCLE[(idx + 1) % PRIORITY_CYCLE.length]!);
   };
 
-  const showMoveToToday =
-    !isEditing &&
-    onMoveToToday &&
-    task.status === "todo" &&
-    task.scheduledDate === null;
-  const showReturnToBacklog =
-    !isEditing && onReturnToBacklog && task.scheduledDate !== null;
+  const isCompleted = task.status === 'completed';
+  const isInProgress = task.status === 'in_progress';
+  const showMoveToToday = !isEditing && onMoveToToday && task.status === 'todo' && task.scheduledDate === null;
+  const showReturnToBacklog = !isEditing && onReturnToBacklog && task.scheduledDate !== null;
 
   return (
-    <div className="group flex items-center gap-3 rounded-lg border border-border bg-bg-surface p-3 shadow-sm transition-all hover:border-accent/40">
-      <GripVertical className="hidden h-4 w-4 shrink-0 text-text-muted group-hover:block" />
-
-      <div className="flex shrink-0 items-center">
-        <Square className="h-4 w-4 text-text-muted opacity-50" />
-      </div>
+    <div
+      className={[
+        'group flex items-center gap-3 border-b border-border px-4 py-2.5 transition-colors duration-100',
+        isInProgress ? 'bg-accent-subtle/30' : 'hover:bg-bg-secondary',
+      ].join(' ')}
+    >
+      {/* Status circle */}
+      <button
+        onClick={() => {
+          if (actions.length === 1) {
+            onStatusChange(task, actions[0]!.nextStatus);
+          } else if (actions.length > 1) {
+            setStatusOpen(!statusOpen);
+          }
+        }}
+        disabled={isCompleted || isEditing}
+        aria-label={`Status: ${task.status}`}
+        className={[
+          'shrink-0 transition-colors duration-100',
+          isCompleted
+            ? 'cursor-default text-success'
+            : isInProgress
+              ? 'cursor-pointer text-accent hover:text-accent-hover'
+              : 'cursor-pointer text-text-muted hover:text-text-secondary',
+        ].join(' ')}
+      >
+        <CheckMark className="h-4 w-4" strokeWidth={1.5} />
+      </button>
 
       {isEditing ? (
+        /* ── Inline edit mode ── */
         <>
-          <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="min-w-0 flex-1 space-y-1.5 py-0.5">
             <input
               ref={inputRef}
               type="text"
@@ -201,93 +190,114 @@ export function TaskItem({
               onChange={(e) => setEditTitle(e.target.value)}
               onKeyDown={handleKeyDown}
               maxLength={200}
-              className="w-full rounded-md border border-accent bg-bg-elevated px-2 py-1 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+              className="w-full rounded bg-bg-elevated px-2 py-1 text-sm text-text-primary ring-1 ring-border-focus focus:outline-none"
             />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <button
                 onClick={cyclePriority}
-                className="inline-flex items-center"
                 type="button"
+                className="flex items-center gap-1 text-xs text-text-muted hover:text-text-secondary"
               >
                 <PriorityBadge priority={editPriority} />
+                <span className="capitalize">{editPriority}</span>
               </button>
-              <input
-                type="number"
-                value={editMinutes}
-                onChange={(e) => setEditMinutes(e.target.value)}
-                onKeyDown={handleKeyDown}
-                min={1}
-                max={1440}
-                className="w-20 rounded-md border border-border bg-bg-elevated px-2 py-0.5 text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
-              />
-              <span className="text-xs text-text-muted">min</span>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  value={editMinutes}
+                  onChange={(e) => setEditMinutes(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  min={1}
+                  max={1440}
+                  className="w-16 rounded bg-bg-elevated px-1.5 py-0.5 text-xs text-text-primary ring-1 ring-border focus:outline-none focus:ring-border-focus"
+                />
+                <span className="text-xs text-text-muted">min</span>
+              </div>
             </div>
           </div>
-
           <div className="flex shrink-0 items-center gap-1">
             <button
               onClick={handleSave}
-              className="rounded-md p-1 text-accent transition-colors hover:bg-accent-subtle"
+              className="flex h-6 w-6 items-center justify-center rounded text-accent hover:bg-accent-subtle"
               aria-label="Save changes"
             >
-              <Check className="h-4 w-4" />
+              <Check className="h-3.5 w-3.5" />
             </button>
             <button
               onClick={handleCancel}
-              className="rounded-md p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+              className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
               aria-label="Cancel editing"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         </>
       ) : (
+        /* ── View mode ── */
         <>
-          <div
-            className="min-w-0 flex-1 cursor-pointer"
-            onDoubleClick={handleTitleDblClick}
-          >
-            <p className="truncate text-sm font-medium text-text-primary">
-              {task.title}
-            </p>
-            <span className="text-xs text-text-muted">
-              {formatMinutes(task.estimatedMinutes)}
-            </span>
-          </div>
-
-          <StatusBadge status={task.status} />
+          {/* Priority dot */}
           <PriorityBadge priority={task.priority} />
 
-          <div className="hidden shrink-0 items-center gap-1 group-hover:flex">
+          {/* Title + estimate */}
+          <div
+            className="min-w-0 flex-1 cursor-pointer"
+            onDoubleClick={handleStartEdit}
+          >
+            <p
+              className={[
+                'truncate text-sm',
+                isCompleted
+                  ? 'text-text-muted line-through'
+                  : isInProgress
+                    ? 'font-medium text-text-primary'
+                    : 'text-text-primary',
+              ].join(' ')}
+            >
+              {task.title}
+            </p>
+          </div>
+
+          {/* Estimate */}
+          <span className="shrink-0 font-mono text-xs text-text-muted">
+            {formatMinutes(task.estimatedMinutes)}
+          </span>
+
+          {/* Actions (shown on hover) */}
+          <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-100 group-hover:opacity-100">
             {showReturnToBacklog && (
               <button
                 onClick={() => onReturnToBacklog!(task)}
-                className="rounded-md p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-info"
-                aria-label={`Return ${task.title} to backlog`}
+                className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
+                aria-label="Return to backlog"
+                title="Return to backlog"
               >
-                <ArrowLeftCircle className="h-4 w-4" />
+                <ArrowDownLeft className="h-3.5 w-3.5" />
               </button>
             )}
             {showMoveToToday && (
               <button
                 onClick={() => onMoveToToday!(task)}
-                className="rounded-md p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-accent"
-                aria-label={`Move ${task.title} to today`}
+                className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-accent"
+                aria-label="Move to today"
+                title="Move to today"
               >
-                <Calendar className="h-4 w-4" />
+                <ArrowUpRight className="h-3.5 w-3.5" />
               </button>
             )}
+
+            {/* Status change dropdown */}
             {actions.length > 0 && (
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setStatusOpen(!statusOpen)}
-                  className="rounded-md p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary"
-                  aria-label="Change task status"
+                  className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
+                  aria-label="Change status"
+                  title="Change status"
                 >
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-3.5 w-3.5" />
                 </button>
                 {statusOpen && (
-                  <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-md border border-border bg-bg-elevated py-1 shadow-lg">
+                  <div className="absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-md border border-border bg-bg-elevated py-0.5 shadow-lg">
                     {actions.map((action) => (
                       <button
                         key={action.nextStatus}
@@ -295,9 +305,11 @@ export function TaskItem({
                           onStatusChange(task, action.nextStatus);
                           setStatusOpen(false);
                         }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-text-primary transition-colors hover:bg-bg-tertiary"
+                        className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-text-primary hover:bg-bg-tertiary"
                       >
-                        {action.icon}
+                        {action.nextStatus === 'completed' && (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                        )}
                         {action.label}
                       </button>
                     ))}
@@ -305,19 +317,22 @@ export function TaskItem({
                 )}
               </div>
             )}
+
             <button
               onClick={handleStartEdit}
-              className="rounded-md p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary"
-              aria-label={`Edit ${task.title}`}
+              className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
+              aria-label="Edit task"
+              title="Edit task"
             >
-              <Pencil className="h-4 w-4" />
+              <Pencil className="h-3.5 w-3.5" />
             </button>
             <button
               onClick={() => onDelete(task)}
-              className="rounded-md p-1 text-text-muted transition-colors hover:bg-danger-subtle hover:text-danger"
-              aria-label={`Delete ${task.title}`}
+              className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-danger-subtle hover:text-danger"
+              aria-label="Delete task"
+              title="Delete task"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
         </>

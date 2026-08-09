@@ -1,26 +1,26 @@
-import { useEffect, useState, useMemo } from "react";
-import { Plus } from "lucide-react";
-import type { Task, TaskPriority, TaskStatus } from "@shared/models";
-import { useTaskStore } from "../stores/taskStore";
-import { TaskItem } from "./TaskItem";
-import { TaskForm } from "./TaskForm";
-import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
+import { useEffect, useState, useMemo } from 'react';
+import { Plus, Search, SlidersHorizontal, X } from 'lucide-react';
+import type { Task, TaskPriority, TaskStatus } from '@shared/models';
+import { useTaskStore } from '../stores/taskStore';
+import { TaskItem } from './TaskItem';
+import { TaskForm } from './TaskForm';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 
 type SortOption =
-  | "priority-high"
-  | "priority-low"
-  | "created-newest"
-  | "created-oldest"
-  | "title-az"
-  | "title-za";
+  | 'priority-high'
+  | 'priority-low'
+  | 'created-newest'
+  | 'created-oldest'
+  | 'title-az'
+  | 'title-za';
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "priority-high", label: "Priority (High → Low)" },
-  { value: "priority-low", label: "Priority (Low → High)" },
-  { value: "created-newest", label: "Created (Newest)" },
-  { value: "created-oldest", label: "Created (Oldest)" },
-  { value: "title-az", label: "Title (A-Z)" },
-  { value: "title-za", label: "Title (Z-A)" },
+  { value: 'priority-high',  label: 'Priority ↓' },
+  { value: 'priority-low',   label: 'Priority ↑' },
+  { value: 'created-newest', label: 'Newest' },
+  { value: 'created-oldest', label: 'Oldest' },
+  { value: 'title-az',       label: 'A → Z' },
+  { value: 'title-za',       label: 'Z → A' },
 ];
 
 const PRIORITY_RANK: Record<string, number> = { high: 3, medium: 2, low: 1 };
@@ -28,24 +28,13 @@ const PRIORITY_RANK: Record<string, number> = { high: 3, medium: 2, low: 1 };
 function sortTasks(tasks: Task[], sort: SortOption): Task[] {
   const sorted = [...tasks];
   switch (sort) {
-    case "priority-high":
-      return sorted.sort(
-        (a, b) => PRIORITY_RANK[b.priority] - PRIORITY_RANK[a.priority],
-      );
-    case "priority-low":
-      return sorted.sort(
-        (a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority],
-      );
-    case "created-newest":
-      return sorted.sort((a, b) => b.createdAt - a.createdAt);
-    case "created-oldest":
-      return sorted.sort((a, b) => a.createdAt - b.createdAt);
-    case "title-az":
-      return sorted.sort((a, b) => a.title.localeCompare(b.title));
-    case "title-za":
-      return sorted.sort((a, b) => b.title.localeCompare(a.title));
-    default:
-      return sorted;
+    case 'priority-high':  return sorted.sort((a, b) => PRIORITY_RANK[b.priority]! - PRIORITY_RANK[a.priority]!);
+    case 'priority-low':   return sorted.sort((a, b) => PRIORITY_RANK[a.priority]! - PRIORITY_RANK[b.priority]!);
+    case 'created-newest': return sorted.sort((a, b) => b.createdAt - a.createdAt);
+    case 'created-oldest': return sorted.sort((a, b) => a.createdAt - b.createdAt);
+    case 'title-az':       return sorted.sort((a, b) => a.title.localeCompare(b.title));
+    case 'title-za':       return sorted.sort((a, b) => b.title.localeCompare(a.title));
+    default:               return sorted;
   }
 }
 
@@ -56,194 +45,150 @@ function getTodayMidnight(): number {
 }
 
 export function BacklogView() {
-  const {
-    tasks,
-    isLoading,
-    error,
-    fetchTasks,
-    createTask,
-    updateTask,
-    deleteTask,
-    clearError,
-  } = useTaskStore();
+  const { tasks, isLoading, error, fetchTasks, createTask, updateTask, deleteTask, clearError } =
+    useTaskStore();
 
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<SortOption>("created-newest");
+  const [search, setSearch]         = useState('');
+  const [sort, setSort]             = useState<SortOption>('created-newest');
+  const [showSearch, setShowSearch] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [toastVisible, setToastVisible] = useState(false);
-  const [toastType, setToastType] = useState<"error" | "success">("error");
+  const [toast, setToast]           = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
-
-  useEffect(() => {
-    if (!toastVisible) return;
-    const timer = setTimeout(() => {
-      setToastVisible(false);
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [toastVisible]);
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const filteredTasks = useMemo(() => {
-    let result = tasks.filter(
-      (t) => t.scheduledDate === null && t.status !== "completed",
-    );
+    let result = tasks.filter((t) => t.scheduledDate === null && t.status !== 'completed');
     if (search.trim()) {
-      const query = search.toLowerCase();
+      const q = search.toLowerCase();
       result = result.filter(
-        (t) =>
-          t.title.toLowerCase().includes(query) ||
-          (t.description ?? "").toLowerCase().includes(query),
+        (t) => t.title.toLowerCase().includes(q) || (t.description ?? '').toLowerCase().includes(q),
       );
     }
     return sortTasks(result, sort);
   }, [tasks, search, sort]);
 
-  const handleCreate = () => {
-    setEditingTask(null);
-    setIsFormOpen(true);
-  };
-
-  const handleEdit = (task: Task) => {
-    setEditingTask(task);
-    setIsFormOpen(true);
-  };
+  const handleCreate = () => { setEditingTask(null); setIsFormOpen(true); };
+  const handleEdit   = (task: Task) => { setEditingTask(task); setIsFormOpen(true); };
 
   const handleInlineSave = async (
     task: Task,
-    values: {
-      title: string;
-      priority: TaskPriority;
-      estimatedMinutes: number;
-    },
-  ) => {
-    await updateTask(task.id, values);
-  };
+    values: { title: string; priority: TaskPriority; estimatedMinutes: number },
+  ) => { await updateTask(task.id, values); };
 
-  const handleDelete = (task: Task) => {
-    setDeletingTask(task);
-  };
+  const handleDelete = (task: Task) => setDeletingTask(task);
 
   const handleStatusChange = async (task: Task, newStatus: TaskStatus) => {
     const success = await updateTask(task.id, { status: newStatus });
     if (!success) {
-      setToastType("error");
-      setToastMessage(error ?? "Status change failed.");
-      setToastVisible(true);
+      setToast({ msg: error ?? 'Status change failed.', type: 'error' });
       return;
     }
-    const statusLabels: Record<string, string> = {
+    const labels: Record<string, string> = {
       in_progress: `Started "${task.title}"`,
-      completed: `Completed "${task.title}"`,
-      todo: `Returned "${task.title}" to backlog`,
+      completed:   `Completed "${task.title}"`,
+      todo:        `Returned "${task.title}" to backlog`,
     };
-    setToastType("success");
-    setToastMessage(statusLabels[newStatus] ?? "Status updated.");
-    setToastVisible(true);
+    setToast({ msg: labels[newStatus] ?? 'Status updated.', type: 'success' });
   };
 
-  const handleMoveToToday = async (task: Task) => {
-    await updateTask(task.id, { scheduledDate: getTodayMidnight() });
-  };
-
+  const handleMoveToToday  = async (task: Task) => { await updateTask(task.id, { scheduledDate: getTodayMidnight() }); };
   const handleConfirmDelete = async () => {
     if (!deletingTask) return;
-    const success = await deleteTask(deletingTask.id);
-    if (success) {
-      setDeletingTask(null);
-    }
+    const ok = await deleteTask(deletingTask.id);
+    if (ok) setDeletingTask(null);
   };
-
   const handleFormSubmit = async (data: {
-    title: string;
-    priority: TaskPriority;
-    estimatedMinutes: number;
-    description: string;
+    title: string; priority: TaskPriority; estimatedMinutes: number; description: string;
   }) => {
-    if (editingTask) {
-      return updateTask(editingTask.id, data);
-    }
+    if (editingTask) return updateTask(editingTask.id, data);
     return createTask(data as Parameters<typeof createTask>[0]);
-  };
-
-  const handleCloseForm = () => {
-    setIsFormOpen(false);
-    setEditingTask(null);
   };
 
   return (
     <div className="flex h-full flex-col bg-bg-primary">
-      <div className="flex items-center justify-between border-b border-border p-4">
-        <h1 className="text-2xl font-bold text-text-primary">Backlog</h1>
-        <button
-          onClick={handleCreate}
-          className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary"
-        >
-          <Plus className="h-4 w-4" />
-          New Task
-        </button>
+      {/* ── View header ── */}
+      <div className="flex h-11 shrink-0 items-center justify-between border-b border-border px-4">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-semibold text-text-primary">Backlog</span>
+          {filteredTasks.length > 0 && (
+            <span className="text-xs text-text-muted">{filteredTasks.length}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {/* Search toggle */}
+          <button
+            onClick={() => { setShowSearch(!showSearch); if (showSearch) setSearch(''); }}
+            className="flex h-7 w-7 items-center justify-center rounded text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
+            aria-label="Toggle search"
+            title="Search"
+          >
+            {showSearch ? <X className="h-3.5 w-3.5" /> : <Search className="h-3.5 w-3.5" />}
+          </button>
+          {/* Sort */}
+          <div className="relative flex items-center gap-1">
+            <SlidersHorizontal className="h-3 w-3 text-text-muted" />
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortOption)}
+              className="cursor-pointer appearance-none bg-transparent text-xs text-text-muted hover:text-text-secondary focus:outline-none"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+          {/* Add task */}
+          <button
+            onClick={handleCreate}
+            className="flex h-7 items-center gap-1 rounded bg-accent px-2.5 text-xs font-medium text-white transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+            New
+          </button>
+        </div>
       </div>
 
-      {error && (
-        <div className="mx-4 mt-3 flex items-center gap-2 rounded-md bg-danger-subtle px-3 py-2 text-sm text-danger">
-          <span>{error}</span>
-          <button
-            onClick={clearError}
-            className="ml-auto text-xs font-medium underline"
-          >
-            Dismiss
-          </button>
+      {/* ── Search bar (conditional) ── */}
+      {showSearch && (
+        <div className="border-b border-border px-4 py-2">
+          <input
+            autoFocus
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search tasks…"
+            className="w-full bg-transparent text-sm text-text-primary placeholder:text-text-muted focus:outline-none"
+          />
         </div>
       )}
 
-      <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search tasks..."
-          className="flex-1 rounded-md border border-border bg-bg-elevated px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary"
-        />
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as SortOption)}
-          className="rounded-md border border-border bg-bg-elevated px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary"
-        >
-          {SORT_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* ── Error bar ── */}
+      {error && (
+        <div className="flex items-center gap-2 border-b border-danger/20 bg-danger-subtle px-4 py-2">
+          <span className="flex-1 text-xs text-danger">{error}</span>
+          <button onClick={clearError} className="text-xs text-danger underline">Dismiss</button>
+        </div>
+      )}
 
-      <div className="flex-1 overflow-y-auto p-4">
+      {/* ── Task list ── */}
+      <div className="flex-1 overflow-y-auto">
         {isLoading && tasks.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-text-muted">Loading tasks...</p>
-          </div>
+          <EmptyState message="Loading…" />
         ) : filteredTasks.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-3">
-            <p className="text-sm text-text-muted">
-              {search.trim()
-                ? "No tasks match your search."
-                : "Your backlog is empty. Create your first task to get started."}
-            </p>
-            {!search.trim() && (
-              <button
-                onClick={handleCreate}
-                className="rounded-md bg-bg-tertiary px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-border focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary"
-              >
-                Create a task
-              </button>
-            )}
-          </div>
+          <EmptyState
+            message={search.trim() ? 'No tasks match your search.' : 'Backlog is empty.'}
+            action={!search.trim() ? { label: 'Create a task', onClick: handleCreate } : undefined}
+          />
         ) : (
-          <div className="space-y-2">
+          <div>
             {filteredTasks.map((task) => (
               <TaskItem
                 key={task.id}
@@ -259,43 +204,58 @@ export function BacklogView() {
         )}
       </div>
 
+      {/* ── Modals ── */}
       <TaskForm
         isOpen={isFormOpen}
-        onClose={handleCloseForm}
+        onClose={() => { setIsFormOpen(false); setEditingTask(null); }}
         onSubmit={handleFormSubmit}
         initialData={editingTask}
       />
-
       <DeleteConfirmationDialog
         isOpen={!!deletingTask}
-        taskTitle={deletingTask?.title ?? ""}
+        taskTitle={deletingTask?.title ?? ''}
         itemType="task"
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeletingTask(null)}
       />
 
-      {toastVisible && toastMessage && (
+      {/* ── Toast ── */}
+      {toast && (
         <div
-          className={`fixed bottom-4 right-4 z-50 flex items-start gap-3 rounded-md border px-4 py-3 shadow-lg ${
-            toastType === "error"
-              ? "border-danger/20 bg-danger-subtle"
-              : "border-success/20 bg-success-subtle"
-          }`}
+          className={[
+            'fixed bottom-10 right-4 z-50 flex items-center gap-3 rounded-md border px-3 py-2 text-xs shadow-lg',
+            toast.type === 'error'
+              ? 'border-danger/20 bg-danger-subtle text-danger'
+              : 'border-success/20 bg-success-subtle text-success',
+          ].join(' ')}
         >
-          <span
-            className={`text-sm ${toastType === "error" ? "text-danger" : "text-success"}`}
-          >
-            {toastMessage}
-          </span>
-          <button
-            onClick={() => setToastVisible(false)}
-            className={`text-xs font-medium underline ${
-              toastType === "error" ? "text-danger" : "text-success"
-            }`}
-          >
-            Dismiss
+          <span>{toast.msg}</span>
+          <button onClick={() => setToast(null)} className="opacity-60 hover:opacity-100">
+            <X className="h-3 w-3" />
           </button>
         </div>
+      )}
+    </div>
+  );
+}
+
+function EmptyState({
+  message,
+  action,
+}: {
+  message: string;
+  action?: { label: string; onClick: () => void };
+}) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-3 py-20">
+      <p className="text-xs text-text-muted">{message}</p>
+      {action && (
+        <button
+          onClick={action.onClick}
+          className="text-xs text-accent hover:underline"
+        >
+          {action.label}
+        </button>
       )}
     </div>
   );

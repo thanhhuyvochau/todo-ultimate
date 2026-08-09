@@ -6,7 +6,6 @@ import {
   EyeOff,
   Check,
   RefreshCw,
-  AlertTriangle,
 } from "lucide-react";
 import type { Task, TaskPriority } from "@shared/models";
 import { useTaskStore } from "../stores/taskStore";
@@ -243,25 +242,25 @@ export function TaskForm({
     !isSubmitting;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-xl border border-border bg-bg-surface p-6 shadow-xl">
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-text-primary">
-            {isEditing ? "Edit Task" : "New Task"}
-          </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[2px]">
+      <div className="relative w-full max-w-md rounded-lg border border-border bg-bg-elevated p-5 shadow-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-sm font-semibold text-text-primary">
+            {isEditing ? 'Edit Task' : 'New Task'}
+          </p>
           <button
             onClick={handleCloseRequest}
-            className="rounded-md p-1 text-text-muted transition-colors hover:text-text-primary"
+            className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
             aria-label="Close form"
           >
-            <X className="h-5 w-5" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3.5">
           <div>
             <label
-              className="mb-1 block text-sm font-medium text-text-primary"
+              className="mb-1 block text-xs font-medium text-text-muted"
               htmlFor="task-title"
             >
               Title
@@ -274,7 +273,7 @@ export function TaskForm({
               onChange={(e) => handleTitleChange(e.target.value)}
               maxLength={200}
               placeholder="What needs to be done?"
-              className={`w-full rounded-md border bg-bg-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary ${titleError ? "border-danger" : "border-border"}`}
+              className={`w-full rounded bg-bg-tertiary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 ${titleError ? 'ring-1 ring-danger' : 'ring-transparent focus:ring-border-focus'}`}
             />
             {titleError && (
               <p className="mt-1 text-xs text-danger">{titleError}</p>
@@ -283,10 +282,10 @@ export function TaskForm({
 
           <div>
             <label
-              className="mb-1 block text-sm font-medium text-text-primary"
+              className="mb-1 block text-xs font-medium text-text-muted"
               htmlFor="task-minutes"
             >
-              Estimated Time (minutes)
+              Estimated time (minutes)
             </label>
             <input
               id="task-minutes"
@@ -296,7 +295,7 @@ export function TaskForm({
               value={estimatedMinutes}
               onChange={(e) => handleMinutesChange(e.target.value)}
               placeholder="e.g. 30"
-              className={`w-full rounded-md border bg-bg-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary ${minutesError ? "border-danger" : "border-border"}`}
+              className={`w-full rounded bg-bg-tertiary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 ${minutesError ? 'ring-1 ring-danger' : 'ring-transparent focus:ring-border-focus'}`}
             />
             {minutesError && (
               <p className="mt-1 text-xs text-danger">{minutesError}</p>
@@ -304,20 +303,21 @@ export function TaskForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-text-primary">
+            <label className="mb-1 block text-xs font-medium text-text-muted">
               Priority
             </label>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               {PRIORITY_OPTIONS.map((option) => (
                 <button
                   key={option.value}
                   type="button"
                   onClick={() => setPriority(option.value)}
-                  className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary ${
+                  className={[
+                    'flex-1 rounded py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent',
                     priority === option.value
-                      ? "border-accent bg-accent-subtle text-accent"
-                      : "border-border bg-bg-tertiary text-text-secondary hover:bg-bg-elevated"
-                  }`}
+                      ? 'bg-accent-subtle text-accent'
+                      : 'bg-bg-tertiary text-text-muted hover:text-text-secondary',
+                  ].join(' ')}
                 >
                   {option.label}
                 </button>
@@ -327,9 +327,9 @@ export function TaskForm({
 
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <label className="text-sm font-medium text-text-primary">
+              <label className="text-xs font-medium text-text-muted">
                 Description
-                <span className="ml-1 text-xs text-text-muted">(optional)</span>
+                <span className="ml-1 opacity-60">(optional)</span>
               </label>
               <button
                 type="button"
@@ -380,50 +380,41 @@ export function TaskForm({
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="mt-5 flex justify-end gap-2">
           <button
             onClick={handleCloseRequest}
             disabled={isSubmitting}
-            className="rounded-md bg-bg-tertiary px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-border focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary"
+            className="rounded px-3 py-1.5 text-xs font-medium text-text-muted hover:bg-bg-tertiary hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40"
           >
-            {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isEditing ? "Save" : "Create"}
+            {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {isEditing ? 'Save' : 'Create'}
           </button>
         </div>
 
         {showUnsavedWarning && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-bg-surface/95">
-            <div className="mx-6 w-full max-w-xs rounded-lg border border-border bg-bg-elevated p-5 shadow-lg">
-              <div className="mb-3 flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-warning-subtle">
-                  <AlertTriangle className="h-5 w-5 text-warning" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-text-primary">
-                    Unsaved Changes
-                  </h3>
-                  <p className="mt-1 text-xs text-text-secondary">
-                    You have unsaved description changes. Discard them?
-                  </p>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-bg-elevated/95 backdrop-blur-[1px]">
+            <div className="w-full max-w-xs rounded-md border border-border bg-bg-elevated p-4 shadow-xl">
+              <p className="text-sm font-medium text-text-primary">Unsaved changes</p>
+              <p className="mt-1 text-xs text-text-muted">
+                Description has unsaved edits. Discard them?
+              </p>
+              <div className="mt-4 flex justify-end gap-2">
                 <button
                   onClick={() => setShowUnsavedWarning(false)}
-                  className="rounded-md bg-bg-tertiary px-3 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-border focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary"
+                  className="rounded px-3 py-1.5 text-xs font-medium text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
                 >
-                  Keep Editing
+                  Keep editing
                 </button>
                 <button
                   onClick={handleDiscardUnsaved}
-                  className="rounded-md bg-warning px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary"
+                  className="rounded bg-warning px-3 py-1.5 text-xs font-medium text-white hover:bg-yellow-600"
                 >
                   Discard
                 </button>

@@ -1,19 +1,19 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { ChevronDown, ChevronRight, Lock } from "lucide-react";
-import type { Task, TaskStatus } from "@shared/models";
-import { useTaskStore } from "../stores/taskStore";
-import { TaskItem } from "./TaskItem";
-import { TaskForm } from "./TaskForm";
-import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { ChevronDown, ChevronRight, Lock, X } from 'lucide-react';
+import type { Task, TaskStatus } from '@shared/models';
+import { useTaskStore } from '../stores/taskStore';
+import { TaskItem } from './TaskItem';
+import { TaskForm } from './TaskForm';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import {
   DndContext,
   PointerSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
-} from "@dnd-kit/core";
-import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+} from '@dnd-kit/core';
+import { SortableContext, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 function getTodayMidnight(): number {
   const d = new Date();
@@ -21,13 +21,17 @@ function getTodayMidnight(): number {
   return d.getTime();
 }
 
-function formatDate(date: Date): string {
-  return date.toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+function formatDateHeader(date: Date): string {
+  const today = new Date();
+  const isToday =
+    date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear();
+
+  if (isToday) {
+    return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 function isTimeAnchored(task: Task): boolean {
@@ -37,15 +41,15 @@ function isTimeAnchored(task: Task): boolean {
 }
 
 function formatAnchorTime(ts: number): string {
-  const d = new Date(ts);
-  return d.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
+  return new Date(ts).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
     hour12: true,
   });
 }
 
-interface TaskItemProps {
+interface SortableTaskItemProps {
+  id: string;
   task: Task;
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
@@ -53,27 +57,13 @@ interface TaskItemProps {
   onReturnToBacklog: (task: Task) => void;
 }
 
-interface SortableTaskItemProps extends TaskItemProps {
-  id: string;
-}
-
 function SortableTaskItem({ id, ...props }: SortableTaskItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
-
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.4 : undefined,
-    cursor: "grab",
   };
-
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <TaskItem {...props} />
@@ -82,76 +72,50 @@ function SortableTaskItem({ id, ...props }: SortableTaskItemProps) {
 }
 
 export function TodayView() {
-  const {
-    tasks,
-    isLoading,
-    error,
-    fetchTasks,
-    updateTask,
-    deleteTask,
-    clearError,
-  } = useTaskStore();
+  const { tasks, isLoading, error, fetchTasks, updateTask, deleteTask, clearError } =
+    useTaskStore();
 
   const [isCompletedOpen, setIsCompletedOpen] = useState(false);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [deletingTask, setDeletingTask] = useState<Task | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [toastVisible, setToastVisible] = useState(false);
-  const [toastType, setToastType] = useState<"error" | "success">("error");
-  const [orderedIds, setOrderedIds] = useState<string[]>([]);
+  const [isFormOpen, setIsFormOpen]           = useState(false);
+  const [editingTask, setEditingTask]         = useState<Task | null>(null);
+  const [deletingTask, setDeletingTask]       = useState<Task | null>(null);
+  const [toast, setToast]                     = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [orderedIds, setOrderedIds]           = useState<string[]>([]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const today = getTodayMidnight();
 
+  useEffect(() => { fetchTasks(); }, [fetchTasks]);
+
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
-  const todayTasks = useMemo(() => {
-    return tasks.filter(
-      (t) =>
-        t.scheduledDate !== null &&
-        t.scheduledDate >= today &&
-        t.scheduledDate < today + 86_400_000,
-    );
-  }, [tasks, today]);
+  const todayTasks = useMemo(() =>
+    tasks.filter(
+      (t) => t.scheduledDate !== null && t.scheduledDate >= today && t.scheduledDate < today + 86_400_000,
+    ),
+    [tasks, today],
+  );
 
-  const activeTasks = useMemo(
-    () => todayTasks.filter((t) => t.status !== "completed"),
-    [todayTasks],
-  );
-  const anchoredTasks = useMemo(
-    () =>
-      activeTasks
-        .filter(isTimeAnchored)
-        .sort((a, b) => (a.scheduledDate ?? 0) - (b.scheduledDate ?? 0)),
-    [activeTasks],
-  );
-  const flexibleTasks = useMemo(
-    () => activeTasks.filter((t) => !isTimeAnchored(t)),
-    [activeTasks],
-  );
-  const completedTasks = useMemo(
-    () => todayTasks.filter((t) => t.status === "completed"),
-    [todayTasks],
-  );
+  const activeTasks    = useMemo(() => todayTasks.filter((t) => t.status !== 'completed'), [todayTasks]);
+  const anchoredTasks  = useMemo(() => activeTasks.filter(isTimeAnchored).sort((a, b) => (a.scheduledDate ?? 0) - (b.scheduledDate ?? 0)), [activeTasks]);
+  const flexibleTasks  = useMemo(() => activeTasks.filter((t) => !isTimeAnchored(t)), [activeTasks]);
+  const completedTasks = useMemo(() => todayTasks.filter((t) => t.status === 'completed'), [todayTasks]);
 
   useEffect(() => {
     setOrderedIds((prev) => {
       const currentIds = new Set(flexibleTasks.map((t) => t.id));
       const kept = prev.filter((id) => currentIds.has(id));
-      const newIds = flexibleTasks
-        .map((t) => t.id)
-        .filter((id) => !kept.includes(id));
+      const newIds = flexibleTasks.map((t) => t.id).filter((id) => !kept.includes(id));
       return [...kept, ...newIds];
     });
   }, [flexibleTasks]);
 
-  const sortedActiveTasks = useMemo(() => {
+  const sortedFlexible = useMemo(() => {
     const orderMap = new Map(orderedIds.map((id, idx) => [id, idx]));
     return [...flexibleTasks].sort((a, b) => {
       const aIdx = orderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
@@ -171,226 +135,180 @@ export function TodayView() {
     });
   }, []);
 
-  const handleReturnToBacklog = (task: Task) => {
-    updateTask(task.id, { scheduledDate: null });
-  };
+  const handleReturnToBacklog = (task: Task) => updateTask(task.id, { scheduledDate: null });
 
   const handleStatusChange = async (task: Task, newStatus: TaskStatus) => {
     const success = await updateTask(task.id, { status: newStatus });
     if (!success) {
-      setToastType("error");
-      setToastMessage(useTaskStore.getState().error ?? "Status change failed.");
-      setToastVisible(true);
+      setToast({ msg: useTaskStore.getState().error ?? 'Status change failed.', type: 'error' });
       return;
     }
-    const statusLabels: Record<string, string> = {
+    const labels: Record<string, string> = {
       in_progress: `Started "${task.title}"`,
-      completed: `Completed "${task.title}"`,
-      todo: `Returned "${task.title}" to backlog`,
+      completed:   `Completed "${task.title}"`,
+      todo:        `Paused "${task.title}"`,
     };
-    setToastType("success");
-    setToastMessage(statusLabels[newStatus] ?? "Status updated.");
-    setToastVisible(true);
+    setToast({ msg: labels[newStatus] ?? 'Status updated.', type: 'success' });
   };
 
-  const dismissToast = () => {
-    setToastVisible(false);
-  };
-
-  useEffect(() => {
-    if (!toastVisible) return;
-    const timer = setTimeout(() => {
-      setToastVisible(false);
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [toastVisible]);
-
-  const handleDelete = (task: Task) => {
-    setDeletingTask(task);
-  };
-
+  const handleDelete        = (task: Task) => setDeletingTask(task);
+  const handleEdit          = (task: Task) => { setEditingTask(task); setIsFormOpen(true); };
   const handleConfirmDelete = async () => {
     if (!deletingTask) return;
-    const success = await deleteTask(deletingTask.id);
-    if (success) {
-      setDeletingTask(null);
-    }
+    const ok = await deleteTask(deletingTask.id);
+    if (ok) setDeletingTask(null);
   };
-
-  const handleEdit = (task: Task) => {
-    setEditingTask(task);
-    setIsFormOpen(true);
-  };
-
   const handleFormSubmit = async (data: {
-    title: string;
-    priority: string;
-    estimatedMinutes: number;
-    description: string;
+    title: string; priority: string; estimatedMinutes: number; description: string;
   }) => {
     if (!editingTask) return false;
     return updateTask(editingTask.id, data as Parameters<typeof updateTask>[1]);
   };
 
-  const handleCloseForm = () => {
-    setIsFormOpen(false);
-    setEditingTask(null);
-  };
-
   return (
     <div className="flex h-full flex-col bg-bg-primary">
-      <div className="border-b border-border p-4">
-        <h1 className="text-2xl font-bold text-text-primary">
-          Today — {formatDate(new Date())}
-        </h1>
+      {/* ── View header ── */}
+      <div className="flex h-11 shrink-0 items-center border-b border-border px-4">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-semibold text-text-primary">Today</span>
+          <span className="text-xs text-text-muted">{formatDateHeader(new Date())}</span>
+          {activeTasks.length > 0 && (
+            <span className="text-xs text-text-muted">· {activeTasks.length} remaining</span>
+          )}
+        </div>
       </div>
 
+      {/* ── Error ── */}
       {error && (
-        <div className="mx-4 mt-3 flex items-center gap-2 rounded-md bg-danger-subtle px-3 py-2 text-sm text-danger">
-          <span>{error}</span>
-          <button
-            onClick={clearError}
-            className="ml-auto text-xs font-medium underline"
-          >
-            Dismiss
-          </button>
+        <div className="flex items-center gap-2 border-b border-danger/20 bg-danger-subtle px-4 py-2">
+          <span className="flex-1 text-xs text-danger">{error}</span>
+          <button onClick={clearError} className="text-xs text-danger underline">Dismiss</button>
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4">
+      {/* ── Content ── */}
+      <div className="flex-1 overflow-y-auto">
         {isLoading && todayTasks.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-text-muted">Loading tasks...</p>
-          </div>
+          <EmptyState message="Loading…" />
         ) : todayTasks.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-3">
-            <p className="text-sm text-text-muted">
-              Nothing scheduled for today.
-            </p>
-            <p className="text-xs text-text-muted">
-              Add tasks from the Backlog or wait for your morning plan.
-            </p>
-          </div>
+          <EmptyState
+            message="Nothing scheduled for today."
+            sublabel="Move tasks from Backlog or let the AI planner fill your day."
+          />
         ) : (
-          <div className="space-y-2">
-            {(anchoredTasks.length > 0 || flexibleTasks.length > 0) && (
-              <>
-                {anchoredTasks.map((task) => (
-                  <div key={task.id} className="relative">
-                    <div className="mb-1 flex items-center gap-1.5 px-1">
-                      <Lock className="h-3 w-3 text-accent" />
-                      <span className="text-xs font-medium text-accent">
-                        {formatAnchorTime(task.scheduledDate!)}
-                      </span>
-                      <span className="text-xs text-text-muted">
-                        Fixed time block — managed by recurring rule
-                      </span>
-                    </div>
-                    <TaskItem
-                      task={task}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      onStatusChange={handleStatusChange}
-                      onReturnToBacklog={handleReturnToBacklog}
-                    />
-                  </div>
-                ))}
-                {flexibleTasks.length > 0 && (
-                  <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-                    <SortableContext items={sortedActiveTasks.map((t) => t.id)}>
-                      <div className="space-y-2">
-                        {anchoredTasks.length > 0 &&
-                          flexibleTasks.length > 0 && (
-                            <div className="my-3 border-t border-border" />
-                          )}
-                        {sortedActiveTasks.map((task) => (
-                          <SortableTaskItem
-                            key={task.id}
-                            id={task.id}
-                            task={task}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            onStatusChange={handleStatusChange}
-                            onReturnToBacklog={handleReturnToBacklog}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
-                  </DndContext>
-                )}
-              </>
-            )}
+          <div>
+            {/* Anchored (fixed-time) tasks */}
+            {anchoredTasks.map((task) => (
+              <div key={task.id}>
+                <div className="flex items-center gap-2 border-b border-border bg-bg-secondary/50 px-4 py-1">
+                  <Lock className="h-3 w-3 text-text-muted" strokeWidth={1.5} />
+                  <span className="font-mono text-xs text-text-muted">
+                    {formatAnchorTime(task.scheduledDate!)}
+                  </span>
+                  <span className="text-2xs text-text-muted">fixed block</span>
+                </div>
+                <TaskItem
+                  task={task}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onStatusChange={handleStatusChange}
+                  onReturnToBacklog={handleReturnToBacklog}
+                />
+              </div>
+            ))}
 
-            {completedTasks.length > 0 && (
-              <div className="mt-4">
-                <button
-                  onClick={() => setIsCompletedOpen(!isCompletedOpen)}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary"
-                >
-                  {isCompletedOpen ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                  Completed ({completedTasks.length})
-                </button>
-                {isCompletedOpen && (
-                  <div className="mt-2 space-y-2">
-                    {completedTasks.map((task) => (
-                      <TaskItem
+            {/* Flexible tasks (drag-to-reorder) */}
+            {flexibleTasks.length > 0 && (
+              <>
+                {anchoredTasks.length > 0 && (
+                  <div className="border-b border-border bg-bg-secondary/50 px-4 py-1">
+                    <span className="text-2xs text-text-muted">Flexible</span>
+                  </div>
+                )}
+                <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                  <SortableContext items={sortedFlexible.map((t) => t.id)}>
+                    {sortedFlexible.map((task) => (
+                      <SortableTaskItem
                         key={task.id}
+                        id={task.id}
                         task={task}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
                         onStatusChange={handleStatusChange}
+                        onReturnToBacklog={handleReturnToBacklog}
                       />
                     ))}
-                  </div>
-                )}
+                  </SortableContext>
+                </DndContext>
+              </>
+            )}
+
+            {/* Completed section */}
+            {completedTasks.length > 0 && (
+              <div>
+                <button
+                  onClick={() => setIsCompletedOpen(!isCompletedOpen)}
+                  className="flex w-full items-center gap-2 border-b border-border bg-bg-secondary/30 px-4 py-1.5 text-xs text-text-muted hover:text-text-secondary"
+                >
+                  {isCompletedOpen
+                    ? <ChevronDown className="h-3 w-3" />
+                    : <ChevronRight className="h-3 w-3" />}
+                  Completed ({completedTasks.length})
+                </button>
+                {isCompletedOpen && completedTasks.map((task) => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onStatusChange={handleStatusChange}
+                  />
+                ))}
               </div>
             )}
           </div>
         )}
       </div>
 
-      {toastVisible && toastMessage && (
+      {/* ── Toast ── */}
+      {toast && (
         <div
-          className={`fixed bottom-4 right-4 z-50 flex items-start gap-3 rounded-md border px-4 py-3 shadow-lg ${
-            toastType === "error"
-              ? "border-danger/20 bg-danger-subtle"
-              : "border-success/20 bg-success-subtle"
-          }`}
+          className={[
+            'fixed bottom-10 right-4 z-50 flex items-center gap-3 rounded-md border px-3 py-2 text-xs shadow-lg',
+            toast.type === 'error'
+              ? 'border-danger/20 bg-danger-subtle text-danger'
+              : 'border-success/20 bg-success-subtle text-success',
+          ].join(' ')}
         >
-          <span
-            className={`text-sm ${toastType === "error" ? "text-danger" : "text-success"}`}
-          >
-            {toastMessage}
-          </span>
-          <button
-            onClick={dismissToast}
-            className={`text-xs font-medium underline ${
-              toastType === "error" ? "text-danger" : "text-success"
-            }`}
-          >
-            Dismiss
+          <span>{toast.msg}</span>
+          <button onClick={() => setToast(null)} className="opacity-60 hover:opacity-100">
+            <X className="h-3 w-3" />
           </button>
         </div>
       )}
 
       <TaskForm
         isOpen={isFormOpen}
-        onClose={handleCloseForm}
+        onClose={() => { setIsFormOpen(false); setEditingTask(null); }}
         onSubmit={handleFormSubmit}
         initialData={editingTask}
       />
-
       <DeleteConfirmationDialog
         isOpen={!!deletingTask}
-        taskTitle={deletingTask?.title ?? ""}
+        taskTitle={deletingTask?.title ?? ''}
         itemType="task"
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeletingTask(null)}
       />
+    </div>
+  );
+}
+
+function EmptyState({ message, sublabel }: { message: string; sublabel?: string }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-1 py-20">
+      <p className="text-xs text-text-muted">{message}</p>
+      {sublabel && <p className="text-2xs text-text-muted opacity-60">{sublabel}</p>}
     </div>
   );
 }

@@ -31,7 +31,7 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
   - `better-sqlite3` is integrated in the Electron main process.
   - WAL mode is enabled.
   - Migration files are applied automatically on startup.
-  - Tests: `src/main/db/__tests__/` (empty — tests pending).
+  - Tests: `src/main/db/__tests__/recurring-rule-repository.test.ts`, `src/main/db/__tests__/task-repository-description.test.ts`.
 - **INVEST Check**: Independent (foundation), Valuable (enables all data), Small (just setup + migrations), Testable (can assert tables exist).
 
 ### TKT-002: Establish Type-Safe IPC Bridge ✅ Done
@@ -100,14 +100,15 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
   - Success/error toasts provide feedback on status changes.
 - **Depends on TKT-011/TKT-012 for**: Timer auto-start/pause on transitions, `actual_minutes` calculation on completion.
 
-### TKT-007: Develop the "Today" View ❌ Not Started
+### TKT-007: Develop the "Today" View ✅ Done
 
 **As a** user, **I want to** view a focused list of tasks selected for today **so that** I am not distracted by the full backlog.
 
-- **Status**: No renderer views exist (`src/renderer/src/App.tsx` is a static placeholder).
+- **Status**: Complete — `src/renderer/src/components/TodayView.tsx` (full Today view with anchored/flexible/completed task groups, collapsible completed section, lock icon + time label for anchored tasks, drag-and-drop excluded for anchored tasks). Wired into `src/renderer/src/components/AppShell.tsx` as the `today` route.
 - **Acceptance Criteria**:
-  - Dashboard shows tasks with date assigned = today.
-  - Supports drag/drop or click-to-move from backlog to Today.
+  - ✅ Dashboard shows tasks with `scheduled_date` = today.
+  - ✅ Click-to-move from backlog to Today (via `TaskItem` "Move to Today" action).
+  - Drag/drop cross-view interaction deferred (tasks move via button action).
 
 ---
 
@@ -226,30 +227,38 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ## Phase 6 & 7: UI Polish, State, and Packaging
 
-### TKT-019: Setup Zustand Stores ❌ Not Started
+### TKT-019: Setup Zustand Stores 🟡 In Progress
 
 **As a** developer, **I want to** manage frontend state with Zustand **so that** UI components stay perfectly in sync without deep prop drilling.
 
-- **Status**: `zustand` ^5.0.3 is in `package.json` dependencies but unused. No stores exist (no `create()`/`useStore` anywhere in `src/`).
+- **Status**: Partially complete — `src/renderer/src/stores/taskStore.ts` (task CRUD + filters), `src/renderer/src/stores/recurringRuleStore.ts` (recurring rule CRUD + toggle). Both stores are used by `BacklogView`, `TodayView`, `RecurringRulesPanel` etc. No timer store or user-settings store yet.
 - **Acceptance Criteria**:
-  - Stores created for Tasks, Timer, and User Settings.
+  - ✅ Task store created and in use.
+  - ✅ Recurring rule store created and in use.
+  - ❌ Timer store (depends on TKT-011).
+  - ❌ User Settings store (theme preference, API key status).
 
-### TKT-020: Build Main Dashboard Layout ❌ Not Started
+### TKT-020: Build Main Dashboard Layout ✅ Done
 
 **As a** user, **I want to** see my Today tasks, active timer, and backlog in a unified shell **so that** I can easily navigate my workflow.
 
-- **Status**: `src/renderer/src/App.tsx` is a static placeholder ("AI Task Planner / Environment Ready"). No layout components.
+- **Status**: Complete — `src/renderer/src/components/AppShell.tsx` (full-screen layout shell with keyboard navigation Ctrl+1/2), `src/renderer/src/components/Sidebar.tsx` (collapsible nav with Backlog/Today/Daily Plan/Reports/Settings, Lucide icons, disabled state for unimplemented views), `src/renderer/src/components/Header.tsx` (app header), `src/renderer/src/components/StatusFooter.tsx` (live clock, API key status indicator, save status). `App.tsx` delegates to `<AppShell />`.
 - **Acceptance Criteria**:
-  - Dashboard shell with Today panel, backlog panel, and timer display.
+  - ✅ Dashboard shell with sidebar navigation.
+  - ✅ Backlog and Today panels wired.
+  - ❌ Active timer display (depends on TKT-011).
+- **Remaining**: Timer widget in shell header/footer (blocked by TKT-011).
 
-### TKT-021: Theme System & Iconography ❌ Not Started
+### TKT-021: Theme System & Iconography 🟡 In Progress
 
 **As a** user, **I want to** toggle between light and dark themes with distinct iconography **so that** the app is comfortable to use in any lighting.
 
-- **Status**: `lucide-react` is in `package.json` but unused. `DESIGN.md` defines color tokens and typography. No CSS variables, no theme toggle, `main.css` has only Tailwind directives.
+- **Status**: Partially complete — `src/renderer/src/assets/main.css` defines full dual-theme CSS custom properties (`:root` light theme + `.dark` dark theme with all color tokens mapped via `tailwind.config.js`). Lucide React icons used throughout: `Sidebar.tsx` (Inbox, Calendar, Lightbulb, BarChart3, Settings), `StatusFooter.tsx` (CheckCircle2, Key, KeyRound, Clock), `TaskItem.tsx`, `RecurringRuleCard.tsx`, etc. **No theme toggle UI** — the `.dark` class is never applied at runtime; app runs in light mode only.
 - **Acceptance Criteria**:
-  - Dual-theme system with light/dark toggle.
-  - Lucide React icons used throughout UI.
+  - ✅ Dual-theme CSS token system (light/dark variables).
+  - ✅ Lucide React icons used throughout UI.
+  - ❌ Theme toggle button to switch between light and dark at runtime.
+- **Remaining**: Add a theme toggle (button in `Header` or `SettingsView`), persist preference, apply `.dark` class to `<html>` or `<body>`.
 
 ### TKT-022: Offline Resilience & Error Handling ❌ Not Started
 

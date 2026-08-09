@@ -1,26 +1,29 @@
-import type { TaskPriority } from "@shared/models";
+import type { TaskPriority } from '@shared/models';
 
-function priorityLabel(priority: TaskPriority) {
-  return priority.charAt(0).toUpperCase() + priority.slice(1);
-}
+const dotClass: Record<TaskPriority, string> = {
+  high:   'bg-priority-high',
+  medium: 'bg-priority-medium',
+  low:    'bg-priority-low',
+};
 
-const variantClasses: Record<TaskPriority, string> = {
-  high: "bg-red-500/10 text-red-400 border-red-500/20 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20",
-  medium:
-    "bg-amber-500/10 text-amber-400 border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
-  low: "bg-slate-500/10 text-slate-400 border-slate-500/20 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/20",
+const label: Record<TaskPriority, string> = {
+  high:   'High',
+  medium: 'Med',
+  low:    'Low',
 };
 
 interface PriorityBadgeProps {
   priority: TaskPriority;
+  showLabel?: boolean;
 }
 
-export function PriorityBadge({ priority }: PriorityBadgeProps) {
+export function PriorityBadge({ priority, showLabel = false }: PriorityBadgeProps) {
   return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${variantClasses[priority]}`}
-    >
-      {priorityLabel(priority)}
+    <span className="inline-flex items-center gap-1">
+      <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${dotClass[priority]}`} />
+      {showLabel && (
+        <span className="text-2xs text-text-muted">{label[priority]}</span>
+      )}
     </span>
   );
 }
