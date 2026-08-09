@@ -21,7 +21,12 @@ interface TaskStore {
     patch: Partial<
       Pick<
         Task,
-        "title" | "priority" | "estimatedMinutes" | "description" | "status"
+        | "title"
+        | "priority"
+        | "estimatedMinutes"
+        | "description"
+        | "status"
+        | "scheduledDate"
       >
     >,
   ) => Promise<boolean>;

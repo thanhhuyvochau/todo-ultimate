@@ -1,9 +1,5 @@
-export function App(): JSX.Element {
-  return (
-    <div className="flex h-screen w-screen flex-col bg-bg-primary text-text-primary">
-      <BacklogView />
-    </div>
-  );
-}
+import { AppShell } from "./components/AppShell";
 
-import { BacklogView } from "./components/BacklogView";
+export function App(): JSX.Element {
+  return <AppShell />;
+}

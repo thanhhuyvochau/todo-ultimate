@@ -7,6 +7,7 @@ import {
   ArrowRightCircle,
   ArrowLeftCircle,
   CheckCircle2,
+  Calendar,
 } from "lucide-react";
 import type { Task, TaskStatus } from "@shared/models";
 import { PriorityBadge } from "./PriorityBadge";
@@ -54,6 +55,8 @@ interface TaskItemProps {
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
   onStatusChange: (task: Task, newStatus: TaskStatus) => void;
+  onMoveToToday?: (task: Task) => void;
+  onReturnToBacklog?: (task: Task) => void;
 }
 
 export function TaskItem({
@@ -61,6 +64,8 @@ export function TaskItem({
   onEdit,
   onDelete,
   onStatusChange,
+  onMoveToToday,
+  onReturnToBacklog,
 }: TaskItemProps) {
   const [statusOpen, setStatusOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -87,6 +92,10 @@ export function TaskItem({
     };
   }, [statusOpen]);
 
+  const showMoveToToday =
+    onMoveToToday && task.status === "todo" && task.scheduledDate === null;
+  const showReturnToBacklog = onReturnToBacklog && task.scheduledDate !== null;
+
   return (
     <div className="group flex items-center gap-3 rounded-lg border border-border bg-bg-surface p-3 shadow-sm transition-all hover:border-accent/40">
       <GripVertical className="hidden h-4 w-4 shrink-0 text-text-muted group-hover:block" />
@@ -104,6 +113,24 @@ export function TaskItem({
       <PriorityBadge priority={task.priority} />
 
       <div className="hidden shrink-0 items-center gap-1 group-hover:flex">
+        {showReturnToBacklog && (
+          <button
+            onClick={() => onReturnToBacklog!(task)}
+            className="rounded-md p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-info"
+            aria-label={`Return ${task.title} to backlog`}
+          >
+            <ArrowLeftCircle className="h-4 w-4" />
+          </button>
+        )}
+        {showMoveToToday && (
+          <button
+            onClick={() => onMoveToToday!(task)}
+            className="rounded-md p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-accent"
+            aria-label={`Move ${task.title} to today`}
+          >
+            <Calendar className="h-4 w-4" />
+          </button>
+        )}
         {actions.length > 0 && (
           <div className="relative" ref={menuRef}>
             <button

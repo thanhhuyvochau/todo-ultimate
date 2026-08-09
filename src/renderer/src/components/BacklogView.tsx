@@ -49,6 +49,12 @@ function sortTasks(tasks: Task[], sort: SortOption): Task[] {
   }
 }
 
+function getTodayMidnight(): number {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
 export function BacklogView() {
   const {
     tasks,
@@ -72,7 +78,7 @@ export function BacklogView() {
   }, [fetchTasks]);
 
   const filteredTasks = useMemo(() => {
-    let result = tasks;
+    let result = tasks.filter((t) => t.scheduledDate === null);
     if (search.trim()) {
       const query = search.toLowerCase();
       result = result.filter((t) => t.title.toLowerCase().includes(query));
@@ -96,6 +102,10 @@ export function BacklogView() {
 
   const handleStatusChange = async (task: Task, newStatus: TaskStatus) => {
     await updateTask(task.id, { status: newStatus });
+  };
+
+  const handleMoveToToday = async (task: Task) => {
+    await updateTask(task.id, { scheduledDate: getTodayMidnight() });
   };
 
   const handleConfirmDelete = async () => {
@@ -199,6 +209,7 @@ export function BacklogView() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onStatusChange={handleStatusChange}
+                onMoveToToday={handleMoveToToday}
               />
             ))}
           </div>
