@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import { initDb } from "./db/database";
 import { registerIpcHandlers } from "./ipc/register-ipc";
 import { handlers } from "./ipc/handlers";
+import { isEncryptionAvailable } from "./services/keychain-service";
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -43,6 +44,14 @@ app.whenReady().then(() => {
   app.on("browser-window-created", (_, window) => {
     optimizer.watchWindowShortcuts(window);
   });
+
+  if (!isEncryptionAvailable()) {
+    throw new Error(
+      "OS keychain encryption is not available. This application requires secure storage " +
+        "for API keys and cannot run without it. Please ensure your operating system supports " +
+        "native keychain/credential storage.",
+    );
+  }
 
   try {
     initDb();

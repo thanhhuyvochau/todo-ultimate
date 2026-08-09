@@ -80,8 +80,8 @@ export const handlers: HandlerMap = {
 
   "key:set": ({ apiKey }) => {
     try {
-      const result = keychainService.setApiKey(apiKey);
-      return ok(result);
+      keychainService.setApiKey(apiKey);
+      return ok({ success: true });
     } catch (err) {
       const error = err as { code?: string; message?: string };
       if (error.code === "KEYCHAIN_UNAVAILABLE") {
@@ -90,14 +90,20 @@ export const handlers: HandlerMap = {
           error.message ?? "Keychain unavailable.",
         );
       }
+      if (error.code === "KEYCHAIN_WRITE_FAILED") {
+        return fail(
+          "KEYCHAIN_WRITE_FAILED",
+          error.message ?? "Failed to write API key.",
+        );
+      }
       return fail("INTERNAL_ERROR", "Failed to save API key.");
     }
   },
 
   "key:get": () => {
     try {
-      const result = keychainService.getApiKey();
-      return ok(result);
+      const hasKey = keychainService.isApiKeySet();
+      return ok({ hasKey });
     } catch (err) {
       return fail("INTERNAL_ERROR", "Failed to check API key status.");
     }
@@ -105,14 +111,20 @@ export const handlers: HandlerMap = {
 
   "key:delete": () => {
     try {
-      const result = keychainService.deleteApiKey();
-      return ok(result);
+      keychainService.deleteApiKey();
+      return ok({ success: true });
     } catch (err) {
       const error = err as { code?: string; message?: string };
       if (error.code === "KEYCHAIN_UNAVAILABLE") {
         return fail(
           "KEYCHAIN_UNAVAILABLE",
           error.message ?? "Keychain unavailable.",
+        );
+      }
+      if (error.code === "KEYCHAIN_WRITE_FAILED") {
+        return fail(
+          "KEYCHAIN_WRITE_FAILED",
+          error.message ?? "Failed to delete API key file.",
         );
       }
       return fail("INTERNAL_ERROR", "Failed to delete API key.");

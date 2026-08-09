@@ -10,9 +10,10 @@ vi.mock("../../db/database", () => ({
 }));
 
 vi.mock("../../services/keychain-service", () => ({
-  getApiKey: () => ({ hasKey: false }),
-  setApiKey: () => ({ success: true }),
-  deleteApiKey: () => ({ success: true }),
+  isApiKeySet: () => false,
+  setApiKey: () => undefined,
+  deleteApiKey: () => undefined,
+  getApiKey: () => null,
   isEncryptionAvailable: () => true,
 }));
 
@@ -255,12 +256,28 @@ describe("timer and ai stubs", () => {
   });
 });
 
-describe("key: stubs", () => {
+describe("key handlers", () => {
   it("key:get returns hasKey false when no key stored", () => {
     const result = handlers["key:get"]({});
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data.hasKey).toBe(false);
+    }
+  });
+
+  it("key:set returns success", () => {
+    const result = handlers["key:set"]({ apiKey: "test-key" });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.success).toBe(true);
+    }
+  });
+
+  it("key:delete returns success", () => {
+    const result = handlers["key:delete"]({});
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.success).toBe(true);
     }
   });
 });
