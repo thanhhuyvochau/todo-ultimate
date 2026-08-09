@@ -13,7 +13,8 @@ export type IpcErrorCode =
   | "KEYCHAIN_WRITE_FAILED"
   | "NOT_IMPLEMENTED"
   | "INTERNAL_ERROR"
-  | "NOT_FOUND";
+  | "NOT_FOUND"
+  | "TASK_ALREADY_ACTIVE";
 
 export type IpcResult<T> =
   { ok: true; data: T } | { ok: false; error: IpcError };

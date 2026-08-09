@@ -136,6 +136,41 @@ export function createTask(input: Omit<Task, "id">): Task {
   return rowToTask(row);
 }
 
+function validateStatusTransition(
+  currentStatus: string,
+  newStatus: string,
+  taskId: string,
+): void {
+  const allowedTransitions: Record<string, string[]> = {
+    todo: ["in_progress"],
+    in_progress: ["todo", "completed"],
+    completed: [],
+  };
+
+  const allowed = allowedTransitions[currentStatus];
+  if (!allowed || !allowed.includes(newStatus)) {
+    throw Object.assign(
+      new Error(`Cannot transition from '${currentStatus}' to '${newStatus}'.`),
+      { code: "STATE_TRANSITION_ILLEGAL" },
+    );
+  }
+
+  if (newStatus === "in_progress") {
+    const db = getDb();
+    const activeTask = db
+      .prepare("SELECT id, title FROM tasks WHERE status = ? AND id != ?")
+      .get("in_progress", taskId) as Pick<TaskRow, "id" | "title"> | undefined;
+    if (activeTask) {
+      throw Object.assign(
+        new Error(
+          `Cannot start this task. "${activeTask.title}" is already in progress.`,
+        ),
+        { code: "TASK_ALREADY_ACTIVE" },
+      );
+    }
+  }
+}
+
 export function updateTask(patch: Partial<Task> & { id: string }): Task {
   const db = getDb();
   const existing = db
@@ -143,6 +178,10 @@ export function updateTask(patch: Partial<Task> & { id: string }): Task {
     .get(patch.id) as TaskRow | undefined;
   if (!existing) {
     throw Object.assign(new Error("Task not found."), { code: "NOT_FOUND" });
+  }
+
+  if (patch.status !== undefined && patch.status !== existing.status) {
+    validateStatusTransition(existing.status, patch.status, patch.id);
   }
 
   const now = Date.now();

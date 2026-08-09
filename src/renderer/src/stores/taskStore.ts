@@ -19,7 +19,10 @@ interface TaskStore {
   updateTask: (
     id: string,
     patch: Partial<
-      Pick<Task, "title" | "priority" | "estimatedMinutes" | "description">
+      Pick<
+        Task,
+        "title" | "priority" | "estimatedMinutes" | "description" | "status"
+      >
     >,
   ) => Promise<boolean>;
   deleteTask: (id: string) => Promise<boolean>;

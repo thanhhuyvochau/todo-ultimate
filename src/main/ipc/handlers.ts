@@ -45,6 +45,18 @@ export const handlers: HandlerMap = {
       if (error.code === "VALIDATION_ERROR") {
         return fail("VALIDATION_ERROR", error.message ?? "Invalid task data.");
       }
+      if (error.code === "STATE_TRANSITION_ILLEGAL") {
+        return fail(
+          "STATE_TRANSITION_ILLEGAL",
+          error.message ?? "Invalid status transition.",
+        );
+      }
+      if (error.code === "TASK_ALREADY_ACTIVE") {
+        return fail(
+          "TASK_ALREADY_ACTIVE",
+          error.message ?? "Another task is already in progress.",
+        );
+      }
       return fail("DB_WRITE_FAILED", "Failed to update task.");
     }
   },

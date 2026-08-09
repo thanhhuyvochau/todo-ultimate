@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { Plus } from "lucide-react";
-import type { Task, TaskPriority } from "@shared/models";
+import type { Task, TaskPriority, TaskStatus } from "@shared/models";
 import { useTaskStore } from "../stores/taskStore";
 import { TaskItem } from "./TaskItem";
 import { TaskForm } from "./TaskForm";
@@ -92,6 +92,10 @@ export function BacklogView() {
 
   const handleDelete = (task: Task) => {
     setDeletingTask(task);
+  };
+
+  const handleStatusChange = async (task: Task, newStatus: TaskStatus) => {
+    await updateTask(task.id, { status: newStatus });
   };
 
   const handleConfirmDelete = async () => {
@@ -194,6 +198,7 @@ export function BacklogView() {
                 task={task}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onStatusChange={handleStatusChange}
               />
             ))}
           </div>
