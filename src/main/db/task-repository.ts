@@ -38,6 +38,7 @@ function validateTaskInput(
   title: unknown,
   priority: unknown,
   estimatedMinutes: unknown,
+  description?: unknown,
 ): string | null {
   if (
     typeof title !== "string" ||
@@ -57,20 +58,46 @@ function validateTaskInput(
   ) {
     return "Estimated minutes must be a positive integer (max 1440).";
   }
+  if (description !== undefined && description !== null) {
+    if (typeof description !== "string" || description.length > 100000) {
+      return "Description must be a string with max 100,000 characters.";
+    }
+  }
   return null;
 }
 
-export function getTasks(status?: TaskStatus): Task[] {
+export function getTasks(filters?: {
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  query?: string;
+}): Task[] {
   const db = getDb();
-  if (status) {
-    const stmt = db.prepare(
-      "SELECT * FROM tasks WHERE status = ? ORDER BY created_at DESC",
-    );
-    const rows = stmt.all(status) as TaskRow[];
-    return rows.map(rowToTask);
+  const clauses: string[] = [];
+  const params: unknown[] = [];
+
+  if (filters?.status) {
+    clauses.push("status = ?");
+    params.push(filters.status);
   }
-  const stmt = db.prepare("SELECT * FROM tasks ORDER BY created_at DESC");
-  const rows = stmt.all() as TaskRow[];
+  if (filters?.priority) {
+    clauses.push("priority = ?");
+    params.push(filters.priority);
+  }
+  if (filters?.query) {
+    clauses.push("title LIKE ?");
+    params.push(`%${filters.query}%`);
+  }
+
+  let sql = "SELECT * FROM tasks";
+  if (clauses.length > 0) {
+    sql += " WHERE " + clauses.join(" AND ");
+  }
+  sql += " ORDER BY created_at DESC";
+
+  const stmt = db.prepare(sql);
+  const rows = (
+    params.length > 0 ? stmt.all(...params) : stmt.all()
+  ) as TaskRow[];
   return rows.map(rowToTask);
 }
 
@@ -80,6 +107,7 @@ export function createTask(input: Omit<Task, "id">): Task {
     input.title,
     input.priority,
     input.estimatedMinutes,
+    input.description,
   );
   if (validationError) {
     throw Object.assign(new Error(validationError), {
@@ -128,6 +156,20 @@ export function updateTask(patch: Partial<Task> & { id: string }): Task {
     patch.estimatedMinutes !== undefined
       ? patch.estimatedMinutes
       : existing.estimated_minutes;
+
+  const validationError = validateTaskInput(
+    patch.title !== undefined ? patch.title : existing.title,
+    patch.priority !== undefined ? patch.priority : existing.priority,
+    patch.estimatedMinutes !== undefined
+      ? patch.estimatedMinutes
+      : existing.estimated_minutes,
+    patch.description !== undefined ? patch.description : existing.description,
+  );
+  if (validationError) {
+    throw Object.assign(new Error(validationError), {
+      code: "VALIDATION_ERROR",
+    });
+  }
 
   const stmt = db.prepare(`
     UPDATE tasks SET title = ?, description = ?, priority = ?, status = ?, estimated_minutes = ?, updated_at = ?

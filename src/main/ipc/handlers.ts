@@ -11,9 +11,9 @@ type HandlerMap = {
 };
 
 export const handlers: HandlerMap = {
-  "tasks:getAll": ({ status }) => {
+  "tasks:getAll": (filters) => {
     try {
-      const tasks = taskRepo.getTasks(status);
+      const tasks = taskRepo.getTasks(filters);
       return ok(tasks);
     } catch (err) {
       return fail("DB_READ_FAILED", "Failed to fetch tasks.");
@@ -41,6 +41,9 @@ export const handlers: HandlerMap = {
       const error = err as { code?: string; message?: string };
       if (error.code === "NOT_FOUND") {
         return fail("NOT_FOUND", error.message ?? "Task not found.");
+      }
+      if (error.code === "VALIDATION_ERROR") {
+        return fail("VALIDATION_ERROR", error.message ?? "Invalid task data.");
       }
       return fail("DB_WRITE_FAILED", "Failed to update task.");
     }

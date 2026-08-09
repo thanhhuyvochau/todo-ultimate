@@ -77,6 +77,117 @@ describe("tasks:getAll", () => {
       expect(result.data).toHaveLength(1);
     }
   });
+
+  it("filters by priority", () => {
+    handlers["tasks:create"]({
+      title: "High Task",
+      description: null,
+      priority: "high",
+      status: "todo",
+      estimatedMinutes: 30,
+      actualMinutes: null,
+      isRecurringChild: false,
+      recurringRuleId: null,
+      scheduledDate: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    handlers["tasks:create"]({
+      title: "Low Task",
+      description: null,
+      priority: "low",
+      status: "todo",
+      estimatedMinutes: 15,
+      actualMinutes: null,
+      isRecurringChild: false,
+      recurringRuleId: null,
+      scheduledDate: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    const result = handlers["tasks:getAll"]({ priority: "high" });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]?.priority).toBe("high");
+    }
+  });
+
+  it("filters by search query", () => {
+    handlers["tasks:create"]({
+      title: "Buy groceries",
+      description: null,
+      priority: "medium",
+      status: "todo",
+      estimatedMinutes: 20,
+      actualMinutes: null,
+      isRecurringChild: false,
+      recurringRuleId: null,
+      scheduledDate: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    handlers["tasks:create"]({
+      title: "Write report",
+      description: null,
+      priority: "medium",
+      status: "todo",
+      estimatedMinutes: 60,
+      actualMinutes: null,
+      isRecurringChild: false,
+      recurringRuleId: null,
+      scheduledDate: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    const result = handlers["tasks:getAll"]({ query: "groceries" });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]?.title).toBe("Buy groceries");
+    }
+  });
+
+  it("filters by status and priority combined", () => {
+    handlers["tasks:create"]({
+      title: "High todo",
+      description: null,
+      priority: "high",
+      status: "todo",
+      estimatedMinutes: 30,
+      actualMinutes: null,
+      isRecurringChild: false,
+      recurringRuleId: null,
+      scheduledDate: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    handlers["tasks:create"]({
+      title: "Low todo",
+      description: null,
+      priority: "low",
+      status: "todo",
+      estimatedMinutes: 15,
+      actualMinutes: null,
+      isRecurringChild: false,
+      recurringRuleId: null,
+      scheduledDate: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    const result = handlers["tasks:getAll"]({
+      status: "todo",
+      priority: "low",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]?.priority).toBe("low");
+    }
+  });
 });
 
 describe("tasks:create", () => {
@@ -145,6 +256,27 @@ describe("tasks:create", () => {
       expect(result.error.code).toBe("VALIDATION_ERROR");
     }
   });
+
+  it("rejects description over 100,000 characters", () => {
+    const result = handlers["tasks:create"]({
+      title: "Valid Title",
+      description: "x".repeat(100001),
+      priority: "medium",
+      status: "todo",
+      estimatedMinutes: 10,
+      actualMinutes: null,
+      isRecurringChild: false,
+      recurringRuleId: null,
+      scheduledDate: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("VALIDATION_ERROR");
+    }
+  });
 });
 
 describe("tasks:update", () => {
@@ -183,6 +315,114 @@ describe("tasks:update", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.code).toBe("NOT_FOUND");
+    }
+  });
+
+  it("rejects empty title on update", () => {
+    const create = handlers["tasks:create"]({
+      title: "Original",
+      description: null,
+      priority: "low",
+      status: "todo",
+      estimatedMinutes: 15,
+      actualMinutes: null,
+      isRecurringChild: false,
+      recurringRuleId: null,
+      scheduledDate: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    expect(create.ok).toBe(true);
+    if (!create.ok) return;
+
+    const result = handlers["tasks:update"]({
+      id: create.data.id,
+      title: "",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("VALIDATION_ERROR");
+    }
+  });
+
+  it("rejects invalid priority on update", () => {
+    const create = handlers["tasks:create"]({
+      title: "Original",
+      description: null,
+      priority: "low",
+      status: "todo",
+      estimatedMinutes: 15,
+      actualMinutes: null,
+      isRecurringChild: false,
+      recurringRuleId: null,
+      scheduledDate: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    expect(create.ok).toBe(true);
+    if (!create.ok) return;
+
+    const result = handlers["tasks:update"]({
+      id: create.data.id,
+      priority: "urgent" as never,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("VALIDATION_ERROR");
+    }
+  });
+
+  it("rejects invalid estimatedMinutes on update", () => {
+    const create = handlers["tasks:create"]({
+      title: "Original",
+      description: null,
+      priority: "low",
+      status: "todo",
+      estimatedMinutes: 15,
+      actualMinutes: null,
+      isRecurringChild: false,
+      recurringRuleId: null,
+      scheduledDate: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    expect(create.ok).toBe(true);
+    if (!create.ok) return;
+
+    const result = handlers["tasks:update"]({
+      id: create.data.id,
+      estimatedMinutes: 0,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("VALIDATION_ERROR");
+    }
+  });
+
+  it("rejects description over 100,000 characters on update", () => {
+    const create = handlers["tasks:create"]({
+      title: "Original",
+      description: null,
+      priority: "low",
+      status: "todo",
+      estimatedMinutes: 15,
+      actualMinutes: null,
+      isRecurringChild: false,
+      recurringRuleId: null,
+      scheduledDate: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    expect(create.ok).toBe(true);
+    if (!create.ok) return;
+
+    const result = handlers["tasks:update"]({
+      id: create.data.id,
+      description: "x".repeat(100001),
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("VALIDATION_ERROR");
     }
   });
 });

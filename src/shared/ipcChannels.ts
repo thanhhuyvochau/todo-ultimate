@@ -1,13 +1,17 @@
 import type {
   Task,
   TaskStatus,
+  TaskPriority,
   DailyPlan,
   PerformanceReport,
   AIScheduleInput,
 } from "./models";
 
 export interface IpcChannelMap {
-  "tasks:getAll": { request: { status?: TaskStatus }; response: Task[] };
+  "tasks:getAll": {
+    request: { status?: TaskStatus; priority?: TaskPriority; query?: string };
+    response: Task[];
+  };
   "tasks:create": { request: Omit<Task, "id">; response: Task };
   "tasks:update": { request: Partial<Task> & { id: string }; response: Task };
   "tasks:delete": { request: { id: string }; response: { success: boolean } };
