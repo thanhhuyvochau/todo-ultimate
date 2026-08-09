@@ -16,7 +16,6 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "postinstall": "electron-rebuild -f -w better-sqlite3",
-    "rebuild": "npx electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {
     "@tiptap/extension-code-block": "^2.11.5",
