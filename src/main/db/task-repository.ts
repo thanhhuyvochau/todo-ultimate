@@ -84,8 +84,8 @@ export function getTasks(filters?: {
     params.push(filters.priority);
   }
   if (filters?.query) {
-    clauses.push("title LIKE ?");
-    params.push(`%${filters.query}%`);
+    clauses.push("(title LIKE ? OR description LIKE ?)");
+    params.push(`%${filters.query}%`, `%${filters.query}%`);
   }
 
   let sql = "SELECT * FROM tasks";
@@ -240,6 +240,10 @@ export function updateTask(patch: Partial<Task> & { id: string }): Task {
     patch.estimatedMinutes !== undefined
       ? patch.estimatedMinutes
       : existing.estimated_minutes;
+  const scheduledDate =
+    "scheduledDate" in patch
+      ? (patch as { scheduledDate: number | null }).scheduledDate
+      : existing.scheduled_date;
 
   const validationError = validateTaskInput(
     patch.title !== undefined ? patch.title : existing.title,
@@ -256,7 +260,7 @@ export function updateTask(patch: Partial<Task> & { id: string }): Task {
   }
 
   const stmt = db.prepare(`
-    UPDATE tasks SET title = ?, description = ?, priority = ?, status = ?, estimated_minutes = ?, updated_at = ?
+    UPDATE tasks SET title = ?, description = ?, priority = ?, status = ?, estimated_minutes = ?, scheduled_date = ?, updated_at = ?
     WHERE id = ?
   `);
   stmt.run(
@@ -265,6 +269,7 @@ export function updateTask(patch: Partial<Task> & { id: string }): Task {
     priority,
     status,
     estimatedMinutes,
+    scheduledDate,
     now,
     patch.id,
   );

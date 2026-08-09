@@ -26,6 +26,28 @@ export function DeleteConfirmationDialog({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onCancel();
+        return;
+      }
+      if (e.key === "Tab") {
+        const dialog = document.querySelector("[data-delete-dialog]");
+        if (!dialog) return;
+        const focusable = dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0]!;
+        const last = focusable[focusable.length - 1]!;
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
     document.addEventListener("keydown", handleKeyDown);
@@ -37,7 +59,10 @@ export function DeleteConfirmationDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-xl border border-border bg-bg-surface p-6 shadow-xl">
+      <div
+        data-delete-dialog
+        className="w-full max-w-lg rounded-xl border border-border bg-bg-surface p-6 shadow-xl"
+      >
         <div className="mb-4 flex items-start gap-4">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger-subtle">
             <AlertTriangle className="h-5 w-5 text-danger" />

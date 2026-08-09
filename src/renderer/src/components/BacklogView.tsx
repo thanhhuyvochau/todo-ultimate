@@ -72,16 +72,33 @@ export function BacklogView() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastType, setToastType] = useState<"error" | "success">("error");
 
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
 
+  useEffect(() => {
+    if (!toastVisible) return;
+    const timer = setTimeout(() => {
+      setToastVisible(false);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [toastVisible]);
+
   const filteredTasks = useMemo(() => {
-    let result = tasks.filter((t) => t.scheduledDate === null);
+    let result = tasks.filter(
+      (t) => t.scheduledDate === null && t.status !== "completed",
+    );
     if (search.trim()) {
       const query = search.toLowerCase();
-      result = result.filter((t) => t.title.toLowerCase().includes(query));
+      result = result.filter(
+        (t) =>
+          t.title.toLowerCase().includes(query) ||
+          (t.description ?? "").toLowerCase().includes(query),
+      );
     }
     return sortTasks(result, sort);
   }, [tasks, search, sort]);
@@ -96,12 +113,37 @@ export function BacklogView() {
     setIsFormOpen(true);
   };
 
+  const handleInlineSave = async (
+    task: Task,
+    values: {
+      title: string;
+      priority: TaskPriority;
+      estimatedMinutes: number;
+    },
+  ) => {
+    await updateTask(task.id, values);
+  };
+
   const handleDelete = (task: Task) => {
     setDeletingTask(task);
   };
 
   const handleStatusChange = async (task: Task, newStatus: TaskStatus) => {
-    await updateTask(task.id, { status: newStatus });
+    const success = await updateTask(task.id, { status: newStatus });
+    if (!success) {
+      setToastType("error");
+      setToastMessage(error ?? "Status change failed.");
+      setToastVisible(true);
+      return;
+    }
+    const statusLabels: Record<string, string> = {
+      in_progress: `Started "${task.title}"`,
+      completed: `Completed "${task.title}"`,
+      todo: `Returned "${task.title}" to backlog`,
+    };
+    setToastType("success");
+    setToastMessage(statusLabels[newStatus] ?? "Status updated.");
+    setToastVisible(true);
   };
 
   const handleMoveToToday = async (task: Task) => {
@@ -209,6 +251,7 @@ export function BacklogView() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onStatusChange={handleStatusChange}
+                onInlineSave={handleInlineSave}
                 onMoveToToday={handleMoveToToday}
               />
             ))}
@@ -230,6 +273,30 @@ export function BacklogView() {
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeletingTask(null)}
       />
+
+      {toastVisible && toastMessage && (
+        <div
+          className={`fixed bottom-4 right-4 z-50 flex items-start gap-3 rounded-md border px-4 py-3 shadow-lg ${
+            toastType === "error"
+              ? "border-danger/20 bg-danger-subtle"
+              : "border-success/20 bg-success-subtle"
+          }`}
+        >
+          <span
+            className={`text-sm ${toastType === "error" ? "text-danger" : "text-success"}`}
+          >
+            {toastMessage}
+          </span>
+          <button
+            onClick={() => setToastVisible(false)}
+            className={`text-xs font-medium underline ${
+              toastType === "error" ? "text-danger" : "text-success"
+            }`}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
     </div>
   );
 }

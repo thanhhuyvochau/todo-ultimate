@@ -143,6 +143,20 @@ export function createRule(input: Omit<RecurringRule, "id">): RecurringRule {
     });
   }
 
+  if (input.timeAnchor != null) {
+    const conflict = db
+      .prepare(
+        "SELECT id FROM recurring_rules WHERE time_anchor = ? AND is_active = 1",
+      )
+      .get(input.timeAnchor);
+    if (conflict) {
+      throw Object.assign(
+        new Error("Another active rule already uses this time anchor."),
+        { code: "TIME_ANCHOR_CONFLICT" },
+      );
+    }
+  }
+
   const now = Date.now();
   const id = randomUUID();
 
@@ -212,6 +226,20 @@ export function updateRule(
     throw Object.assign(new Error(validationError), {
       code: "VALIDATION_ERROR",
     });
+  }
+
+  if (merged.timeAnchor != null) {
+    const conflict = db
+      .prepare(
+        "SELECT id FROM recurring_rules WHERE time_anchor = ? AND is_active = 1 AND id != ?",
+      )
+      .get(merged.timeAnchor, patch.id);
+    if (conflict) {
+      throw Object.assign(
+        new Error("Another active rule already uses this time anchor."),
+        { code: "TIME_ANCHOR_CONFLICT" },
+      );
+    }
   }
 
   const stmt = db.prepare(`

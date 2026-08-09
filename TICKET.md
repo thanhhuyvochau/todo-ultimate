@@ -61,35 +61,44 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ## Phase 2: Task Management
 
-### TKT-004: Implement Task Backlog CRUD 🟡 In Progress
+### TKT-004: Implement Task Backlog CRUD ✅ Done
 
 **As a** user, **I want to** create, read, update, and delete tasks in my backlog **so that** I can track things I need to do.
 
-- **Status**: **Backend complete** — `src/main/db/task-repository.ts` with full CRUD + validation (title 1-200 chars, priority enum, estimatedMinutes 1-1440, description ≤100k). IPC handlers registered for `tasks:getAll`, `tasks:create`, `tasks:update`, `tasks:delete`. **UI missing** — no task form, no list component, no delete confirmation, no inline editing. Only hard delete (no soft delete).
+- **Status**: Complete — `src/main/db/task-repository.ts` (full CRUD + validation + `scheduledDate` persistence), `src/main/ipc/handlers.ts` (4 task handlers), `src/renderer/src/stores/taskStore.ts` (Zustand store), `src/renderer/src/components/BacklogView.tsx` (list with search/sort/empty state), `src/renderer/src/components/TaskForm.tsx` (create/edit modal with validation + TipTap description), `src/renderer/src/components/TaskItem.tsx` (card row with inline editing, status menu, move-to-today, checkbox), `src/renderer/src/components/DeleteConfirmationDialog.tsx` (focus-trapped confirmation), `src/renderer/src/components/PriorityBadge.tsx`, `src/renderer/src/components/StatusBadge.tsx`.
 - **Acceptance Criteria**:
-  - ~~UI allows creating tasks with title, priority (low/medium/high), and estimated minutes.~~ _(pending renderer)_
-  - ~~Tasks are saved to SQLite and default to `todo` status.~~ _(done)_
-  - ~~User can edit inline and soft/hard delete with confirmation.~~ _(pending UI)_
-  - ~~Backend validation ensures titles are 1-200 chars and estimated minutes < 1440.~~ _(done)_
-- **Remaining**: Renderer components for task form, task list, edit/delete UI, drag-to-Today interaction.
+  - UI allows creating tasks with title, priority (low/medium/high), and estimated minutes.
+  - Tasks are saved to SQLite and default to `todo` status.
+  - User can edit inline (pencil → inline title/priority/minutes with Save/Cancel) or full edit via modal.
+  - Hard delete with confirmation dialog (focus-trapped, Escape-close).
+  - Backend validation ensures titles are 1-200 chars and estimated minutes 1-1440.
+  - Search matches both title and description.
+  - Move-to-Today and Return-to-Backlog persist `scheduled_date`.
+  - Checkbox visual placeholder present (functional in Today view).
+- **Remaining**: Drag-to-Today cross-view DnD interaction (deferred to TKT-006/007).
 
-### TKT-005: Integrate Rich Markdown Notes for Tasks ❌ Not Started
+### TKT-005: Integrate Rich Markdown Notes for Tasks ✅ Done
 
 **As a** user, **I want to** add rich formatting (lists, links, code) to my task descriptions **so that** I have necessary context when starting work.
 
-- **Status**: No implementation. `@tiptap/*` packages (react, starter-kit, task-item, task-list, code-block) are already in `package.json` but unused.
+- **Status**: Complete — `src/renderer/src/components/MarkdownEditor.tsx` (TipTap wrapper with toolbar: bold, italic, strikethrough, H1-H3, bullet/ordered/task lists, blockquote, code block, link), `src/renderer/src/components/TaskForm.tsx` (auto-save 1.5s debounce, save indicator, preview toggle, unsaved-changes warning). `@tailwindcss/typography` configured for preview rendering. Backend enforces 100k char limit. Extensions: `@tiptap/starter-kit`, `@tiptap/extension-task-list`, `@tiptap/extension-task-item`, `@tiptap/extension-code-block`, `@tiptap/extension-link`.
 - **Acceptance Criteria**:
   - TipTap editor integrated for task descriptions.
   - Markdown input is parsed and saved properly.
+- **Remaining (edge cases, not blocking):** Image paste handling, virtualized scrolling for very long content, Markdown serializer (currently stores as HTML).
 
-### TKT-006: Build Task Status Workflow UI ❌ Not Started
+### TKT-006: Build Task Status Workflow UI ✅ Done
 
 **As a** user, **I want to** move tasks through distinct states (Todo → In Progress → Done) **so that** I can track my active execution.
 
-- **Status**: No implementation. ⚠ **Note**: Backend `updateTask` does **not** guard illegal state transitions despite `STATE_TRANSITION_ILLEGAL` error code being defined in `src/shared/ipcResult.ts`. This guard must be added server-side.
+- **Status**: Complete — `src/main/db/task-repository.ts` (`validateStatusTransition`: todo→in_progress, in_progress→todo|completed, completed→blocked; single-active-task guard), `src/main/ipc/handlers.ts` (maps `STATE_TRANSITION_ILLEGAL` + `TASK_ALREADY_ACTIVE`), `src/renderer/src/components/TaskItem.tsx` (`STATUS_ACTIONS` dropdown per state), `src/renderer/src/components/TodayView.tsx` (anchored/flexible/completed groups with collapsible completed section), `src/renderer/src/components/BacklogView.tsx` (completed tasks filtered from backlog, success/error toasts on transitions).
 - **Acceptance Criteria**:
-  - Tasks can transition statuses.
-  - Invalid transitions (e.g., Done -> In Progress) are blocked or handled cleanly.
+  - Tasks can transition statuses with correct allowed/blocked paths.
+  - Invalid transitions are blocked with clear error messages.
+  - Only one task can be `in_progress` at a time.
+  - Completed tasks are filtered from the Backlog.
+  - Success/error toasts provide feedback on status changes.
+- **Depends on TKT-011/TKT-012 for**: Timer auto-start/pause on transitions, `actual_minutes` calculation on completion.
 
 ### TKT-007: Develop the "Today" View ❌ Not Started
 
@@ -124,14 +133,15 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
   - Active recurring rules generate standard Tasks in the "Today" view.
 - **INVEST Check**: Independent (standalone service, depends on existing repos), Valuable (automatic task generation), Small (single service + hook).
 
-### TKT-010: Implement Fixed-Time Blocking ❌ Not Started
+### TKT-010: Implement Fixed-Time Blocking ✅ Done
 
 **As a** user, **I want to** mark specific recurring tasks at fixed times **so that** the AI planner treats them as non-negotiable anchor blocks.
 
-- **Status**: `time_anchor` column in `recurring_rules` table + `timeAnchor` field in `RecurringRule` type exist. No logic uses it.
+- **Status**: `src/shared/models.ts` (expanded `AIScheduleInput` with `fixedBlocks` field), `src/main/db/recurring-rule-repository.ts` (duplicate `timeAnchor` validation on create/update), `src/renderer/src/components/TodayView.tsx` (lock icon + time label on anchored tasks, anchored tasks excluded from drag-and-drop), `src/main/db/__tests__/recurring-rule-repository.test.ts` (2 new duplicate time anchor tests).
 - **Acceptance Criteria**:
   - Tasks can possess an `anchor_time` field.
   - Planner API rejects scheduling over fixed blocks.
+- **INVEST Check**: Independent (validation + UI guardrails), Valuable (prevents schedule conflicts), Small (targeted changes to existing components).
 
 ---
 
@@ -259,3 +269,14 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
   - ~~`electron-builder` configured.~~ _(done)_
   - ~~Builds output executable files for Windows/Mac/Linux.~~ _(pending — renderer build not producing output)_
 - **Remaining**: Fix renderer build pipeline; produce distributable artifacts.
+
+### TKT-024: Add Hover Tooltips to Icon Buttons ❌ Not Started
+
+**As a** user, **I want to** see a text label when hovering over icon-only buttons **so that** I understand what each action does without trial-and-error.
+
+- **Status**: All 16 icon-only buttons already have `aria-label` attributes for screen readers, but no visible hover tooltip exists. Buttons without tooltips: `TaskItem` (Save, Cancel, Return-to-backlog, Move-to-today, Status-change, Edit, Delete), `DeleteConfirmationDialog` (Close), `RecurringRuleCard` (Toggle, Edit, Delete), `RecurringRulesPanel` (Refresh), `Sidebar` (Toggle), `TaskForm`/`RecurringRuleForm` (Close).
+- **Acceptance Criteria**:
+  - Hovering any icon button shows a short text label describing the action.
+  - Tooltip text matches existing `aria-label` values.
+  - Works in both light and dark themes.
+- **INVEST Check**: Independent (standalone component), Valuable (improves discoverability), Small (~30 min, simple component + wiring).

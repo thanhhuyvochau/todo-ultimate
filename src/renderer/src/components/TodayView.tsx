@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Lock } from "lucide-react";
 import type { Task, TaskStatus } from "@shared/models";
 import { useTaskStore } from "../stores/taskStore";
 import { TaskItem } from "./TaskItem";
@@ -27,6 +27,21 @@ function formatDate(date: Date): string {
     year: "numeric",
     month: "long",
     day: "numeric",
+  });
+}
+
+function isTimeAnchored(task: Task): boolean {
+  if (task.scheduledDate === null) return false;
+  const d = new Date(task.scheduledDate);
+  return !(d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0);
+}
+
+function formatAnchorTime(ts: number): string {
+  const d = new Date(ts);
+  return d.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
   });
 }
 
@@ -83,6 +98,7 @@ export function TodayView() {
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
+  const [toastType, setToastType] = useState<"error" | "success">("error");
   const [orderedIds, setOrderedIds] = useState<string[]>([]);
 
   const sensors = useSensors(
@@ -108,6 +124,17 @@ export function TodayView() {
     () => todayTasks.filter((t) => t.status !== "completed"),
     [todayTasks],
   );
+  const anchoredTasks = useMemo(
+    () =>
+      activeTasks
+        .filter(isTimeAnchored)
+        .sort((a, b) => (a.scheduledDate ?? 0) - (b.scheduledDate ?? 0)),
+    [activeTasks],
+  );
+  const flexibleTasks = useMemo(
+    () => activeTasks.filter((t) => !isTimeAnchored(t)),
+    [activeTasks],
+  );
   const completedTasks = useMemo(
     () => todayTasks.filter((t) => t.status === "completed"),
     [todayTasks],
@@ -115,23 +142,23 @@ export function TodayView() {
 
   useEffect(() => {
     setOrderedIds((prev) => {
-      const currentIds = new Set(activeTasks.map((t) => t.id));
+      const currentIds = new Set(flexibleTasks.map((t) => t.id));
       const kept = prev.filter((id) => currentIds.has(id));
-      const newIds = activeTasks
+      const newIds = flexibleTasks
         .map((t) => t.id)
         .filter((id) => !kept.includes(id));
       return [...kept, ...newIds];
     });
-  }, [activeTasks]);
+  }, [flexibleTasks]);
 
   const sortedActiveTasks = useMemo(() => {
     const orderMap = new Map(orderedIds.map((id, idx) => [id, idx]));
-    return [...activeTasks].sort((a, b) => {
+    return [...flexibleTasks].sort((a, b) => {
       const aIdx = orderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
       const bIdx = orderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
       return aIdx - bIdx;
     });
-  }, [activeTasks, orderedIds]);
+  }, [flexibleTasks, orderedIds]);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
@@ -151,11 +178,19 @@ export function TodayView() {
   const handleStatusChange = async (task: Task, newStatus: TaskStatus) => {
     const success = await updateTask(task.id, { status: newStatus });
     if (!success) {
-      setToastMessage(
-        "Status change blocked. Another task may already be in progress.",
-      );
+      setToastType("error");
+      setToastMessage(useTaskStore.getState().error ?? "Status change failed.");
       setToastVisible(true);
+      return;
     }
+    const statusLabels: Record<string, string> = {
+      in_progress: `Started "${task.title}"`,
+      completed: `Completed "${task.title}"`,
+      todo: `Returned "${task.title}" to backlog`,
+    };
+    setToastType("success");
+    setToastMessage(statusLabels[newStatus] ?? "Status updated.");
+    setToastVisible(true);
   };
 
   const dismissToast = () => {
@@ -238,24 +273,52 @@ export function TodayView() {
           </div>
         ) : (
           <div className="space-y-2">
-            {activeTasks.length > 0 && (
-              <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-                <SortableContext items={sortedActiveTasks.map((t) => t.id)}>
-                  <div className="space-y-2">
-                    {sortedActiveTasks.map((task) => (
-                      <SortableTaskItem
-                        key={task.id}
-                        id={task.id}
-                        task={task}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        onStatusChange={handleStatusChange}
-                        onReturnToBacklog={handleReturnToBacklog}
-                      />
-                    ))}
+            {(anchoredTasks.length > 0 || flexibleTasks.length > 0) && (
+              <>
+                {anchoredTasks.map((task) => (
+                  <div key={task.id} className="relative">
+                    <div className="mb-1 flex items-center gap-1.5 px-1">
+                      <Lock className="h-3 w-3 text-accent" />
+                      <span className="text-xs font-medium text-accent">
+                        {formatAnchorTime(task.scheduledDate!)}
+                      </span>
+                      <span className="text-xs text-text-muted">
+                        Fixed time block — managed by recurring rule
+                      </span>
+                    </div>
+                    <TaskItem
+                      task={task}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onStatusChange={handleStatusChange}
+                      onReturnToBacklog={handleReturnToBacklog}
+                    />
                   </div>
-                </SortableContext>
-              </DndContext>
+                ))}
+                {flexibleTasks.length > 0 && (
+                  <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                    <SortableContext items={sortedActiveTasks.map((t) => t.id)}>
+                      <div className="space-y-2">
+                        {anchoredTasks.length > 0 &&
+                          flexibleTasks.length > 0 && (
+                            <div className="my-3 border-t border-border" />
+                          )}
+                        {sortedActiveTasks.map((task) => (
+                          <SortableTaskItem
+                            key={task.id}
+                            id={task.id}
+                            task={task}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            onStatusChange={handleStatusChange}
+                            onReturnToBacklog={handleReturnToBacklog}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                )}
+              </>
             )}
 
             {completedTasks.length > 0 && (
@@ -291,11 +354,23 @@ export function TodayView() {
       </div>
 
       {toastVisible && toastMessage && (
-        <div className="fixed bottom-4 right-4 z-50 flex items-start gap-3 rounded-md border border-danger/20 bg-danger-subtle px-4 py-3 shadow-lg">
-          <span className="text-sm text-danger">{toastMessage}</span>
+        <div
+          className={`fixed bottom-4 right-4 z-50 flex items-start gap-3 rounded-md border px-4 py-3 shadow-lg ${
+            toastType === "error"
+              ? "border-danger/20 bg-danger-subtle"
+              : "border-success/20 bg-success-subtle"
+          }`}
+        >
+          <span
+            className={`text-sm ${toastType === "error" ? "text-danger" : "text-success"}`}
+          >
+            {toastMessage}
+          </span>
           <button
             onClick={dismissToast}
-            className="text-xs font-medium text-danger underline hover:text-red-500"
+            className={`text-xs font-medium underline ${
+              toastType === "error" ? "text-danger" : "text-success"
+            }`}
           >
             Dismiss
           </button>

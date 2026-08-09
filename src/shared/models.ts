@@ -64,4 +64,10 @@ export interface PerformanceReport {
 export interface AIScheduleInput {
   focusHours: number;
   primaryGoal: string;
+  fixedBlocks?: {
+    taskId: string;
+    title: string;
+    startTime: number;
+    durationMinutes: number;
+  }[];
 }

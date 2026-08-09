@@ -361,6 +361,40 @@ describe("recurring-rule-repository", () => {
         }),
       ).toThrow("Description");
     });
+
+    it("rejects duplicate time anchor", async () => {
+      const repo = await getRepo();
+      const anchor = new Date("2026-01-01T20:00:00").getTime();
+      repo.createRule({
+        title: "Evening Read",
+        description: null,
+        priority: "low",
+        estimatedMinutes: 30,
+        frequency: "daily",
+        timeAnchor: anchor,
+        daysOfWeek: null,
+        dayOfMonth: null,
+        isActive: true,
+        lastInstantiatedDate: null,
+        createdAt: Date.now(),
+      });
+
+      expect(() =>
+        repo.createRule({
+          title: "Evening Read 2",
+          description: null,
+          priority: "medium",
+          estimatedMinutes: 15,
+          frequency: "daily",
+          timeAnchor: anchor,
+          daysOfWeek: null,
+          dayOfMonth: null,
+          isActive: true,
+          lastInstantiatedDate: null,
+          createdAt: Date.now(),
+        }),
+      ).toThrow("Another active rule already uses this time anchor");
+    });
   });
 
   describe("updateRule", () => {
@@ -436,6 +470,42 @@ describe("recurring-rule-repository", () => {
       });
       expect(updated.frequency).toBe("weekly");
       expect(updated.daysOfWeek).toEqual([1, 4]);
+    });
+
+    it("rejects duplicate time anchor on update", async () => {
+      const repo = await getRepo();
+      const anchor = new Date("2026-01-01T20:00:00").getTime();
+      repo.createRule({
+        title: "Evening Read",
+        description: null,
+        priority: "low",
+        estimatedMinutes: 30,
+        frequency: "daily",
+        timeAnchor: anchor,
+        daysOfWeek: null,
+        dayOfMonth: null,
+        isActive: true,
+        lastInstantiatedDate: null,
+        createdAt: Date.now(),
+      });
+
+      const rule2 = repo.createRule({
+        title: "Morning Routine",
+        description: null,
+        priority: "medium",
+        estimatedMinutes: 15,
+        frequency: "daily",
+        timeAnchor: new Date("2026-01-01T08:00:00").getTime(),
+        daysOfWeek: null,
+        dayOfMonth: null,
+        isActive: true,
+        lastInstantiatedDate: null,
+        createdAt: Date.now(),
+      });
+
+      expect(() =>
+        repo.updateRule({ id: rule2.id, timeAnchor: anchor }),
+      ).toThrow("Another active rule already uses this time anchor");
     });
   });
 

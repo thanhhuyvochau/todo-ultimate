@@ -3,6 +3,7 @@ import StarterKit from "@tiptap/starter-kit";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import CodeBlock from "@tiptap/extension-code-block";
+import Link from "@tiptap/extension-link";
 import {
   Bold,
   Italic,
@@ -15,6 +16,7 @@ import {
   ListTodo,
   Code2,
   Quote,
+  Link2,
 } from "lucide-react";
 
 interface MarkdownEditorProps {
@@ -68,6 +70,12 @@ export function MarkdownEditor({
       TaskList,
       TaskItem.configure({ nested: true }),
       CodeBlock,
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: "text-accent underline cursor-pointer",
+        },
+      }),
     ],
     content: initialContent || "",
     editable,
@@ -192,6 +200,27 @@ export function MarkdownEditor({
             isActive={editor.isActive("codeBlock")}
             label="Code Block"
             icon={<Code2 className="h-3.5 w-3.5" />}
+          />
+
+          <ToolbarDivider />
+
+          <ToolbarButton
+            onClick={() => {
+              const previousUrl = editor.getAttributes("link").href as
+                string | undefined;
+              if (previousUrl) {
+                editor.chain().focus().unsetLink().run();
+                return true;
+              }
+              const url = window.prompt("Enter link URL:");
+              if (url) {
+                editor.chain().focus().setLink({ href: url }).run();
+              }
+              return true;
+            }}
+            isActive={editor.isActive("link")}
+            label="Link"
+            icon={<Link2 className="h-3.5 w-3.5" />}
           />
         </div>
       )}
