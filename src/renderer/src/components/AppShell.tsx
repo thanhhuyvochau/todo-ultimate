@@ -1,13 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ViewName } from "./Sidebar";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { BacklogView } from "./BacklogView";
 import { TodayView } from "./TodayView";
+import { StatusFooter } from "./StatusFooter";
+
+const ENABLED_VIEWS: ViewName[] = ["backlog", "today"];
 
 export function AppShell() {
   const [activeView, setActiveView] = useState<ViewName>("backlog");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!e.ctrlKey) return;
+      const index = Number(e.key) - 1;
+      if (index >= 0 && index < ENABLED_VIEWS.length) {
+        e.preventDefault();
+        setActiveView(ENABLED_VIEWS[index]!);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <div className="flex h-screen w-screen flex-col bg-bg-primary text-text-primary">
@@ -41,6 +57,7 @@ export function AppShell() {
           )}
         </main>
       </div>
+      <StatusFooter />
     </div>
   );
 }

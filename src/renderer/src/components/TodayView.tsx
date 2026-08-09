@@ -1,10 +1,19 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { Task, TaskStatus } from "@shared/models";
 import { useTaskStore } from "../stores/taskStore";
 import { TaskItem } from "./TaskItem";
 import { TaskForm } from "./TaskForm";
 import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 function getTodayMidnight(): number {
   const d = new Date();
@@ -19,6 +28,42 @@ function formatDate(date: Date): string {
     month: "long",
     day: "numeric",
   });
+}
+
+interface TaskItemProps {
+  task: Task;
+  onEdit: (task: Task) => void;
+  onDelete: (task: Task) => void;
+  onStatusChange: (task: Task, newStatus: TaskStatus) => void;
+  onReturnToBacklog: (task: Task) => void;
+}
+
+interface SortableTaskItemProps extends TaskItemProps {
+  id: string;
+}
+
+function SortableTaskItem({ id, ...props }: SortableTaskItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : undefined,
+    cursor: "grab",
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <TaskItem {...props} />
+    </div>
+  );
 }
 
 export function TodayView() {
@@ -38,6 +83,11 @@ export function TodayView() {
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
+  const [orderedIds, setOrderedIds] = useState<string[]>([]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
 
   const today = getTodayMidnight();
 
@@ -62,6 +112,37 @@ export function TodayView() {
     () => todayTasks.filter((t) => t.status === "completed"),
     [todayTasks],
   );
+
+  useEffect(() => {
+    setOrderedIds((prev) => {
+      const currentIds = new Set(activeTasks.map((t) => t.id));
+      const kept = prev.filter((id) => currentIds.has(id));
+      const newIds = activeTasks
+        .map((t) => t.id)
+        .filter((id) => !kept.includes(id));
+      return [...kept, ...newIds];
+    });
+  }, [activeTasks]);
+
+  const sortedActiveTasks = useMemo(() => {
+    const orderMap = new Map(orderedIds.map((id, idx) => [id, idx]));
+    return [...activeTasks].sort((a, b) => {
+      const aIdx = orderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+      const bIdx = orderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+      return aIdx - bIdx;
+    });
+  }, [activeTasks, orderedIds]);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setOrderedIds((prev) => {
+      const oldIndex = prev.indexOf(active.id as string);
+      const newIndex = prev.indexOf(over.id as string);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  }, []);
 
   const handleReturnToBacklog = (task: Task) => {
     updateTask(task.id, { scheduledDate: null });
@@ -158,18 +239,23 @@ export function TodayView() {
         ) : (
           <div className="space-y-2">
             {activeTasks.length > 0 && (
-              <div className="space-y-2">
-                {activeTasks.map((task) => (
-                  <TaskItem
-                    key={task.id}
-                    task={task}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onStatusChange={handleStatusChange}
-                    onReturnToBacklog={handleReturnToBacklog}
-                  />
-                ))}
-              </div>
+              <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                <SortableContext items={sortedActiveTasks.map((t) => t.id)}>
+                  <div className="space-y-2">
+                    {sortedActiveTasks.map((task) => (
+                      <SortableTaskItem
+                        key={task.id}
+                        id={task.id}
+                        task={task}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onStatusChange={handleStatusChange}
+                        onReturnToBacklog={handleReturnToBacklog}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             )}
 
             {completedTasks.length > 0 && (
