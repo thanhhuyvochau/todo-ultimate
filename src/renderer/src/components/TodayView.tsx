@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import type { Task } from "@shared/models";
+import type { Task, TaskStatus } from "@shared/models";
 import { useTaskStore } from "../stores/taskStore";
 import { TaskItem } from "./TaskItem";
 import { TaskForm } from "./TaskForm";
@@ -36,6 +36,8 @@ export function TodayView() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastVisible, setToastVisible] = useState(false);
 
   const today = getTodayMidnight();
 
@@ -64,6 +66,28 @@ export function TodayView() {
   const handleReturnToBacklog = (task: Task) => {
     updateTask(task.id, { scheduledDate: null });
   };
+
+  const handleStatusChange = async (task: Task, newStatus: TaskStatus) => {
+    const success = await updateTask(task.id, { status: newStatus });
+    if (!success) {
+      setToastMessage(
+        "Status change blocked. Another task may already be in progress.",
+      );
+      setToastVisible(true);
+    }
+  };
+
+  const dismissToast = () => {
+    setToastVisible(false);
+  };
+
+  useEffect(() => {
+    if (!toastVisible) return;
+    const timer = setTimeout(() => {
+      setToastVisible(false);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [toastVisible]);
 
   const handleDelete = (task: Task) => {
     setDeletingTask(task);
@@ -141,7 +165,7 @@ export function TodayView() {
                     task={task}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
-                    onStatusChange={() => {}}
+                    onStatusChange={handleStatusChange}
                     onReturnToBacklog={handleReturnToBacklog}
                   />
                 ))}
@@ -169,7 +193,7 @@ export function TodayView() {
                         task={task}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
-                        onStatusChange={() => {}}
+                        onStatusChange={handleStatusChange}
                       />
                     ))}
                   </div>
@@ -179,6 +203,18 @@ export function TodayView() {
           </div>
         )}
       </div>
+
+      {toastVisible && toastMessage && (
+        <div className="fixed bottom-4 right-4 z-50 flex items-start gap-3 rounded-md border border-danger/20 bg-danger-subtle px-4 py-3 shadow-lg">
+          <span className="text-sm text-danger">{toastMessage}</span>
+          <button
+            onClick={dismissToast}
+            className="text-xs font-medium text-danger underline hover:text-red-500"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       <TaskForm
         isOpen={isFormOpen}
