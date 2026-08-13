@@ -24,6 +24,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ### TKT-001: Implement SQLite Database & Migration Engine ✅ Done
 
+- **Spec**: [`01-sqlite-database-migrations.md`](./spec/01-sqlite-database-migrations.md)
+
 **As a** system, **I want to** initialize a local SQLite database with an automated migration engine **so that** the app can store local-first data reliably.
 
 - **Status**: `src/main/db/database.ts`, `src/main/db/migration-runner.ts`, `src/main/db/migrations/001_init.sql` — WAL mode enabled, all 6 tables (`tasks`, `task_time_logs`, `recurring_rules`, `daily_plans`, `performance_reports`, `schema_version`) created on startup.
@@ -36,6 +38,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ### TKT-002: Establish Type-Safe IPC Bridge ✅ Done
 
+- **Spec**: [`02-ipc-bridge-protocol.md`](./spec/02-ipc-bridge-protocol.md)
+
 **As a** developer, **I want to** communicate between the main and renderer processes using a strongly typed IPC bridge **so that** data exchange is secure and predictable.
 
 - **Status**: `src/shared/ipcChannels.ts` (typed `IpcChannelMap`), `src/shared/ipcResult.ts` (standardized `IpcResult`), `src/preload/index.ts` (contextBridge), `src/main/ipc/register-ipc.ts`, `src/main/ipc/handlers.ts`. No `any` types in IPC payloads.
@@ -47,6 +51,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 - **INVEST Check**: Small and Testable (can mock calls).
 
 ### TKT-003: Configure safeStorage Keychain for API Keys ✅ Done
+
+- **Spec**: [`03-safestorage-keychain.md`](./spec/03-safestorage-keychain.md)
 
 **As a** privacy-conscious user, **I want my** AI API keys encrypted natively **so that** they cannot be read by malicious software.
 
@@ -62,6 +68,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 ## Phase 2: Task Management
 
 ### TKT-004: Implement Task Backlog CRUD ✅ Done
+
+- **Spec**: [`04-backlog-crud.md`](./spec/04-backlog-crud.md)
 
 **As a** user, **I want to** create, read, update, and delete tasks in my backlog **so that** I can track things I need to do.
 
@@ -79,6 +87,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ### TKT-005: Integrate Rich Markdown Notes for Tasks ✅ Done
 
+- **Spec**: [`05-rich-markdown-notes.md`](./spec/05-rich-markdown-notes.md)
+
 **As a** user, **I want to** add rich formatting (lists, links, code) to my task descriptions **so that** I have necessary context when starting work.
 
 - **Status**: Complete — `src/renderer/src/components/MarkdownEditor.tsx` (TipTap wrapper with toolbar: bold, italic, strikethrough, H1-H3, bullet/ordered/task lists, blockquote, code block, link), `src/renderer/src/components/TaskForm.tsx` (auto-save 1.5s debounce, save indicator, preview toggle, unsaved-changes warning). `@tailwindcss/typography` configured for preview rendering. Backend enforces 100k char limit. Extensions: `@tiptap/starter-kit`, `@tiptap/extension-task-list`, `@tiptap/extension-task-item`, `@tiptap/extension-code-block`, `@tiptap/extension-link`.
@@ -88,6 +98,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 - **Remaining (edge cases, not blocking):** Image paste handling, virtualized scrolling for very long content, Markdown serializer (currently stores as HTML).
 
 ### TKT-006: Build Task Status Workflow UI ✅ Done
+
+- **Spec**: [`06-task-status-workflow.md`](./spec/06-task-status-workflow.md)
 
 **As a** user, **I want to** move tasks through distinct states (Todo → In Progress → Done) **so that** I can track my active execution.
 
@@ -101,6 +113,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 - **Depends on TKT-011/TKT-012 for**: Timer auto-start/pause on transitions, `actual_minutes` calculation on completion.
 
 ### TKT-007: Develop the "Today" View ✅ Done
+
+- **Spec**: [`07-today-view.md`](./spec/07-today-view.md)
 
 **As a** user, **I want to** view a focused list of tasks selected for today **so that** I am not distracted by the full backlog.
 
@@ -116,6 +130,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ### TKT-008: Define Recurring Task Templates ✅ Done
 
+- **Spec**: [`08-recurring-rule-definitions.md`](./spec/08-recurring-rule-definitions.md)
+
 **As a** user, **I want to** create task templates that repeat on a schedule (e.g., daily at 8 PM) **so that** I don't have to recreate habits manually.
 
 - **Status**: `src/main/db/recurring-rule-repository.ts` (full CRUD + toggle + validation), `src/main/ipc/handlers.ts` (5 recurring handlers), `src/main/ipc/__tests__/handlers.test.ts` (9 test cases), `src/renderer/src/stores/recurringRuleStore.ts` (Zustand store), `src/renderer/src/components/RecurringRuleForm.tsx` (create/edit form with frequency, days, time anchor), `src/renderer/src/components/RecurringRuleCard.tsx` (card with toggle/edit/delete), `src/renderer/src/components/RecurringRulesPanel.tsx` (list panel with empty state), `src/renderer/src/components/SettingsView.tsx` (integrated panel), `src/renderer/src/components/DeleteConfirmationDialog.tsx` (updated for rule deletion wording).
@@ -126,6 +142,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ### TKT-009: Build Daily Instantiation Engine ✅ Done
 
+- **Spec**: [`09-daily-instantiation-engine.md`](./spec/09-daily-instantiation-engine.md)
+
 **As a** system, **I want to** automatically instantiate today's recurring tasks on startup or date-rollover **so that** the user's daily habits are ready to go.
 
 - **Status**: `src/main/services/recurring-engine.ts` (background service with `instantiateDailyTasks`, `getStartOfDay`, `matchesTodayFrequency`), `src/main/index.ts` (hooks engine on startup + 60s midnight-check interval), `src/main/db/task-repository.ts` (added `createRecurringChildTask` for rule→task instantiation), `src/main/services/__tests__/recurring-engine.test.ts` (11 tests: daily/weekly/monthly creation, dedup, inactive skip, time anchor, multi-rule count).
@@ -135,6 +153,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 - **INVEST Check**: Independent (standalone service, depends on existing repos), Valuable (automatic task generation), Small (single service + hook).
 
 ### TKT-010: Implement Fixed-Time Blocking ✅ Done
+
+- **Spec**: [`10-fixed-time-blocking.md`](./spec/10-fixed-time-blocking.md)
 
 **As a** user, **I want to** mark specific recurring tasks at fixed times **so that** the AI planner treats them as non-negotiable anchor blocks.
 
@@ -150,6 +170,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ### TKT-011: Implement Start/Pause Task Timer ✅ Done
 
+- **Spec**: [`11-start-pause-timer.md`](./spec/11-start-pause-timer.md)
+
 **As a** user, **I want to** start and pause a timer on my active task **so that** I can track exactly how much time I spend on it.
 
 - **Status**: Complete — `src/main/db/time-log-repository.ts` (time log CRUD + duration calculations), `src/main/services/timer-service.ts` (background-safe 1s tick loop, recovery on startup, auto-pausing previous task timer, cleanup on app quit), `src/shared/ipcChannels.ts` (`timer:start`, `timer:pause`, `timer:getActive`), `src/preload/index.ts` (`onTimerTick` subscription bridge), `src/renderer/src/stores/timerStore.ts` (Zustand store), `src/renderer/src/components/Header.tsx` (live active timer readout with pulsing indicator and pause control).
@@ -162,6 +184,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ### TKT-012: Calculate Actual Task Duration ✅ Done
 
+- **Spec**: [`12-actual-duration-calculation.md`](./spec/12-actual-duration-calculation.md)
+
 **As a** user, **I want** the system to aggregate my start/pause intervals **so that** I get an accurate total time spent when completing a task.
 
 - **Status**: Complete — `src/main/db/time-log-repository.ts` (`pauseTimeLog` calculates interval duration and aggregates total minutes onto `tasks.actual_minutes`).
@@ -170,6 +194,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
   - ✅ Total duration is computed accurately and persisted to `tasks.actual_minutes`.
 
 ### TKT-013: Calculate & Store Variance Metrics ❌ Not Started
+
+- **Spec**: [`13-variance-metrics.md`](./spec/13-variance-metrics.md)
 
 **As a** system, **I want to** compute the difference between estimated and actual time **so that** the AI can adjust my future scheduling.
 
@@ -184,6 +210,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ### TKT-014: Integrate DeepSeek API Client ❌ Not Started
 
+- **Spec**: [`14-deepseek-api-client.md`](./spec/14-deepseek-api-client.md)
+
 **As a** system, **I want to** connect to the DeepSeek API with retries and timeouts **so that** AI features can be requested reliably.
 
 - **Status**: `openai` ^4.83.0 is in `package.json` dependencies. No client module exists. `src/main/services/prompts/` directory not created. No retries/timeouts/response validation code.
@@ -192,6 +220,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
   - Graceful fallback/timeout handling implemented.
 
 ### TKT-015: Build Daily AI Planning (Morning Standup) ❌ Not Started
+
+- **Spec**: [`15-daily-planning.md`](./spec/15-daily-planning.md)
 
 **As a** user, **I want** the AI to propose a daily schedule based on my backlog, fixed blocks, and historical variance **so that** I can plan realistically.
 
@@ -202,6 +232,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ### TKT-016: UI for Plan Review & Approval ❌ Not Started
 
+- **Spec**: [`16-plan-review-approval.md`](./spec/16-plan-review-approval.md)
+
 **As a** user, **I want to** review and modify the AI's proposed schedule before it applies **so that** I retain final control over my day.
 
 - **Status**: No UI; no plan-approval logic.
@@ -211,6 +243,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ### TKT-017: Generate AI Performance Reports ❌ Not Started
 
+- **Spec**: [`17-performance-report-generation.md`](./spec/17-performance-report-generation.md)
+
 **As a** user, **I want** the AI to analyze my completed tasks over a timeframe **so that** I can receive coaching on my estimation accuracy.
 
 - **Status**: `ai:generateReport` handler returns `NOT_IMPLEMENTED`. `performance_reports` table + `PerformanceReport` type exist but unused.
@@ -219,6 +253,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
   - AI returns structured insights on under/over-estimation patterns.
 
 ### TKT-018: Implement AI Report Caching ❌ Not Started
+
+- **Spec**: [`18-report-caching.md`](./spec/18-report-caching.md)
 
 **As a** system, **I want to** cache performance reports locally **so that** I minimize unnecessary/costly API calls for historical data.
 
@@ -232,6 +268,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ### TKT-019: Setup Zustand Stores 🟡 In Progress
 
+- **Spec**: [`19-zustand-stores.md`](./spec/19-zustand-stores.md)
+
 **As a** developer, **I want to** manage frontend state with Zustand **so that** UI components stay perfectly in sync without deep prop drilling.
 
 - **Status**: Partially complete — `src/renderer/src/stores/taskStore.ts` (task CRUD + filters), `src/renderer/src/stores/recurringRuleStore.ts` (recurring rule CRUD + toggle), `src/renderer/src/stores/timerStore.ts` (timer state + tick subscriptions). No user-settings store yet.
@@ -242,6 +280,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
   - ❌ User Settings store (theme preference, API key status).
 
 ### TKT-020: Build Main Dashboard Layout ✅ Done
+
+- **Spec**: [`20-dashboard-ui.md`](./spec/20-dashboard-ui.md)
 
 **As a** user, **I want to** see my Today tasks, active timer, and backlog in a unified shell **so that** I can easily navigate my workflow.
 
@@ -254,6 +294,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ### TKT-021: Theme System & Iconography 🟡 In Progress
 
+- **Specs**: [`22-dark-light-theme.md`](./spec/22-dark-light-theme.md), [`23-icon-system.md`](./spec/23-icon-system.md)
+
 **As a** user, **I want to** toggle between light and dark themes with distinct iconography **so that** the app is comfortable to use in any lighting.
 
 - **Status**: Partially complete — `src/renderer/src/assets/main.css` defines full dual-theme CSS custom properties (`:root` light theme + `.dark` dark theme with all color tokens mapped via `tailwind.config.js`). Lucide React icons used throughout: `Sidebar.tsx` (Inbox, Calendar, Lightbulb, BarChart3, Settings), `StatusFooter.tsx` (CheckCircle2, Key, KeyRound, Clock), `TaskItem.tsx`, `RecurringRuleCard.tsx`, etc. **No theme toggle UI** — the `.dark` class is never applied at runtime; app runs in light mode only.
@@ -265,6 +307,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ### TKT-022: Offline Resilience & Error Handling ❌ Not Started
 
+- **Specs**: [`24-offline-resilience.md`](./spec/24-offline-resilience.md), [`26-error-handling-reconnection.md`](./spec/26-error-handling-reconnection.md)
+
 **As a** user, **I want** my task lists and timers to work flawlessly offline **so that** only AI-specific features are disabled when my internet drops.
 
 - **Status**: No offline indicator, no AI-unreachable UI, no reconnection logic.
@@ -273,6 +317,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
   - Clear UI indicator when AI is unreachable.
 
 ### TKT-023: Electron App Packaging 🟡 In Progress
+
+- **Spec**: [`27-electron-packaging.md`](./spec/27-electron-packaging.md)
 
 **As a** user, **I want to** download a standalone executable **so that** I can install the app easily on my machine.
 
@@ -283,6 +329,8 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 - **Remaining**: Fix renderer build pipeline; produce distributable artifacts.
 
 ### TKT-024: Add Hover Tooltips to Icon Buttons ❌ Not Started
+
+- **Spec**: [`23-icon-system.md`](./spec/23-icon-system.md)
 
 **As a** user, **I want to** see a text label when hovering over icon-only buttons **so that** I understand what each action does without trial-and-error.
 
