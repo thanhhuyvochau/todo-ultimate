@@ -6,6 +6,8 @@ import type {
   PerformanceReport,
   AIScheduleInput,
   RecurringRule,
+  TaskVariance,
+  VarianceMetrics,
 } from "./models";
 
 export interface IpcChannelMap {
@@ -54,6 +56,14 @@ export interface IpcChannelMap {
   "recurring:toggle": {
     request: { id: string };
     response: RecurringRule;
+  };
+  "metrics:getVariance": {
+    request: { timeframeStart?: number; timeframeEnd?: number };
+    response: VarianceMetrics;
+  };
+  "metrics:getTaskVariance": {
+    request: { taskId: string };
+    response: TaskVariance | null;
   };
 }
 

@@ -193,16 +193,20 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
   - ✅ `task_time_logs` table records intervals.
   - ✅ Total duration is computed accurately and persisted to `tasks.actual_minutes`.
 
-### TKT-013: Calculate & Store Variance Metrics ❌ Not Started
+### TKT-013: Calculate & Store Variance Metrics ✅ Done
 
 - **Spec**: [`13-variance-metrics.md`](./spec/13-variance-metrics.md)
 
 **As a** system, **I want to** compute the difference between estimated and actual time **so that** the AI can adjust my future scheduling.
 
-- **Status**: `actual_minutes` column exists in `tasks` table. No Δ = Actual − Estimated computation anywhere.
+- **Status**: Complete — `src/main/db/migrations/003_task_completed_at.sql` (`completed_at` column, set on →`completed` transition), `src/main/db/task-repository.ts` (`getCompletedTasks(timeframe?)`), `src/main/services/variance-service.ts` (`getTaskVariance`, `getVarianceMetrics`, `formatVarianceContext`), `src/shared/models.ts` (`TaskVariance`, `VarianceBucket`, `VarianceMetrics`, `TaskType`, `AIScheduleInput.historicalVariance`), `src/shared/ipcChannels.ts` (`metrics:getVariance`, `metrics:getTaskVariance`), `src/preload/index.ts` + `src/shared/api.ts` (exposed `getVarianceMetrics`/`getTaskVariance`), `src/main/ipc/handlers.ts` (handlers + timer finalize on completion), `src/renderer/src/components/VarianceBadge.tsx` (Δ badge on completed task cards).
 - **Acceptance Criteria**:
-  - Variance (Δ = Actual − Estimated) is computed on completion.
-  - Data is made available to the AI via query endpoints.
+  - ✅ Variance (Δ = Actual − Estimated) computed on-demand for completed tasks (per-task + aggregate by priority and task type).
+  - ✅ Data made available to the AI via `metrics:getVariance` / `metrics:getTaskVariance` query endpoints, plus `formatVarianceContext` prompt snippet for TKT-015.
+  - ✅ Δ badge displayed on completed task cards (red `+Xm` underestimated / green `−Xm` overestimated).
+  - ✅ `tasks:update` finalizes any unclosed timer on completion so `actual_minutes` is complete before Δ is derived.
+- **Tests**: `src/main/services/__tests__/variance-service.test.ts`, `src/main/ipc/__tests__/handlers.test.ts` (metrics handlers), `src/renderer/src/components/__tests__/VarianceBadge.test.tsx`.
+- **Deferred (per spec dependencies)**: Trend chart + accuracy gauge → report dashboard (TKT-017/TKT-025); actual prompt assembly → TKT-015.
 
 ---
 

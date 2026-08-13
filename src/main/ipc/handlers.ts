@@ -2,9 +2,11 @@ import type { IpcChannelMap } from "@/shared/ipcChannels";
 import type { IpcResult } from "@/shared/ipcResult";
 import { ok, fail } from "@/shared/ipcResult";
 import * as taskRepo from "@/main/db/task-repository";
+import * as timeLogRepo from "@/main/db/time-log-repository";
 import * as recurringRuleRepo from "@/main/db/recurring-rule-repository";
 import * as keychainService from "@/main/services/keychain-service";
 import * as timerService from "@/main/services/timer-service";
+import * as varianceService from "@/main/services/variance-service";
 
 type HandlerMap = {
   [K in keyof IpcChannelMap]: (
@@ -37,6 +39,12 @@ export const handlers: HandlerMap = {
 
   "tasks:update": (data) => {
     try {
+      if (data.status === "completed") {
+        const unclosed = timeLogRepo.getUnclosedTimeLog(data.id);
+        if (unclosed) {
+          timerService.pauseTimer(data.id);
+        }
+      }
       const task = taskRepo.updateTask(data);
       return ok(task);
     } catch (err) {
@@ -242,6 +250,27 @@ export const handlers: HandlerMap = {
         return fail("NOT_FOUND", error.message ?? "Recurring rule not found.");
       }
       return fail("DB_WRITE_FAILED", "Failed to toggle recurring rule.");
+    }
+  },
+
+  "metrics:getVariance": ({ timeframeStart, timeframeEnd }) => {
+    try {
+      const metrics = varianceService.getVarianceMetrics({
+        start: timeframeStart,
+        end: timeframeEnd,
+      });
+      return ok(metrics);
+    } catch (err) {
+      return fail("DB_READ_FAILED", "Failed to compute variance metrics.");
+    }
+  },
+
+  "metrics:getTaskVariance": ({ taskId }) => {
+    try {
+      const variance = varianceService.getTaskVariance(taskId);
+      return ok(variance);
+    } catch (err) {
+      return fail("DB_READ_FAILED", "Failed to compute task variance.");
     }
   },
 };

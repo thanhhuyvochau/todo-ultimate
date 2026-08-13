@@ -24,6 +24,7 @@ function createTable(db: Database.Database) {
       is_recurring_child INTEGER DEFAULT 0,
       recurring_rule_id TEXT,
       scheduled_date INTEGER,
+      completed_at INTEGER,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     )

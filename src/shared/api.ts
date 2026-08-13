@@ -54,4 +54,10 @@ export interface RendererApi {
   toggleRecurringRule: (
     id: IpcChannelMap["recurring:toggle"]["request"],
   ) => Promise<IpcResult<IpcChannelMap["recurring:toggle"]["response"]>>;
+  getVarianceMetrics: (
+    params: IpcChannelMap["metrics:getVariance"]["request"],
+  ) => Promise<IpcResult<IpcChannelMap["metrics:getVariance"]["response"]>>;
+  getTaskVariance: (
+    params: IpcChannelMap["metrics:getTaskVariance"]["request"],
+  ) => Promise<IpcResult<IpcChannelMap["metrics:getTaskVariance"]["response"]>>;
 }

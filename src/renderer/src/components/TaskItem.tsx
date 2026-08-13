@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { Task, TaskStatus, TaskPriority } from '@shared/models';
 import { PriorityBadge } from './PriorityBadge';
+import { VarianceBadge } from './VarianceBadge';
 
 const PRIORITY_CYCLE: TaskPriority[] = ['low', 'medium', 'high'];
 
@@ -261,6 +262,7 @@ export function TaskItem({
           <span className="shrink-0 font-mono text-xs text-text-muted">
             {formatMinutes(task.estimatedMinutes)}
           </span>
+          <VarianceBadge task={task} />
 
           {/* Actions (shown on hover) */}
           <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-100 group-hover:opacity-100">

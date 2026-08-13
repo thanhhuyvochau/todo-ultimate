@@ -31,6 +31,10 @@ const api: RendererApi = {
     ipcRenderer.invoke("recurring:delete", params),
   toggleRecurringRule: (params) =>
     ipcRenderer.invoke("recurring:toggle", params),
+  getVarianceMetrics: (params) =>
+    ipcRenderer.invoke("metrics:getVariance", params),
+  getTaskVariance: (params) =>
+    ipcRenderer.invoke("metrics:getTaskVariance", params),
 };
 
 contextBridge.exposeInMainWorld("api", api);

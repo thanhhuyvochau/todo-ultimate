@@ -35,6 +35,7 @@ beforeEach(() => {
       is_recurring_child INTEGER DEFAULT 0,
       recurring_rule_id TEXT,
       scheduled_date INTEGER,
+      completed_at INTEGER,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
@@ -843,3 +844,78 @@ describe("timer IPC handlers", () => {
   });
 });
 
+describe("metrics handlers", () => {
+  it("metrics:getVariance returns empty metrics when no completed tasks", () => {
+    const result = handlers["metrics:getVariance"]({});
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.totalCompleted).toBe(0);
+      expect(result.data.overallMeanVariance).toBe(0);
+      expect(result.data.byPriority.high.count).toBe(0);
+    }
+  });
+
+  it("metrics:getVariance computes variance for completed tasks", () => {
+    db.prepare(
+      `
+      INSERT INTO tasks (id, title, priority, status, estimated_minutes, actual_minutes, is_recurring_child, completed_at, created_at, updated_at)
+      VALUES ('var-1', 'Variance Task', 'high', 'completed', 30, 45, 0, 2000, 1000, 1000)
+    `,
+    ).run();
+
+    const result = handlers["metrics:getVariance"]({});
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.totalCompleted).toBe(1);
+      expect(result.data.overallMeanVariance).toBe(15);
+      expect(result.data.underestimationRate).toBe(1);
+    }
+  });
+
+  it("metrics:getTaskVariance returns null for unknown task", () => {
+    const result = handlers["metrics:getTaskVariance"]({ taskId: "nope" });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data).toBeNull();
+    }
+  });
+
+  it("tasks:update to completed stamps completed_at", () => {
+    const create = handlers["tasks:create"]({
+      title: "To Complete",
+      description: null,
+      priority: "medium",
+      status: "todo",
+      estimatedMinutes: 30,
+      actualMinutes: null,
+      isRecurringChild: false,
+      recurringRuleId: null,
+      scheduledDate: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    expect(create.ok).toBe(true);
+    if (!create.ok) return;
+
+    db.prepare("UPDATE tasks SET actual_minutes = 45 WHERE id = ?").run(
+      create.data.id,
+    );
+
+    const start = handlers["tasks:update"]({
+      id: create.data.id,
+      status: "in_progress",
+    });
+    expect(start.ok).toBe(true);
+
+    const update = handlers["tasks:update"]({
+      id: create.data.id,
+      status: "completed",
+    });
+    expect(update.ok).toBe(true);
+
+    const row = db
+      .prepare("SELECT completed_at FROM tasks WHERE id = ?")
+      .get(create.data.id) as { completed_at: number | null };
+    expect(row.completed_at).not.toBeNull();
+  });
+});

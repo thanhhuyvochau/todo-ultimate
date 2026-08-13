@@ -13,6 +13,7 @@ interface TaskRow {
   is_recurring_child: number;
   recurring_rule_id: string | null;
   scheduled_date: number | null;
+  completed_at: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -29,6 +30,7 @@ function rowToTask(row: TaskRow): Task {
     isRecurringChild: row.is_recurring_child === 1,
     recurringRuleId: row.recurring_rule_id,
     scheduledDate: row.scheduled_date,
+    completedAt: row.completed_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -244,6 +246,10 @@ export function updateTask(patch: Partial<Task> & { id: string }): Task {
     "scheduledDate" in patch
       ? (patch as { scheduledDate: number | null }).scheduledDate
       : existing.scheduled_date;
+  const completedAt =
+    patch.status === "completed" && existing.status !== "completed"
+      ? now
+      : existing.completed_at;
 
   const validationError = validateTaskInput(
     patch.title !== undefined ? patch.title : existing.title,
@@ -260,7 +266,7 @@ export function updateTask(patch: Partial<Task> & { id: string }): Task {
   }
 
   const stmt = db.prepare(`
-    UPDATE tasks SET title = ?, description = ?, priority = ?, status = ?, estimated_minutes = ?, scheduled_date = ?, updated_at = ?
+    UPDATE tasks SET title = ?, description = ?, priority = ?, status = ?, estimated_minutes = ?, scheduled_date = ?, completed_at = ?, updated_at = ?
     WHERE id = ?
   `);
   stmt.run(
@@ -270,6 +276,7 @@ export function updateTask(patch: Partial<Task> & { id: string }): Task {
     status,
     estimatedMinutes,
     scheduledDate,
+    completedAt,
     now,
     patch.id,
   );
@@ -288,4 +295,33 @@ export function deleteTask(id: string): { success: boolean } {
   }
   db.prepare("DELETE FROM tasks WHERE id = ?").run(id);
   return { success: true };
+}
+
+export function getCompletedTasks(timeframe?: {
+  start?: number;
+  end?: number;
+}): Task[] {
+  const db = getDb();
+  const clauses: string[] = [
+    "status = 'completed'",
+    "actual_minutes IS NOT NULL",
+  ];
+  const params: unknown[] = [];
+
+  if (timeframe?.start !== undefined) {
+    clauses.push("completed_at >= ?");
+    params.push(timeframe.start);
+  }
+  if (timeframe?.end !== undefined) {
+    clauses.push("completed_at <= ?");
+    params.push(timeframe.end);
+  }
+
+  const stmt = db.prepare(
+    `SELECT * FROM tasks WHERE ${clauses.join(" AND ")} ORDER BY completed_at ASC`,
+  );
+  const rows = (
+    params.length > 0 ? stmt.all(...params) : stmt.all()
+  ) as TaskRow[];
+  return rows.map(rowToTask);
 }

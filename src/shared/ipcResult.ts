@@ -14,7 +14,10 @@ export type IpcErrorCode =
   | "NOT_IMPLEMENTED"
   | "INTERNAL_ERROR"
   | "NOT_FOUND"
-  | "TASK_ALREADY_ACTIVE";
+  | "TASK_ALREADY_ACTIVE"
+  | "TIMER_START_FAILED"
+  | "TIMER_PAUSE_FAILED"
+  | "TIMER_READ_FAILED";
 
 export type IpcResult<T> =
   { ok: true; data: T } | { ok: false; error: IpcError };
