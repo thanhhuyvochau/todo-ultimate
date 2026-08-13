@@ -32,6 +32,9 @@ export interface RendererApi {
   generateReport: (
     timeframeDays: IpcChannelMap["ai:generateReport"]["request"],
   ) => Promise<IpcResult<IpcChannelMap["ai:generateReport"]["response"]>>;
+  testConnection: () => Promise<
+    IpcResult<IpcChannelMap["ai:testConnection"]["response"]>
+  >;
   setApiKey: (
     apiKey: IpcChannelMap["key:set"]["request"],
   ) => Promise<IpcResult<IpcChannelMap["key:set"]["response"]>>;

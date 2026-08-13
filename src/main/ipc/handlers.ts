@@ -7,11 +7,14 @@ import * as recurringRuleRepo from "@/main/db/recurring-rule-repository";
 import * as keychainService from "@/main/services/keychain-service";
 import * as timerService from "@/main/services/timer-service";
 import * as varianceService from "@/main/services/variance-service";
+import * as deepseekService from "@/main/services/deepseekService";
 
 type HandlerMap = {
   [K in keyof IpcChannelMap]: (
     request: IpcChannelMap[K]["request"],
-  ) => IpcResult<IpcChannelMap[K]["response"]>;
+  ) =>
+    | IpcResult<IpcChannelMap[K]["response"]>
+    | Promise<IpcResult<IpcChannelMap[K]["response"]>>;
 };
 
 export const handlers: HandlerMap = {
@@ -128,6 +131,15 @@ export const handlers: HandlerMap = {
 
   "ai:generateReport": () => {
     return fail("NOT_IMPLEMENTED", "AI report service is not yet implemented.");
+  },
+
+  "ai:testConnection": async () => {
+    try {
+      const success = await deepseekService.testConnection();
+      return ok({ success });
+    } catch (err) {
+      return fail("INTERNAL_ERROR", "Failed to test the AI connection.");
+    }
   },
 
   "key:set": ({ apiKey }) => {

@@ -7,7 +7,9 @@ import { fail } from "@/shared/ipcResult";
 type HandlerMap = {
   [K in keyof IpcChannelMap]: (
     request: IpcChannelMap[K]["request"],
-  ) => IpcResult<IpcChannelMap[K]["response"]>;
+  ) =>
+    | IpcResult<IpcChannelMap[K]["response"]>
+    | Promise<IpcResult<IpcChannelMap[K]["response"]>>;
 };
 
 export function registerIpcHandlers(handlers: HandlerMap): void {

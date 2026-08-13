@@ -21,6 +21,7 @@ const api: RendererApi = {
   },
   generatePlan: (input) => ipcRenderer.invoke("ai:generatePlan", input),
   generateReport: (params) => ipcRenderer.invoke("ai:generateReport", params),
+  testConnection: () => ipcRenderer.invoke("ai:testConnection", {}),
   setApiKey: (params) => ipcRenderer.invoke("key:set", params),
   getApiKey: () => ipcRenderer.invoke("key:get", {}),
   deleteApiKey: () => ipcRenderer.invoke("key:delete", {}),

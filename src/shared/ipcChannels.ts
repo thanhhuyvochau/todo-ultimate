@@ -37,6 +37,7 @@ export interface IpcChannelMap {
     request: { timeframeDays: number };
     response: PerformanceReport;
   };
+  "ai:testConnection": { request: object; response: { success: boolean } };
   "key:set": { request: { apiKey: string }; response: { success: boolean } };
   "key:get": { request: object; response: { hasKey: boolean } };
   "key:delete": { request: object; response: { success: boolean } };

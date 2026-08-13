@@ -17,6 +17,12 @@ vi.mock("../../services/keychain-service", () => ({
   isEncryptionAvailable: () => true,
 }));
 
+const mockTestConnection = vi.fn<() => Promise<boolean>>();
+
+vi.mock("../../services/deepseekService", () => ({
+  testConnection: () => mockTestConnection(),
+}));
+
 let db: Database.Database;
 
 beforeEach(() => {
@@ -518,6 +524,26 @@ describe("timer and ai stubs", () => {
     const result = handlers["ai:generateReport"]({ timeframeDays: 7 });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe("NOT_IMPLEMENTED");
+  });
+});
+
+describe("ai:testConnection", () => {
+  it("returns success true when connection works", async () => {
+    mockTestConnection.mockResolvedValue(true);
+    const result = await handlers["ai:testConnection"]({});
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.success).toBe(true);
+    }
+  });
+
+  it("returns success false when connection fails", async () => {
+    mockTestConnection.mockResolvedValue(false);
+    const result = await handlers["ai:testConnection"]({});
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.success).toBe(false);
+    }
   });
 });
 

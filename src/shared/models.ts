@@ -76,6 +76,88 @@ export interface AIScheduleInput {
   historicalVariance?: VarianceMetrics;
 }
 
+export interface PlannedTaskBlock {
+  taskId: string;
+  title: string;
+  priority: TaskPriority;
+  estimatedMinutes: number;
+  budgetedMinutes: number;
+  scheduledStart: number;
+  isFixed: boolean;
+  rationale: string;
+}
+
+export interface DailyPlanSchedule {
+  date: number;
+  focusHours: number;
+  primaryGoal: string;
+  schedule: PlannedTaskBlock[];
+  unscheduledTasks: string[];
+  summary: string;
+}
+
+export interface DailyPlanRequest {
+  focusHours: number;
+  primaryGoal: string;
+  tasks: {
+    id: string;
+    title: string;
+    priority: TaskPriority;
+    estimatedMinutes: number;
+  }[];
+  fixedBlocks?: AIScheduleInput["fixedBlocks"];
+  historicalVariance?: VarianceMetrics;
+}
+
+export interface PriorityMetrics {
+  meanVariance: number;
+  meanVarianceRatio: number | null;
+  count: number;
+}
+
+export interface ReportMetrics {
+  totalCompleted: number;
+  overallVariance: number;
+  meanAbsoluteVariance: number;
+  byPriority: Record<TaskPriority, PriorityMetrics>;
+  efficiencyScore: number;
+  trendDirection: "improving" | "declining" | "stable";
+}
+
+export interface ReportPattern {
+  title: string;
+  description: string;
+  severity: "info" | "warning" | "positive";
+}
+
+export interface ReportAdvice {
+  category: "estimation" | "priority" | "scheduling" | "focus";
+  recommendation: string;
+  actionableTip: string;
+}
+
+export interface PerformanceReportContent {
+  timeframe: { start: number; end: number };
+  generatedAt: number;
+  metrics: ReportMetrics;
+  patterns: ReportPattern[];
+  advice: ReportAdvice[];
+  summary: string;
+}
+
+export interface ReportParams {
+  timeframeStart: number;
+  timeframeEnd: number;
+  completedTasks: {
+    id: string;
+    title: string;
+    priority: TaskPriority;
+    estimatedMinutes: number;
+    actualMinutes: number;
+  }[];
+  metrics: VarianceMetrics;
+}
+
 export interface TaskVariance {
   taskId: string;
   estimatedMinutes: number;
