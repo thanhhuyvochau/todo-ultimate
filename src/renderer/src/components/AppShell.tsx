@@ -6,10 +6,11 @@ import { BacklogView } from "./BacklogView";
 import { TodayView } from "./TodayView";
 import { PlanView } from "./PlanView";
 import { SettingsView } from "./SettingsView";
+import { ReportsView } from "./ReportsView";
 import { StatusFooter } from "./StatusFooter";
 import { useTimerStore } from "../stores/timerStore";
 
-const ENABLED_VIEWS: ViewName[] = ["backlog", "today", "plan"];
+const ENABLED_VIEWS: ViewName[] = ["backlog", "today", "plan", "reports"];
 
 export function AppShell() {
   const [activeView, setActiveView] = useState<ViewName>("backlog");
@@ -42,31 +43,11 @@ export function AppShell() {
           {activeView === "plan" && (
             <PlanView onApproved={() => setActiveView("today")} />
           )}
-          {activeView === "reports" && (
-            <PlaceholderView
-              label="Reports"
-              sublabel="Performance insights coming soon"
-            />
-          )}
+          {activeView === "reports" && <ReportsView />}
           {activeView === "settings" && <SettingsView />}
         </main>
       </div>
       <StatusFooter />
-    </div>
-  );
-}
-
-function PlaceholderView({
-  label,
-  sublabel,
-}: {
-  label: string;
-  sublabel: string;
-}) {
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-1">
-      <p className="text-sm font-medium text-text-secondary">{label}</p>
-      <p className="text-xs text-text-muted">{sublabel}</p>
     </div>
   );
 }

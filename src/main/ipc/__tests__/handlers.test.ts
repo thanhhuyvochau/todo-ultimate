@@ -38,6 +38,12 @@ vi.mock("../../services/daily-plan-service", () => ({
   generateDailyPlan: (...args: unknown[]) => mockGeneratePlan(...args),
 }));
 
+const mockGenerateReport = vi.fn();
+
+vi.mock("../../services/report-service", () => ({
+  generateReport: (...args: unknown[]) => mockGenerateReport(...args),
+}));
+
 let db: Database.Database;
 
 beforeEach(() => {
@@ -580,10 +586,67 @@ describe("ai stubs", () => {
     if (!result.ok) expect(result.error.code).toBe("VALIDATION_ERROR");
   });
 
-  it("ai:generateReport returns NOT_IMPLEMENTED", () => {
-    const result = handlers["ai:generateReport"]({ timeframeDays: 7 });
+  it("ai:generateReport returns the report on success", async () => {
+    const report = {
+      timeframe: { start: 1000, end: 2000 },
+      generatedAt: 3000,
+      metrics: {
+        totalCompleted: 1,
+        overallVariance: 15,
+        meanAbsoluteVariance: 15,
+        byPriority: {
+          low: { meanVariance: 0, meanVarianceRatio: null, count: 0 },
+          medium: { meanVariance: 0, meanVarianceRatio: null, count: 0 },
+          high: { meanVariance: 15, meanVarianceRatio: 1.5, count: 1 },
+        },
+        efficiencyScore: 72,
+        trendDirection: "improving",
+      },
+      patterns: [],
+      advice: [],
+      summary: "You underestimate high-priority tasks.",
+    };
+    mockGenerateReport.mockResolvedValueOnce(report);
+
+    const result = await handlers["ai:generateReport"]({
+      timeframeStart: 1000,
+      timeframeEnd: 2000,
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toEqual(report);
+  });
+
+  it("ai:generateReport maps AI_AUTH_FAILED", async () => {
+    mockGenerateReport.mockRejectedValueOnce(
+      Object.assign(new Error("No API key configured."), {
+        code: "AI_AUTH_FAILED",
+      }),
+    );
+
+    const result = await handlers["ai:generateReport"]({
+      timeframeStart: 1000,
+      timeframeEnd: 2000,
+    });
+
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe("NOT_IMPLEMENTED");
+    if (!result.ok) expect(result.error.code).toBe("AI_AUTH_FAILED");
+  });
+
+  it("ai:generateReport maps VALIDATION_ERROR", async () => {
+    mockGenerateReport.mockRejectedValueOnce(
+      Object.assign(new Error("Invalid report timeframe."), {
+        code: "VALIDATION_ERROR",
+      }),
+    );
+
+    const result = await handlers["ai:generateReport"]({
+      timeframeStart: 2000,
+      timeframeEnd: 1000,
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("VALIDATION_ERROR");
   });
 });
 

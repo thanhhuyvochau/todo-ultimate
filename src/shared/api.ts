@@ -30,7 +30,7 @@ export interface RendererApi {
     input: IpcChannelMap["ai:generatePlan"]["request"],
   ) => Promise<IpcResult<IpcChannelMap["ai:generatePlan"]["response"]>>;
   generateReport: (
-    timeframeDays: IpcChannelMap["ai:generateReport"]["request"],
+    params: IpcChannelMap["ai:generateReport"]["request"],
   ) => Promise<IpcResult<IpcChannelMap["ai:generateReport"]["response"]>>;
   testConnection: () => Promise<
     IpcResult<IpcChannelMap["ai:testConnection"]["response"]>

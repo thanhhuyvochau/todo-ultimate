@@ -11,6 +11,7 @@ import * as deepseekService from "@/main/services/deepseekService";
 import * as dailyPlanService from "@/main/services/daily-plan-service";
 import * as dailyPlanRepo from "@/main/db/daily-plan-repository";
 import * as planApprovalService from "@/main/services/plan-approval-service";
+import * as reportService from "@/main/services/report-service";
 import { getStartOfDay } from "@/main/services/recurring-engine";
 
 const AI_IPC_ERROR_CODES = new Set<string>([
@@ -158,8 +159,16 @@ export const handlers: HandlerMap = {
     }
   },
 
-  "ai:generateReport": () => {
-    return fail("NOT_IMPLEMENTED", "AI report service is not yet implemented.");
+  "ai:generateReport": async ({ timeframeStart, timeframeEnd }) => {
+    try {
+      const report = await reportService.generateReport({
+        timeframeStart,
+        timeframeEnd,
+      });
+      return ok(report);
+    } catch (err) {
+      return mapAiError(err);
+    }
   },
 
   "ai:testConnection": async () => {

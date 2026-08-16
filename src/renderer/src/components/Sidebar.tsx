@@ -14,7 +14,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "backlog", label: "Backlog", icon: Inbox, enabled: true },
   { id: "today", label: "Today", icon: Calendar, enabled: true },
   { id: "plan", label: "Daily Plan", icon: Lightbulb, enabled: true },
-  { id: "reports", label: "Reports", icon: BarChart2, enabled: false },
+  { id: "reports", label: "Reports", icon: BarChart2, enabled: true },
   { id: "settings", label: "Settings", icon: Settings, enabled: true },
 ];
 

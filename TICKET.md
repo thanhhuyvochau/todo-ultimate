@@ -259,16 +259,21 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 - **Decisions**: `budgetedMinutes` is stored only in `plan_json` (original `estimated_minutes` preserved for variance metrics); reorder affects stored schedule order only.
 - **Tests**: `src/main/db/__tests__/daily-plan-repository.test.ts`, `src/main/services/__tests__/plan-approval-service.test.ts`, `src/main/ipc/__tests__/handlers.test.ts` (plan handlers).
 
-### TKT-017: Generate AI Performance Reports ❌ Not Started
+### TKT-017: Generate AI Performance Reports ✅ Done
 
 - **Spec**: [`17-performance-report-generation.md`](./spec/17-performance-report-generation.md)
 
 **As a** user, **I want** the AI to analyze my completed tasks over a timeframe **so that** I can receive coaching on my estimation accuracy.
 
-- **Status**: `ai:generateReport` handler returns `NOT_IMPLEMENTED`. `performance_reports` table + `PerformanceReport` type exist but unused.
+- **Status**: `src/main/services/report-service.ts` (orchestration: validates timeframe, gathers `getCompletedTasks` + `getVarianceMetrics`, empty-state fallback, calls `deepseekService.generatePerformanceReport`), `src/main/ipc/handlers.ts` (`ai:generateReport` handler + `mapAiError`), `src/shared/ipcChannels.ts` (`ai:generateReport` request `{timeframeStart, timeframeEnd}` → response `PerformanceReportContent`), `src/shared/api.ts` + `src/preload/index.ts` (updated `generateReport` signature), `src/renderer/src/stores/reportStore.ts` (Zustand store: preset/custom timeframe resolution + generate), `src/renderer/src/components/ReportsView.tsx` (timeframe selector 7/14/30/custom, efficiency gauge, metric cards, priority variance bars, patterns + advice + summary sections, copy-to-clipboard, empty state), wired into `AppShell.tsx` + `Sidebar.tsx` (`reports` enabled).
 - **Acceptance Criteria**:
-  - Gathers tasks in timeframe.
-  - AI returns structured insights on under/over-estimation patterns.
+  - ✅ Gathers tasks in timeframe (completed tasks + variance metrics).
+  - ✅ AI returns structured insights on under/over-estimation patterns (`PerformanceReportContent`: metrics, patterns, advice, summary).
+  - ✅ 7/14/30-day presets + custom date range.
+  - ✅ Metrics/patterns/advice displayed; copy-to-clipboard export.
+  - ✅ Empty state handled gracefully (no-data fallback without an AI call).
+- **Tests**: `src/main/services/__tests__/report-service.test.ts`, `src/main/ipc/__tests__/handlers.test.ts` (report cases), `src/renderer/src/stores/__tests__/reportStore.test.ts`.
+- **Deferred**: `performance_reports` caching + history browsing → TKT-018 (spec 18/25).
 
 ### TKT-018: Implement AI Report Caching ❌ Not Started
 

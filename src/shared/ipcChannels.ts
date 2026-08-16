@@ -4,7 +4,7 @@ import type {
   TaskPriority,
   DailyPlan,
   DailyPlanSchedule,
-  PerformanceReport,
+  PerformanceReportContent,
   AIScheduleInput,
   RecurringRule,
   TaskVariance,
@@ -35,8 +35,8 @@ export interface IpcChannelMap {
   };
   "ai:generatePlan": { request: AIScheduleInput; response: DailyPlanSchedule };
   "ai:generateReport": {
-    request: { timeframeDays: number };
-    response: PerformanceReport;
+    request: { timeframeStart: number; timeframeEnd: number };
+    response: PerformanceReportContent;
   };
   "ai:testConnection": { request: object; response: { success: boolean } };
   "key:set": { request: { apiKey: string }; response: { success: boolean } };
