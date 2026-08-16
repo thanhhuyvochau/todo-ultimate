@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 
-type DeleteItemType = "task" | "rule" | "key";
+type DeleteItemType = "task" | "rule" | "key" | "report";
 
 interface DeleteConfirmationDialogProps {
   isOpen: boolean;
@@ -69,11 +69,15 @@ export function DeleteConfirmationDialog({
                 ? "Delete rule?"
                 : itemType === "key"
                   ? "Remove API key?"
-                  : "Delete task?"}
+                  : itemType === "report"
+                    ? "Delete report?"
+                    : "Delete task?"}
             </p>
             <p className="mt-1 text-xs text-text-muted">
               {itemType === "key" ? (
                 "The stored API key will be permanently removed."
+              ) : itemType === "report" ? (
+                "This cached report will be permanently removed."
               ) : (
                 <>
                   <span className="text-text-secondary">

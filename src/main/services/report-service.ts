@@ -1,7 +1,13 @@
-import type { PerformanceReportContent, ReportParams } from "@/shared/models";
+import type {
+  PerformanceReportContent,
+  PerformanceReportSummary,
+  ReportParams,
+} from "@/shared/models";
 import { getCompletedTasks } from "@/main/db/task-repository";
 import { getVarianceMetrics } from "@/main/services/variance-service";
 import * as deepseekService from "@/main/services/deepseekService";
+import * as reportRepo from "@/main/db/performance-report-repository";
+import { REPORT_PROMPT_VERSION } from "@/main/services/prompts";
 
 export interface GenerateReportParams {
   timeframeStart: number;
@@ -92,5 +98,76 @@ export async function generateReport(
     metrics,
   };
 
-  return deepseekService.generatePerformanceReport(reportParams);
+  const report = await deepseekService.generatePerformanceReport(reportParams);
+
+  reportRepo.saveReport(
+    JSON.stringify(report),
+    params.timeframeStart,
+    params.timeframeEnd,
+    REPORT_PROMPT_VERSION,
+  );
+
+  return report;
+}
+
+function parseCachedReport(
+  report: ReturnType<typeof reportRepo.getById>,
+): PerformanceReportContent | null {
+  if (!report) {
+    return null;
+  }
+  try {
+    return JSON.parse(report.reportJson) as PerformanceReportContent;
+  } catch {
+    console.warn(
+      `Skipping corrupted cached report ${report.id}: invalid JSON.`,
+    );
+    return null;
+  }
+}
+
+export function listReports(): PerformanceReportSummary[] {
+  const summaries: PerformanceReportSummary[] = [];
+  for (const report of reportRepo.listAll()) {
+    const parsed = parseCachedReport(report);
+    if (!parsed) {
+      continue;
+    }
+    summaries.push({
+      id: report.id,
+      timeframeStart: report.timeframeStart,
+      timeframeEnd: report.timeframeEnd,
+      promptVersion: report.promptVersion,
+      createdAt: report.createdAt,
+      efficiencyScore: parsed.metrics.efficiencyScore,
+      totalCompleted: parsed.metrics.totalCompleted,
+    });
+  }
+  return summaries;
+}
+
+export function getCachedReport(id: string): PerformanceReportContent {
+  const report = reportRepo.getById(id);
+  if (!report) {
+    throw Object.assign(new Error("Cached report not found."), {
+      code: "NOT_FOUND",
+    });
+  }
+  const parsed = parseCachedReport(report);
+  if (!parsed) {
+    throw Object.assign(new Error("Cached report is corrupted."), {
+      code: "REPORT_CORRUPTED",
+    });
+  }
+  return parsed;
+}
+
+export function deleteReport(id: string): { success: boolean } {
+  const deleted = reportRepo.deleteById(id);
+  if (!deleted) {
+    throw Object.assign(new Error("Cached report not found."), {
+      code: "NOT_FOUND",
+    });
+  }
+  return { success: true };
 }

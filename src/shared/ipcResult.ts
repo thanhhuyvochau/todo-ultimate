@@ -22,7 +22,8 @@ export type IpcErrorCode =
   | "TASK_ALREADY_ACTIVE"
   | "TIMER_START_FAILED"
   | "TIMER_PAUSE_FAILED"
-  | "TIMER_READ_FAILED";
+  | "TIMER_READ_FAILED"
+  | "REPORT_CORRUPTED";
 
 export type IpcResult<T> =
   { ok: true; data: T } | { ok: false; error: IpcError };

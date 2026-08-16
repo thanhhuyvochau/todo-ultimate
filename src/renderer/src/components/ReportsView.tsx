@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertTriangle,
+  ArrowLeft,
   BarChart2,
   Check,
   CheckCircle2,
@@ -16,9 +17,11 @@ import type {
   TaskPriority,
 } from "@/shared/models";
 import {
+  resolveReportTimeframe,
   useReportStore,
   type ReportTimeframePreset,
 } from "../stores/reportStore";
+import { ReportHistory } from "./ReportHistory";
 
 const PRESETS: { id: ReportTimeframePreset; label: string }[] = [
   { id: "7", label: "7 days" },
@@ -211,6 +214,8 @@ function AdviceSection({ advice }: { advice: ReportAdvice[] }) {
 export function ReportsView() {
   const {
     report,
+    reports,
+    viewingCachedId,
     preset,
     customStart,
     customEnd,
@@ -219,21 +224,46 @@ export function ReportsView() {
     setPreset,
     setCustomRange,
     generateReport,
+    loadReports,
     clearError,
     clearReport,
   } = useReportStore();
 
   const [copied, setCopied] = useState(false);
+  const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
+
+  useEffect(() => {
+    void loadReports();
+  }, [loadReports]);
 
   const customDisabled =
     preset === "custom" &&
     (!customStart || !customEnd || customStart >= customEnd);
 
-  const handleGenerate = async () => {
+  const runGenerate = async () => {
+    setShowReplaceConfirm(false);
     const ok = await generateReport();
     if (!ok) {
       setCopied(false);
     }
+  };
+
+  const handleGenerate = async () => {
+    const { timeframeStart, timeframeEnd } = resolveReportTimeframe(
+      preset,
+      customStart,
+      customEnd,
+    );
+    const existing = reports.some(
+      (item) =>
+        item.timeframeStart === timeframeStart &&
+        item.timeframeEnd === timeframeEnd,
+    );
+    if (existing) {
+      setShowReplaceConfirm(true);
+      return;
+    }
+    await runGenerate();
   };
 
   const handleCopy = async () => {
@@ -252,12 +282,23 @@ export function ReportsView() {
       <div className="flex h-11 shrink-0 items-center justify-between border-b border-border px-4">
         <span className="text-sm font-semibold text-text-primary">Reports</span>
         {report && (
-          <button
-            onClick={clearReport}
-            className="text-xs font-medium text-text-secondary hover:text-text-primary"
-          >
-            New report
-          </button>
+          <div className="flex items-center gap-3">
+            {viewingCachedId && (
+              <button
+                onClick={clearReport}
+                className="flex items-center gap-1 text-xs font-medium text-text-secondary hover:text-text-primary"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back
+              </button>
+            )}
+            <button
+              onClick={clearReport}
+              className="text-xs font-medium text-text-secondary hover:text-text-primary"
+            >
+              New report
+            </button>
+          </div>
         )}
       </div>
 
@@ -274,87 +315,107 @@ export function ReportsView() {
       )}
 
       {!report ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto p-6">
-          <div className="text-center">
-            <Sparkles className="mx-auto h-8 w-8 text-accent" />
-            <h2 className="mt-3 text-lg font-medium text-text-primary">
-              Generate a performance report
-            </h2>
-            <p className="mt-1 max-w-sm text-xs text-text-muted">
-              The AI analyzes your completed tasks to coach you on estimation
-              accuracy.
-            </p>
-          </div>
-
-          <div className="w-full max-w-sm space-y-4">
-            <div>
-              <label className="mb-1 block text-xs text-text-secondary">
-                Timeframe
-              </label>
-              <div className="flex gap-1 rounded-md bg-bg-tertiary p-1">
-                {PRESETS.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setPreset(item.id)}
-                    className={[
-                      "flex-1 rounded px-2 py-1.5 text-xs font-medium transition-colors",
-                      preset === item.id
-                        ? "bg-bg-surface text-text-primary shadow-sm"
-                        : "text-text-muted hover:text-text-secondary",
-                    ].join(" ")}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
+        <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
+          <div className="flex flex-col items-center gap-6">
+            <div className="text-center">
+              <Sparkles className="mx-auto h-8 w-8 text-accent" />
+              <h2 className="mt-3 text-lg font-medium text-text-primary">
+                Generate a performance report
+              </h2>
+              <p className="mt-1 max-w-sm text-xs text-text-muted">
+                The AI analyzes your completed tasks to coach you on estimation
+                accuracy.
+              </p>
             </div>
 
-            {preset === "custom" && (
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <label className="mb-1 block text-xs text-text-secondary">
-                    From
-                  </label>
-                  <input
-                    type="date"
-                    value={customStart}
-                    onChange={(e) => setCustomRange(e.target.value, customEnd)}
-                    className="w-full rounded-md border border-border bg-bg-surface px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="mb-1 block text-xs text-text-secondary">
-                    To
-                  </label>
-                  <input
-                    type="date"
-                    value={customEnd}
-                    onChange={(e) =>
-                      setCustomRange(customStart, e.target.value)
-                    }
-                    className="w-full rounded-md border border-border bg-bg-surface px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
+            <div className="w-full max-w-sm space-y-4">
+              <div>
+                <label className="mb-1 block text-xs text-text-secondary">
+                  Timeframe
+                </label>
+                <div className="flex gap-1 rounded-md bg-bg-tertiary p-1">
+                  {PRESETS.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => setPreset(item.id)}
+                      className={[
+                        "flex-1 rounded px-2 py-1.5 text-xs font-medium transition-colors",
+                        preset === item.id
+                          ? "bg-bg-surface text-text-primary shadow-sm"
+                          : "text-text-muted hover:text-text-secondary",
+                      ].join(" ")}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
               </div>
-            )}
 
-            <button
-              onClick={handleGenerate}
-              disabled={isGenerating || customDisabled}
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isGenerating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <BarChart2 className="h-4 w-4" />
+              {preset === "custom" && (
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <label className="mb-1 block text-xs text-text-secondary">
+                      From
+                    </label>
+                    <input
+                      type="date"
+                      value={customStart}
+                      onChange={(e) =>
+                        setCustomRange(e.target.value, customEnd)
+                      }
+                      className="w-full rounded-md border border-border bg-bg-surface px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="mb-1 block text-xs text-text-secondary">
+                      To
+                    </label>
+                    <input
+                      type="date"
+                      value={customEnd}
+                      onChange={(e) =>
+                        setCustomRange(customStart, e.target.value)
+                      }
+                      className="w-full rounded-md border border-border bg-bg-surface px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                    />
+                  </div>
+                </div>
               )}
-              Generate Report
-            </button>
+
+              <button
+                onClick={handleGenerate}
+                disabled={isGenerating || customDisabled}
+                className="flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <BarChart2 className="h-4 w-4" />
+                )}
+                Generate Report
+              </button>
+            </div>
+          </div>
+
+          <div className="mx-auto w-full max-w-2xl">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs font-medium text-text-secondary">
+                Report history ({reports.length})
+              </span>
+            </div>
+            <ReportHistory />
           </div>
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto p-6">
           <div className="mx-auto max-w-2xl space-y-4">
+            {viewingCachedId && (
+              <div className="flex items-center gap-2 rounded-lg border border-accent/30 bg-accent-subtle px-3 py-2">
+                <span className="text-xs font-medium text-accent">
+                  Cached report — generated {formatDate(report.generatedAt)}
+                </span>
+              </div>
+            )}
             <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-bg-surface p-4">
               <div>
                 <p className="text-sm font-medium text-text-primary">
@@ -410,6 +471,34 @@ export function ReportsView() {
               <p className="mt-2 text-sm leading-relaxed text-text-primary">
                 {report.summary}
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showReplaceConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[2px]">
+          <div className="w-full max-w-sm rounded-lg border border-border bg-bg-elevated p-5 shadow-2xl">
+            <p className="text-sm font-medium text-text-primary">
+              Replace existing report?
+            </p>
+            <p className="mt-1 text-xs text-text-muted">
+              A report for this timeframe already exists. Generating a new one
+              will replace it.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setShowReplaceConfirm(false)}
+                className="rounded-md px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-bg-tertiary hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={runGenerate}
+                className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                Replace
+              </button>
             </div>
           </div>
         </div>

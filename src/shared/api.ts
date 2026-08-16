@@ -35,6 +35,15 @@ export interface RendererApi {
   testConnection: () => Promise<
     IpcResult<IpcChannelMap["ai:testConnection"]["response"]>
   >;
+  listReports: () => Promise<
+    IpcResult<IpcChannelMap["report:list"]["response"]>
+  >;
+  getReport: (
+    params: IpcChannelMap["report:get"]["request"],
+  ) => Promise<IpcResult<IpcChannelMap["report:get"]["response"]>>;
+  deleteReport: (
+    params: IpcChannelMap["report:delete"]["request"],
+  ) => Promise<IpcResult<IpcChannelMap["report:delete"]["response"]>>;
   setApiKey: (
     apiKey: IpcChannelMap["key:set"]["request"],
   ) => Promise<IpcResult<IpcChannelMap["key:set"]["response"]>>;

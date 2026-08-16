@@ -1,10 +1,16 @@
 import { create } from "zustand";
-import type { PerformanceReportContent } from "@/shared/models";
+import type {
+  PerformanceReportContent,
+  PerformanceReportSummary,
+} from "@/shared/models";
 
 export type ReportTimeframePreset = "7" | "14" | "30" | "custom";
 
 interface ReportStore {
   report: PerformanceReportContent | null;
+  reports: PerformanceReportSummary[];
+  viewingCachedId: string | null;
+  isLoadingHistory: boolean;
   preset: ReportTimeframePreset;
   customStart: string;
   customEnd: string;
@@ -13,6 +19,9 @@ interface ReportStore {
   setPreset: (preset: ReportTimeframePreset) => void;
   setCustomRange: (start: string, end: string) => void;
   generateReport: () => Promise<boolean>;
+  loadReports: () => Promise<void>;
+  viewReport: (id: string) => Promise<boolean>;
+  deleteReport: (id: string) => Promise<boolean>;
   clearError: () => void;
   clearReport: () => void;
 }
@@ -48,6 +57,9 @@ export function resolveReportTimeframe(
 
 export const useReportStore = create<ReportStore>((set, get) => ({
   report: null,
+  reports: [],
+  viewingCachedId: null,
+  isLoadingHistory: false,
   preset: "7",
   customStart: "",
   customEnd: "",
@@ -78,13 +90,52 @@ export const useReportStore = create<ReportStore>((set, get) => ({
       timeframeEnd,
     });
     if (result.ok) {
-      set({ report: result.data, isGenerating: false });
+      set({
+        report: result.data,
+        viewingCachedId: null,
+        isGenerating: false,
+      });
+      await get().loadReports();
       return true;
     }
     set({ error: result.error.message, isGenerating: false });
     return false;
   },
 
+  loadReports: async () => {
+    set({ isLoadingHistory: true });
+    const result = await window.api.listReports();
+    if (result.ok) {
+      set({ reports: result.data, isLoadingHistory: false });
+    } else {
+      set({ isLoadingHistory: false });
+    }
+  },
+
+  viewReport: async (id) => {
+    const result = await window.api.getReport({ id });
+    if (result.ok) {
+      set({ report: result.data, viewingCachedId: id, error: null });
+      return true;
+    }
+    set({ error: result.error.message });
+    return false;
+  },
+
+  deleteReport: async (id) => {
+    const result = await window.api.deleteReport({ id });
+    if (result.ok) {
+      const { viewingCachedId } = get();
+      if (viewingCachedId === id) {
+        set({ report: null, viewingCachedId: null });
+      }
+      await get().loadReports();
+      return true;
+    }
+    set({ error: result.error.message });
+    return false;
+  },
+
   clearError: () => set({ error: null }),
-  clearReport: () => set({ report: null }),
+  clearReport: () => set({ report: null, viewingCachedId: null }),
 }));

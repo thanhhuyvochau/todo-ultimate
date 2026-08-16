@@ -180,6 +180,47 @@ export const handlers: HandlerMap = {
     }
   },
 
+  "report:list": () => {
+    try {
+      const reports = reportService.listReports();
+      return ok(reports);
+    } catch (err) {
+      return fail("DB_READ_FAILED", "Failed to fetch cached reports.");
+    }
+  },
+
+  "report:get": ({ id }) => {
+    try {
+      const report = reportService.getCachedReport(id);
+      return ok(report);
+    } catch (err) {
+      const error = err as { code?: string; message?: string };
+      if (error.code === "NOT_FOUND") {
+        return fail("NOT_FOUND", error.message ?? "Cached report not found.");
+      }
+      if (error.code === "REPORT_CORRUPTED") {
+        return fail(
+          "REPORT_CORRUPTED",
+          error.message ?? "Cached report is corrupted.",
+        );
+      }
+      return fail("DB_READ_FAILED", "Failed to read cached report.");
+    }
+  },
+
+  "report:delete": ({ id }) => {
+    try {
+      const result = reportService.deleteReport(id);
+      return ok(result);
+    } catch (err) {
+      const error = err as { code?: string; message?: string };
+      if (error.code === "NOT_FOUND") {
+        return fail("NOT_FOUND", error.message ?? "Cached report not found.");
+      }
+      return fail("DB_WRITE_FAILED", "Failed to delete cached report.");
+    }
+  },
+
   "key:set": ({ apiKey }) => {
     try {
       keychainService.setApiKey(apiKey);

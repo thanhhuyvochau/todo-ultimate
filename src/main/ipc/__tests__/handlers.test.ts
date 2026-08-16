@@ -39,9 +39,15 @@ vi.mock("../../services/daily-plan-service", () => ({
 }));
 
 const mockGenerateReport = vi.fn();
+const mockListReports = vi.fn();
+const mockGetCachedReport = vi.fn();
+const mockDeleteReport = vi.fn();
 
 vi.mock("../../services/report-service", () => ({
   generateReport: (...args: unknown[]) => mockGenerateReport(...args),
+  listReports: (...args: unknown[]) => mockListReports(...args),
+  getCachedReport: (...args: unknown[]) => mockGetCachedReport(...args),
+  deleteReport: (...args: unknown[]) => mockDeleteReport(...args),
 }));
 
 let db: Database.Database;
@@ -667,6 +673,110 @@ describe("ai:testConnection", () => {
     if (result.ok) {
       expect(result.data.success).toBe(false);
     }
+  });
+});
+
+describe("report handlers", () => {
+  const summary = {
+    id: "r1",
+    timeframeStart: 1000,
+    timeframeEnd: 2000,
+    promptVersion: "v1",
+    createdAt: 5000,
+    efficiencyScore: 72,
+    totalCompleted: 3,
+  };
+
+  it("report:list returns cached report summaries", () => {
+    mockListReports.mockReturnValueOnce([summary]);
+
+    const result = handlers["report:list"]({});
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toEqual([summary]);
+  });
+
+  it("report:list maps read failures to DB_READ_FAILED", () => {
+    mockListReports.mockImplementationOnce(() => {
+      throw new Error("boom");
+    });
+
+    const result = handlers["report:list"]({});
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("DB_READ_FAILED");
+  });
+
+  it("report:get returns the cached report content", () => {
+    const report = {
+      timeframe: { start: 1000, end: 2000 },
+      generatedAt: 5000,
+      metrics: {
+        totalCompleted: 1,
+        overallVariance: 15,
+        meanAbsoluteVariance: 15,
+        byPriority: {
+          low: { meanVariance: 0, meanVarianceRatio: null, count: 0 },
+          medium: { meanVariance: 0, meanVarianceRatio: null, count: 0 },
+          high: { meanVariance: 15, meanVarianceRatio: 1.5, count: 1 },
+        },
+        efficiencyScore: 72,
+        trendDirection: "improving",
+      },
+      patterns: [],
+      advice: [],
+      summary: "Great job.",
+    };
+    mockGetCachedReport.mockReturnValueOnce(report);
+
+    const result = handlers["report:get"]({ id: "r1" });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toEqual(report);
+  });
+
+  it("report:get maps NOT_FOUND", () => {
+    mockGetCachedReport.mockImplementationOnce(() => {
+      throw Object.assign(new Error("Cached report not found."), {
+        code: "NOT_FOUND",
+      });
+    });
+
+    const result = handlers["report:get"]({ id: "missing" });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("NOT_FOUND");
+  });
+
+  it("report:get maps REPORT_CORRUPTED", () => {
+    mockGetCachedReport.mockImplementationOnce(() => {
+      throw Object.assign(new Error("Cached report is corrupted."), {
+        code: "REPORT_CORRUPTED",
+      });
+    });
+
+    const result = handlers["report:get"]({ id: "r1" });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("REPORT_CORRUPTED");
+  });
+
+  it("report:delete returns success", () => {
+    mockDeleteReport.mockReturnValueOnce({ success: true });
+
+    const result = handlers["report:delete"]({ id: "r1" });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.success).toBe(true);
+  });
+
+  it("report:delete maps NOT_FOUND", () => {
+    mockDeleteReport.mockImplementationOnce(() => {
+      throw Object.assign(new Error("Cached report not found."), {
+        code: "NOT_FOUND",
+      });
+    });
+
+    const result = handlers["report:delete"]({ id: "missing" });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("NOT_FOUND");
   });
 });
 

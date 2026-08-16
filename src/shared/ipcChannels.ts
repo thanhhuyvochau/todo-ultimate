@@ -5,6 +5,7 @@ import type {
   DailyPlan,
   DailyPlanSchedule,
   PerformanceReportContent,
+  PerformanceReportSummary,
   AIScheduleInput,
   RecurringRule,
   TaskVariance,
@@ -39,6 +40,12 @@ export interface IpcChannelMap {
     response: PerformanceReportContent;
   };
   "ai:testConnection": { request: object; response: { success: boolean } };
+  "report:list": { request: object; response: PerformanceReportSummary[] };
+  "report:get": { request: { id: string }; response: PerformanceReportContent };
+  "report:delete": {
+    request: { id: string };
+    response: { success: boolean };
+  };
   "key:set": { request: { apiKey: string }; response: { success: boolean } };
   "key:get": { request: object; response: { hasKey: boolean } };
   "key:delete": { request: object; response: { success: boolean } };

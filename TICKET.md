@@ -275,15 +275,21 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 - **Tests**: `src/main/services/__tests__/report-service.test.ts`, `src/main/ipc/__tests__/handlers.test.ts` (report cases), `src/renderer/src/stores/__tests__/reportStore.test.ts`.
 - **Deferred**: `performance_reports` caching + history browsing → TKT-018 (spec 18/25).
 
-### TKT-018: Implement AI Report Caching ❌ Not Started
+### TKT-018: Implement AI Report Caching ✅ Done
 
 - **Spec**: [`18-report-caching.md`](./spec/18-report-caching.md)
 
 **As a** system, **I want to** cache performance reports locally **so that** I minimize unnecessary/costly API calls for historical data.
 
-- **Status**: No cache logic; no report repository.
+- **Status**: Complete — `src/main/db/performance-report-repository.ts` (`saveReport` upsert by `(timeframe_start, timeframe_end)` + `getById`/`listAll`/`deleteById`/`findByTimeframe`), `src/main/services/report-service.ts` (persists AI-generated reports tagged with `REPORT_PROMPT_VERSION`; adds `listReports`/`getCachedReport`/`deleteReport` with corrupted-entry skipping), `src/shared/models.ts` (`PerformanceReportSummary`), `src/shared/ipcChannels.ts` (`report:list`/`report:get`/`report:delete`), `src/main/ipc/handlers.ts` (3 report handlers incl. `REPORT_CORRUPTED` mapping), `src/preload/index.ts` + `src/shared/api.ts` (`listReports`/`getReport`/`deleteReport`), `src/renderer/src/stores/reportStore.ts` (history state + `loadReports`/`viewReport`/`deleteReport`; reload after generate), `src/renderer/src/components/ReportHistory.tsx` (history list with view/delete + empty state), `src/renderer/src/components/ReportsView.tsx` (history panel, cached-report banner + back, replace-on-duplicate confirm), `src/renderer/src/components/DeleteConfirmationDialog.tsx` (`report` item type).
 - **Acceptance Criteria**:
-  - Generated reports are stored in SQLite with timestamp and prompt version.
+  - ✅ Generated reports are stored in SQLite with timestamp and prompt version (`performance_reports` table already existed; `saveReport` tags `prompt_version = REPORT_PROMPT_VERSION`).
+  - ✅ Same-timeframe duplicate prompts user action (replace-on-duplicate confirm before regenerating; upsert keeps one-report-per-timeframe).
+  - ✅ Report history view lists all cached reports, newest first, showing timeframe, score, task count, and generated date.
+  - ✅ Click-to-view loads the full cached report; delete removes the entry with confirmation.
+  - ✅ Corrupted entries are skipped on list (with a warning) and surface `REPORT_CORRUPTED` on view.
+- **Decisions**: Only AI-generated reports are cached (empty "no data" fallback stays ephemeral); empty fallback is not persisted.
+- **Tests**: `src/main/db/__tests__/performance-report-repository.test.ts`, `src/main/services/__tests__/report-service.test.ts` (persistence/list/get/delete/corruption), `src/main/ipc/__tests__/handlers.test.ts` (report handlers), `src/renderer/src/stores/__tests__/reportStore.test.ts` (history actions).
 
 ---
 

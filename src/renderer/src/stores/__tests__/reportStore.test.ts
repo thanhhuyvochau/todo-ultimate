@@ -1,8 +1,21 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { PerformanceReportContent } from "@/shared/models";
+import type {
+  PerformanceReportContent,
+  PerformanceReportSummary,
+} from "@/shared/models";
 import { useReportStore, resolveReportTimeframe } from "../reportStore";
 
 type ApiMock = Record<string, ReturnType<typeof vi.fn>>;
+
+const sampleSummary: PerformanceReportSummary = {
+  id: "r1",
+  timeframeStart: 1000,
+  timeframeEnd: 2000,
+  promptVersion: "v1",
+  createdAt: 5000,
+  efficiencyScore: 72,
+  totalCompleted: 1,
+};
 
 const sampleReport: PerformanceReportContent = {
   timeframe: { start: 1000, end: 2000 },
@@ -27,6 +40,11 @@ const sampleReport: PerformanceReportContent = {
 function setupApi(overrides: ApiMock = {}): ApiMock {
   const apiMock: ApiMock = {
     generateReport: vi.fn().mockResolvedValue({ ok: true, data: sampleReport }),
+    listReports: vi.fn().mockResolvedValue({ ok: true, data: [] }),
+    getReport: vi.fn().mockResolvedValue({ ok: true, data: sampleReport }),
+    deleteReport: vi
+      .fn()
+      .mockResolvedValue({ ok: true, data: { success: true } }),
     ...overrides,
   };
   (window as unknown as Record<string, unknown>).api = apiMock;
@@ -37,6 +55,9 @@ beforeEach(() => {
   vi.restoreAllMocks();
   useReportStore.setState({
     report: null,
+    reports: [],
+    viewingCachedId: null,
+    isLoadingHistory: false,
     preset: "7",
     customStart: "",
     customEnd: "",
@@ -90,6 +111,61 @@ describe("reportStore", () => {
     expect(ok).toBe(false);
     expect(api.generateReport).not.toHaveBeenCalled();
     expect(useReportStore.getState().error).toBe("Select a valid date range.");
+  });
+
+  it("generateReport reloads history after success", async () => {
+    const api = setupApi({
+      listReports: vi
+        .fn()
+        .mockResolvedValue({ ok: true, data: [sampleSummary] }),
+    });
+
+    await useReportStore.getState().generateReport();
+
+    expect(api.listReports).toHaveBeenCalledTimes(1);
+    expect(useReportStore.getState().reports).toEqual([sampleSummary]);
+  });
+
+  it("loadReports populates the history list", async () => {
+    const api = setupApi({
+      listReports: vi
+        .fn()
+        .mockResolvedValue({ ok: true, data: [sampleSummary] }),
+    });
+
+    await useReportStore.getState().loadReports();
+
+    expect(useReportStore.getState().reports).toEqual([sampleSummary]);
+    expect(useReportStore.getState().isLoadingHistory).toBe(false);
+  });
+
+  it("viewReport loads a cached report and tracks its id", async () => {
+    setupApi({
+      getReport: vi.fn().mockResolvedValue({ ok: true, data: sampleReport }),
+    });
+
+    const ok = await useReportStore.getState().viewReport("r1");
+
+    expect(ok).toBe(true);
+    expect(useReportStore.getState().report).toEqual(sampleReport);
+    expect(useReportStore.getState().viewingCachedId).toBe("r1");
+  });
+
+  it("deleteReport removes the entry and clears it if currently viewing", async () => {
+    const api = setupApi({
+      deleteReport: vi
+        .fn()
+        .mockResolvedValue({ ok: true, data: { success: true } }),
+      listReports: vi.fn().mockResolvedValue({ ok: true, data: [] }),
+    });
+    useReportStore.setState({ report: sampleReport, viewingCachedId: "r1" });
+
+    const ok = await useReportStore.getState().deleteReport("r1");
+
+    expect(ok).toBe(true);
+    expect(useReportStore.getState().report).toBeNull();
+    expect(useReportStore.getState().viewingCachedId).toBeNull();
+    expect(api.deleteReport).toHaveBeenCalledWith({ id: "r1" });
   });
 });
 

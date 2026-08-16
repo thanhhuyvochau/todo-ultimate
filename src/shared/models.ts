@@ -64,6 +64,16 @@ export interface PerformanceReport {
   createdAt: number;
 }
 
+export interface PerformanceReportSummary {
+  id: string;
+  timeframeStart: number;
+  timeframeEnd: number;
+  promptVersion: string;
+  createdAt: number;
+  efficiencyScore: number;
+  totalCompleted: number;
+}
+
 export interface AIScheduleInput {
   focusHours: number;
   primaryGoal: string;

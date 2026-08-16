@@ -98,6 +98,15 @@ beforeEach(() => {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS performance_reports (
+      id TEXT PRIMARY KEY,
+      timeframe_start INTEGER NOT NULL,
+      timeframe_end INTEGER NOT NULL,
+      report_json TEXT NOT NULL,
+      prompt_version TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    );
   `);
 
   testDbReady.mockReturnValue(db);
@@ -187,5 +196,119 @@ describe("report-service", () => {
     await expect(
       service.generateReport({ timeframeStart: 1000, timeframeEnd: 2000 }),
     ).rejects.toMatchObject({ code: "AI_AUTH_FAILED" });
+  });
+
+  it("persists an AI-generated report to the cache", async () => {
+    insertCompletedTask({
+      id: "c1",
+      title: "Ship it",
+      estimatedMinutes: 30,
+      actualMinutes: 45,
+      completedAt: 1500,
+    });
+
+    const service = await getService();
+    await service.generateReport({
+      timeframeStart: 1000,
+      timeframeEnd: 2000,
+    });
+
+    const rows = db.prepare("SELECT * FROM performance_reports").all() as {
+      id: string;
+      timeframe_start: number;
+      timeframe_end: number;
+      report_json: string;
+      prompt_version: string;
+      created_at: number;
+    }[];
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.timeframe_start).toBe(1000);
+    expect(rows[0]?.timeframe_end).toBe(2000);
+    expect(rows[0]?.prompt_version).toBe("v1");
+    expect(JSON.parse(rows[0]?.report_json ?? "{}").summary).toBe(
+      sampleReport.summary,
+    );
+  });
+
+  it("does not persist the empty fallback report", async () => {
+    const service = await getService();
+    await service.generateReport({
+      timeframeStart: 1000,
+      timeframeEnd: 2000,
+    });
+
+    const rows = db
+      .prepare("SELECT COUNT(*) AS count FROM performance_reports")
+      .get() as {
+      count: number;
+    };
+    expect(rows.count).toBe(0);
+  });
+
+  it("listReports returns summaries and skips corrupted entries", async () => {
+    const service = await getService();
+
+    db.prepare(
+      `INSERT INTO performance_reports (id, timeframe_start, timeframe_end, report_json, prompt_version, created_at)
+       VALUES ('r1', 1000, 2000, ?, 'v1', 5000)`,
+    ).run(JSON.stringify(sampleReport));
+
+    db.prepare(
+      `INSERT INTO performance_reports (id, timeframe_start, timeframe_end, report_json, prompt_version, created_at)
+       VALUES ('r2', 3000, 4000, 'not-json', 'v1', 6000)`,
+    ).run();
+
+    const summaries = service.listReports();
+
+    expect(summaries).toHaveLength(1);
+    expect(summaries[0]?.id).toBe("r1");
+    expect(summaries[0]?.efficiencyScore).toBe(72);
+    expect(summaries[0]?.totalCompleted).toBe(1);
+  });
+
+  it("getCachedReport returns parsed content", async () => {
+    const service = await getService();
+    db.prepare(
+      `INSERT INTO performance_reports (id, timeframe_start, timeframe_end, report_json, prompt_version, created_at)
+       VALUES ('r1', 1000, 2000, ?, 'v1', 5000)`,
+    ).run(JSON.stringify(sampleReport));
+
+    const report = service.getCachedReport("r1");
+    expect(report.summary).toBe(sampleReport.summary);
+  });
+
+  it("getCachedReport throws NOT_FOUND for missing and REPORT_CORRUPTED for bad JSON", async () => {
+    const service = await getService();
+
+    expect(() => service.getCachedReport("missing")).toThrowError(
+      expect.objectContaining({ code: "NOT_FOUND" }),
+    );
+
+    db.prepare(
+      `INSERT INTO performance_reports (id, timeframe_start, timeframe_end, report_json, prompt_version, created_at)
+       VALUES ('r2', 3000, 4000, 'not-json', 'v1', 6000)`,
+    ).run();
+
+    expect(() => service.getCachedReport("r2")).toThrowError(
+      expect.objectContaining({ code: "REPORT_CORRUPTED" }),
+    );
+  });
+
+  it("deleteReport removes an entry and throws NOT_FOUND when missing", async () => {
+    const service = await getService();
+    db.prepare(
+      `INSERT INTO performance_reports (id, timeframe_start, timeframe_end, report_json, prompt_version, created_at)
+       VALUES ('r1', 1000, 2000, ?, 'v1', 5000)`,
+    ).run(JSON.stringify(sampleReport));
+
+    expect(service.deleteReport("r1")).toEqual({ success: true });
+    expect(
+      db.prepare("SELECT COUNT(*) AS count FROM performance_reports").get(),
+    ).toMatchObject({ count: 0 });
+
+    expect(() => service.deleteReport("r1")).toThrowError(
+      expect.objectContaining({ code: "NOT_FOUND" }),
+    );
   });
 });
