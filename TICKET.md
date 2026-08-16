@@ -212,27 +212,36 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ## Phase 5: AI Integration
 
-### TKT-014: Integrate DeepSeek API Client ❌ Not Started
+### TKT-014: Integrate DeepSeek API Client ✅ Done
 
 - **Spec**: [`14-deepseek-api-client.md`](./spec/14-deepseek-api-client.md)
 
 **As a** system, **I want to** connect to the DeepSeek API with retries and timeouts **so that** AI features can be requested reliably.
 
-- **Status**: `openai` ^4.83.0 is in `package.json` dependencies. No client module exists. `src/main/services/prompts/` directory not created. No retries/timeouts/response validation code.
+- **Status**: Complete — `src/main/services/deepseekService.ts` (single client module: `openai` with `baseURL` + `deepseek-chat`, `response_format: json_object`, keychain-loaded API key at call time, 30s timeout, 3-retry exponential backoff with `Retry-After` support, `AI_*` error codes, `validateDailyPlan`/`validatePerformanceReport` response validation, `testConnection`), `src/main/services/prompts/` (versioned `plan-v1.txt`/`report-v1.txt` + `fillTemplate`), `src/shared/models.ts` (`DailyPlanRequest`, `ReportParams`, `PerformanceReportContent`, `DailyPlanSchedule`).
 - **Acceptance Criteria**:
-  - DeepSeek client implemented.
-  - Graceful fallback/timeout handling implemented.
+  - ✅ API key loaded from keychain, never logged.
+  - ✅ 30s timeout enforced.
+  - ✅ Retry with exponential backoff (max 3) on 50x/network errors.
+  - ✅ Responses validated against expected schema.
+  - ✅ Structured error codes returned to renderer.
+  - ✅ `ai:testConnection` handler exposed; UI stays responsive (async IPC).
+- **Tests**: `src/main/services/__tests__/deepseek-service.test.ts`.
 
-### TKT-015: Build Daily AI Planning (Morning Standup) ❌ Not Started
+### TKT-015: Build Daily AI Planning (Morning Standup) ✅ Done
 
 - **Spec**: [`15-daily-planning.md`](./spec/15-daily-planning.md)
 
-**As a** user, **I want** the AI to propose a daily schedule based on my backlog, fixed blocks, and historical variance **so that** I can plan realistically.
+**As a** user, **I want to** the AI to propose a daily schedule based on my backlog, fixed blocks, and historical variance **so that** I can plan realistically.
 
-- **Status**: `ai:generatePlan` handler returns `NOT_IMPLEMENTED`. `daily_plans` table + `DailyPlan`/`AIScheduleInput` types exist but unused.
+- **Status**: Complete — `src/main/services/daily-plan-service.ts` (assembles `DailyPlanRequest` from todo backlog, today's time-anchored fixed blocks, and variance metrics; validates positive `focusHours`), `src/main/ipc/handlers.ts` (`ai:generatePlan` handler + `mapAiError` mapping `AI_*`/`VALIDATION_ERROR` → `IpcErrorCode`), `src/shared/ipcChannels.ts` (`ai:generatePlan` response → `DailyPlanSchedule`), `src/main/services/deepseekService.ts` (feeds `formatVarianceContext` into the plan prompt), `src/main/services/prompts/plan-v1.txt` (`{{historicalVarianceContext}}` placeholder).
 - **Acceptance Criteria**:
-  - Prompt gathers active backlog, daily hours limit, and variance data.
-  - AI returns a structured JSON payload of proposed tasks and timeboxes.
+  - ✅ Prompt gathers active backlog, daily hours limit, and variance data.
+  - ✅ AI returns a structured JSON payload of proposed tasks and timeboxes (`DailyPlanSchedule`).
+  - ✅ Fixed blocks partitioned separately (no overlap / no double-counting) and excluded from flexible backlog.
+  - ✅ No API key / AI failures surface structured error codes (e.g. `AI_AUTH_FAILED`) to the renderer.
+- **Tests**: `src/main/services/__tests__/daily-plan-service.test.ts`, `src/main/ipc/__tests__/handlers.test.ts`.
+- **Deferred (per spec dependencies)**: Plan review UI, approval, and `daily_plans` persistence → TKT-016.
 
 ### TKT-016: UI for Plan Review & Approval ❌ Not Started
 

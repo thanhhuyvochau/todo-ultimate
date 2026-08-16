@@ -11,7 +11,7 @@ Backlog tasks (each with id, title, priority, estimatedMinutes):
 {{tasksJson}}
 
 Historical estimation accuracy:
-{{historicalVarianceJson}}
+{{historicalVarianceContext}}
 
 Instructions:
 - Assign as many tasks as fit within the available focus hours, ordered by priority.

@@ -1,6 +1,15 @@
-import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  afterAll,
+  vi,
+} from "vitest";
 import Database from "better-sqlite3";
 import { handlers } from "../handlers";
+import * as timerService from "../../services/timer-service";
 
 const testDbReady = vi.fn<() => Database.Database>();
 
@@ -21,6 +30,12 @@ const mockTestConnection = vi.fn<() => Promise<boolean>>();
 
 vi.mock("../../services/deepseekService", () => ({
   testConnection: () => mockTestConnection(),
+}));
+
+const mockGeneratePlan = vi.fn();
+
+vi.mock("../../services/daily-plan-service", () => ({
+  generateDailyPlan: (...args: unknown[]) => mockGeneratePlan(...args),
 }));
 
 let db: Database.Database;
@@ -72,6 +87,10 @@ beforeEach(() => {
   `);
 
   testDbReady.mockReturnValue(db);
+});
+
+afterEach(() => {
+  timerService.stopTimerEngine();
 });
 
 afterAll(() => {
@@ -498,26 +517,57 @@ describe("tasks:delete", () => {
   });
 });
 
-describe("timer and ai stubs", () => {
-  it("timer:start returns NOT_IMPLEMENTED", () => {
-    const result = handlers["timer:start"]({ taskId: "abc" });
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe("NOT_IMPLEMENTED");
-  });
+describe("ai stubs", () => {
+  it("ai:generatePlan returns the schedule on success", async () => {
+    const schedule = {
+      date: 1723536000000,
+      focusHours: 6,
+      primaryGoal: "Ship the feature",
+      schedule: [],
+      unscheduledTasks: [],
+      summary: "A focused day.",
+    };
+    mockGeneratePlan.mockResolvedValueOnce(schedule);
 
-  it("timer:pause returns NOT_IMPLEMENTED", () => {
-    const result = handlers["timer:pause"]({ taskId: "abc" });
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe("NOT_IMPLEMENTED");
-  });
-
-  it("ai:generatePlan returns NOT_IMPLEMENTED", () => {
-    const result = handlers["ai:generatePlan"]({
-      focusHours: 4,
-      primaryGoal: "Build feature",
+    const result = await handlers["ai:generatePlan"]({
+      focusHours: 6,
+      primaryGoal: "Ship the feature",
     });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toEqual(schedule);
+  });
+
+  it("ai:generatePlan maps AI_AUTH_FAILED", async () => {
+    mockGeneratePlan.mockRejectedValueOnce(
+      Object.assign(new Error("No API key configured."), {
+        code: "AI_AUTH_FAILED",
+      }),
+    );
+
+    const result = await handlers["ai:generatePlan"]({
+      focusHours: 6,
+      primaryGoal: "Ship the feature",
+    });
+
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe("NOT_IMPLEMENTED");
+    if (!result.ok) expect(result.error.code).toBe("AI_AUTH_FAILED");
+  });
+
+  it("ai:generatePlan maps VALIDATION_ERROR", async () => {
+    mockGeneratePlan.mockRejectedValueOnce(
+      Object.assign(new Error("Focus hours must be a positive number."), {
+        code: "VALIDATION_ERROR",
+      }),
+    );
+
+    const result = await handlers["ai:generatePlan"]({
+      focusHours: 0,
+      primaryGoal: "",
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("VALIDATION_ERROR");
   });
 
   it("ai:generateReport returns NOT_IMPLEMENTED", () => {

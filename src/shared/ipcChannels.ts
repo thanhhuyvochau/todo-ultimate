@@ -2,7 +2,7 @@ import type {
   Task,
   TaskStatus,
   TaskPriority,
-  DailyPlan,
+  DailyPlanSchedule,
   PerformanceReport,
   AIScheduleInput,
   RecurringRule,
@@ -32,7 +32,7 @@ export interface IpcChannelMap {
       elapsedSeconds: number;
     } | null;
   };
-  "ai:generatePlan": { request: AIScheduleInput; response: DailyPlan };
+  "ai:generatePlan": { request: AIScheduleInput; response: DailyPlanSchedule };
   "ai:generateReport": {
     request: { timeframeDays: number };
     response: PerformanceReport;

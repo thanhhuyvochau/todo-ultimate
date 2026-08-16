@@ -7,6 +7,7 @@ import type {
   ReportParams,
 } from "@/shared/models";
 import * as keychainService from "@/main/services/keychain-service";
+import { formatVarianceContext } from "@/main/services/variance-service";
 import {
   loadPlanPrompt,
   loadReportPrompt,
@@ -281,7 +282,9 @@ export async function generateDailyPlan(
     primaryGoal: input.primaryGoal,
     fixedBlocksJson: JSON.stringify(input.fixedBlocks ?? []),
     tasksJson: JSON.stringify(input.tasks),
-    historicalVarianceJson: JSON.stringify(input.historicalVariance ?? null),
+    historicalVarianceContext: input.historicalVariance
+      ? formatVarianceContext(input.historicalVariance)
+      : "No historical data available yet.",
   });
 
   const data = await chatJson([

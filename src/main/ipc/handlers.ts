@@ -1,5 +1,5 @@
 import type { IpcChannelMap } from "@/shared/ipcChannels";
-import type { IpcResult } from "@/shared/ipcResult";
+import type { IpcErrorCode, IpcResult } from "@/shared/ipcResult";
 import { ok, fail } from "@/shared/ipcResult";
 import * as taskRepo from "@/main/db/task-repository";
 import * as timeLogRepo from "@/main/db/time-log-repository";
@@ -8,6 +8,27 @@ import * as keychainService from "@/main/services/keychain-service";
 import * as timerService from "@/main/services/timer-service";
 import * as varianceService from "@/main/services/variance-service";
 import * as deepseekService from "@/main/services/deepseekService";
+import * as dailyPlanService from "@/main/services/daily-plan-service";
+
+const AI_IPC_ERROR_CODES = new Set<string>([
+  "AI_TIMEOUT",
+  "AI_RATE_LIMITED",
+  "AI_AUTH_FAILED",
+  "AI_PARSE_ERROR",
+  "AI_NETWORK_ERROR",
+  "AI_REQUEST_FAILED",
+  "VALIDATION_ERROR",
+]);
+
+function mapAiError(err: unknown): IpcResult<never> {
+  const code = (err as { code?: string }).code;
+  const message =
+    (err as { message?: string }).message ?? "AI plan generation failed.";
+  if (code && AI_IPC_ERROR_CODES.has(code)) {
+    return fail(code as IpcErrorCode, message);
+  }
+  return fail("INTERNAL_ERROR", message);
+}
 
 type HandlerMap = {
   [K in keyof IpcChannelMap]: (
@@ -122,11 +143,16 @@ export const handlers: HandlerMap = {
     }
   },
 
-  "ai:generatePlan": () => {
-    return fail(
-      "NOT_IMPLEMENTED",
-      "AI planning service is not yet implemented.",
-    );
+  "ai:generatePlan": async (input) => {
+    try {
+      const plan = await dailyPlanService.generateDailyPlan({
+        focusHours: input.focusHours,
+        primaryGoal: input.primaryGoal,
+      });
+      return ok(plan);
+    } catch (err) {
+      return mapAiError(err);
+    }
   },
 
   "ai:generateReport": () => {
