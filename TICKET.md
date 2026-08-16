@@ -290,12 +290,12 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 **As a** developer, **I want to** manage frontend state with Zustand **so that** UI components stay perfectly in sync without deep prop drilling.
 
-- **Status**: Partially complete — `src/renderer/src/stores/taskStore.ts` (task CRUD + filters), `src/renderer/src/stores/recurringRuleStore.ts` (recurring rule CRUD + toggle), `src/renderer/src/stores/timerStore.ts` (timer state + tick subscriptions). No user-settings store yet.
+- **Status**: Partially complete — `src/renderer/src/stores/taskStore.ts` (task CRUD + filters), `src/renderer/src/stores/recurringRuleStore.ts` (recurring rule CRUD + toggle), `src/renderer/src/stores/timerStore.ts` (timer state + tick subscriptions), `src/renderer/src/stores/settingsStore.ts` (API key status + save/delete/test). Theme preference still pending (see TKT-021).
 - **Acceptance Criteria**:
   - ✅ Task store created and in use.
   - ✅ Recurring rule store created and in use.
   - ✅ Timer store created and in use.
-  - ❌ User Settings store (theme preference, API key status).
+  - 🟡 User Settings store (API key status ✅ via TKT-025; theme preference pending).
 
 ### TKT-020: Build Main Dashboard Layout ✅ Done
 
@@ -358,3 +358,18 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
   - Tooltip text matches existing `aria-label` values.
   - Works in both light and dark themes.
 - **INVEST Check**: Independent (standalone component), Valuable (improves discoverability), Small (~30 min, simple component + wiring).
+
+### TKT-025: Settings — API Key Management ✅ Done
+
+- **Spec**: [`21-settings-page.md`](./spec/21-settings-page.md)
+
+**As a** user, **I want to** configure and validate my DeepSeek API key from Settings **so that** AI features work without manual console commands.
+
+- **Status**: Complete — `src/renderer/src/stores/settingsStore.ts` (Zustand: `hasKey`, `loadStatus`, `saveKey`, `deleteKey`, `testConnection`, `clearError`), `src/renderer/src/components/ApiKeySettings.tsx` (masked password input + Save / Test Connection / Delete, status badge, error banner), `src/renderer/src/components/DeleteConfirmationDialog.tsx` (added `itemType="key"` wording), `src/renderer/src/components/SettingsView.tsx` (renders `ApiKeySettings` above recurring rules), `src/renderer/src/components/StatusFooter.tsx` (consumes `settingsStore.hasKey` for a reactive footer indicator).
+- **Acceptance Criteria**:
+  - ✅ API key saves and encrypts via safeStorage (`key:set`).
+  - ✅ Test Connection validates the key (`ai:testConnection`; boolean result, frontend-only).
+  - ✅ Delete key removes from keychain (`key:delete`) with confirmation.
+  - ❌ Default focus hours, theme, report timeframe preferences (future tickets).
+  - ❌ Data export / clear-all (future tickets).
+- **Tests**: `src/renderer/src/stores/__tests__/settingsStore.test.ts`, `src/renderer/src/components/__tests__/ApiKeySettings.test.tsx`.

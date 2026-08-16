@@ -1,24 +1,24 @@
-import { useEffect, useState } from 'react';
-import { KeyRound, Key } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { KeyRound, Key } from "lucide-react";
+import { useSettingsStore } from "../stores/settingsStore";
 
 export function StatusFooter() {
-  const [hasApiKey, setHasApiKey] = useState(false);
+  const hasApiKey = useSettingsStore((s) => s.hasKey);
+  const loadStatus = useSettingsStore((s) => s.loadStatus);
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
-    window.api.getApiKey().then((result) => {
-      if (result.ok) setHasApiKey(result.data.hasKey);
-    });
-  }, []);
+    loadStatus();
+  }, [loadStatus]);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 30_000);
     return () => clearInterval(timer);
   }, []);
 
-  const timeStr = time.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
+  const timeStr = time.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 
   return (
@@ -36,7 +36,7 @@ export function StatusFooter() {
           ) : (
             <Key className="h-2.5 w-2.5 text-warning opacity-60" />
           )}
-          {hasApiKey ? 'API ready' : 'No API key'}
+          {hasApiKey ? "API ready" : "No API key"}
         </span>
         <span className="font-mono text-2xs text-text-muted">{timeStr}</span>
       </div>

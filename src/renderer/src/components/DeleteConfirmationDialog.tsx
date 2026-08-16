@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { useEffect, useRef } from "react";
+import { X } from "lucide-react";
 
-type DeleteItemType = 'task' | 'rule';
+type DeleteItemType = "task" | "rule" | "key";
 
 interface DeleteConfirmationDialogProps {
   isOpen: boolean;
@@ -14,7 +14,7 @@ interface DeleteConfirmationDialogProps {
 export function DeleteConfirmationDialog({
   isOpen,
   taskTitle,
-  itemType = 'task',
+  itemType = "task",
   onConfirm,
   onCancel,
 }: DeleteConfirmationDialogProps) {
@@ -23,26 +23,35 @@ export function DeleteConfirmationDialog({
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onCancel(); return; }
-      if (e.key === 'Tab') {
-        const dialog = document.querySelector('[data-delete-dialog]');
+      if (e.key === "Escape") {
+        onCancel();
+        return;
+      }
+      if (e.key === "Tab") {
+        const dialog = document.querySelector("[data-delete-dialog]");
         if (!dialog) return;
         const focusable = dialog.querySelectorAll<HTMLElement>(
           'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
         );
         if (focusable.length === 0) return;
         const first = focusable[0]!;
-        const last  = focusable[focusable.length - 1]!;
+        const last = focusable[focusable.length - 1]!;
         if (e.shiftKey) {
-          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
         } else {
-          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
         }
       }
     };
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
     cancelRef.current?.focus();
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onCancel]);
 
   if (!isOpen) return null;
@@ -56,12 +65,25 @@ export function DeleteConfirmationDialog({
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <p className="text-sm font-medium text-text-primary">
-              Delete {itemType === 'rule' ? 'rule' : 'task'}?
+              {itemType === "rule"
+                ? "Delete rule?"
+                : itemType === "key"
+                  ? "Remove API key?"
+                  : "Delete task?"}
             </p>
             <p className="mt-1 text-xs text-text-muted">
-              <span className="text-text-secondary">&ldquo;{taskTitle}&rdquo;</span>
-              {' '}will be permanently removed.
-              {itemType === 'rule' && ' Existing tasks will not be affected.'}
+              {itemType === "key" ? (
+                "The stored API key will be permanently removed."
+              ) : (
+                <>
+                  <span className="text-text-secondary">
+                    &ldquo;{taskTitle}&rdquo;
+                  </span>{" "}
+                  will be permanently removed.
+                  {itemType === "rule" &&
+                    " Existing tasks will not be affected."}
+                </>
+              )}
             </p>
           </div>
           <button
@@ -84,7 +106,7 @@ export function DeleteConfirmationDialog({
             onClick={onConfirm}
             className="rounded-md bg-danger px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-danger"
           >
-            Delete
+            {itemType === "key" ? "Remove" : "Delete"}
           </button>
         </div>
       </div>
