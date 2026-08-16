@@ -243,16 +243,21 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 - **Tests**: `src/main/services/__tests__/daily-plan-service.test.ts`, `src/main/ipc/__tests__/handlers.test.ts`.
 - **Deferred (per spec dependencies)**: Plan review UI, approval, and `daily_plans` persistence → TKT-016.
 
-### TKT-016: UI for Plan Review & Approval ❌ Not Started
+### TKT-016: UI for Plan Review & Approval ✅ Done
 
 - **Spec**: [`16-plan-review-approval.md`](./spec/16-plan-review-approval.md)
 
 **As a** user, **I want to** review and modify the AI's proposed schedule before it applies **so that** I retain final control over my day.
 
-- **Status**: No UI; no plan-approval logic.
+- **Status**: Complete — `src/main/db/daily-plan-repository.ts` (`getPlanForDate` / `saveApprovedPlan` upsert into `daily_plans`), `src/main/services/plan-approval-service.ts` (atomic `approvePlan`: schedules flexible tasks to today, leaves fixed blocks untouched, persists `plan_json` with `is_approved: 1`, full rollback on missing/unavailable task), `src/shared/ipcChannels.ts` (`plan:getToday`, `plan:approve`), `src/main/ipc/handlers.ts` (2 plan handlers), `src/preload/index.ts` + `src/shared/api.ts` (`getTodayPlan`/`approvePlan`), `src/renderer/src/stores/planStore.ts` (Zustand: generate/review/update-budget/reorder/remove/approve/discard), `src/renderer/src/components/PlanView.tsx` (generate form + review timeline with drag-to-reorder), `src/renderer/src/components/PlanBlockRow.tsx` (inline budget edit + remove), `src/renderer/src/components/ApprovePlanDialog.tsx` (focus-trapped confirmation), wired into `AppShell.tsx` (`plan` route) + `Sidebar.tsx` (`plan` enabled).
 - **Acceptance Criteria**:
-  - User can accept, reject, or adjust the proposed plan.
-  - Accepted plan applies tasks to the Today view.
+  - User can accept, reject, or adjust the proposed plan (approve/discard/regenerate + inline budget edits + reorder + remove).
+  - Accepted plan applies tasks to the Today view (flexible tasks get `scheduled_date = start-of-day` → Today's Flexible group; fixed blocks already anchored).
+  - Plan persisted atomically to `daily_plans` with `is_approved: true`; missing/unavailable tasks cause full rollback.
+  - Confirmation dialog before approval ("This will schedule X tasks for today"), plus warning when a plan is already approved for today.
+  - Post-approval redirects to Today view.
+- **Decisions**: `budgetedMinutes` is stored only in `plan_json` (original `estimated_minutes` preserved for variance metrics); reorder affects stored schedule order only.
+- **Tests**: `src/main/db/__tests__/daily-plan-repository.test.ts`, `src/main/services/__tests__/plan-approval-service.test.ts`, `src/main/ipc/__tests__/handlers.test.ts` (plan handlers).
 
 ### TKT-017: Generate AI Performance Reports ❌ Not Started
 

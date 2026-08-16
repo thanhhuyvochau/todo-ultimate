@@ -36,6 +36,8 @@ const api: RendererApi = {
     ipcRenderer.invoke("metrics:getVariance", params),
   getTaskVariance: (params) =>
     ipcRenderer.invoke("metrics:getTaskVariance", params),
+  getTodayPlan: () => ipcRenderer.invoke("plan:getToday", {}),
+  approvePlan: (schedule) => ipcRenderer.invoke("plan:approve", { schedule }),
 };
 
 contextBridge.exposeInMainWorld("api", api);

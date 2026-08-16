@@ -84,6 +84,16 @@ beforeEach(() => {
       last_instantiated_date INTEGER,
       created_at INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS daily_plans (
+      id TEXT PRIMARY KEY,
+      date INTEGER NOT NULL,
+      focus_hours REAL,
+      primary_goal TEXT,
+      plan_json TEXT NOT NULL,
+      is_approved INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL
+    );
   `);
 
   testDbReady.mockReturnValue(db);
@@ -993,5 +1003,115 @@ describe("metrics handlers", () => {
       .prepare("SELECT completed_at FROM tasks WHERE id = ?")
       .get(create.data.id) as { completed_at: number | null };
     expect(row.completed_at).not.toBeNull();
+  });
+});
+
+describe("plan handlers", () => {
+  function startOfToday(): number {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+
+  it("plan:getToday returns null when no plan exists", () => {
+    const result = handlers["plan:getToday"]({});
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data).toBeNull();
+    }
+  });
+
+  it("plan:approve schedules tasks and returns the approved plan", () => {
+    const create = handlers["tasks:create"]({
+      title: "Write code",
+      description: null,
+      priority: "high",
+      status: "todo",
+      estimatedMinutes: 30,
+      actualMinutes: null,
+      isRecurringChild: false,
+      recurringRuleId: null,
+      scheduledDate: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    expect(create.ok).toBe(true);
+    if (!create.ok) return;
+
+    const schedule = {
+      date: startOfToday(),
+      focusHours: 6,
+      primaryGoal: "Ship it",
+      schedule: [
+        {
+          taskId: create.data.id,
+          title: "Write code",
+          priority: "high",
+          estimatedMinutes: 30,
+          budgetedMinutes: 25,
+          scheduledStart: startOfToday() + 9 * 60 * 60 * 1000,
+          isFixed: false,
+          rationale: "High priority first.",
+        },
+      ],
+      unscheduledTasks: [],
+      summary: "A focused day.",
+    };
+
+    const result = handlers["plan:approve"]({ schedule });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.isApproved).toBe(true);
+    }
+
+    const row = db
+      .prepare("SELECT scheduled_date FROM tasks WHERE id = ?")
+      .get(create.data.id) as { scheduled_date: number | null };
+    expect(row.scheduled_date).toBe(startOfToday());
+  });
+
+  it("plan:approve returns VALIDATION_ERROR for non-positive focus hours", () => {
+    const result = handlers["plan:approve"]({
+      schedule: {
+        date: startOfToday(),
+        focusHours: 0,
+        primaryGoal: "",
+        schedule: [],
+        unscheduledTasks: [],
+        summary: "",
+      },
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("VALIDATION_ERROR");
+    }
+  });
+
+  it("plan:approve returns NOT_FOUND for a missing task", () => {
+    const result = handlers["plan:approve"]({
+      schedule: {
+        date: startOfToday(),
+        focusHours: 6,
+        primaryGoal: "Ship it",
+        schedule: [
+          {
+            taskId: "missing-task",
+            title: "Ghost",
+            priority: "high",
+            estimatedMinutes: 30,
+            budgetedMinutes: 30,
+            scheduledStart: startOfToday() + 9 * 60 * 60 * 1000,
+            isFixed: false,
+            rationale: "Nope.",
+          },
+        ],
+        unscheduledTasks: [],
+        summary: "Nope.",
+      },
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("NOT_FOUND");
+    }
   });
 });

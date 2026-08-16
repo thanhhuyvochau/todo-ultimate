@@ -2,6 +2,7 @@ import type {
   Task,
   TaskStatus,
   TaskPriority,
+  DailyPlan,
   DailyPlanSchedule,
   PerformanceReport,
   AIScheduleInput,
@@ -65,6 +66,14 @@ export interface IpcChannelMap {
   "metrics:getTaskVariance": {
     request: { taskId: string };
     response: TaskVariance | null;
+  };
+  "plan:getToday": {
+    request: object;
+    response: DailyPlan | null;
+  };
+  "plan:approve": {
+    request: { schedule: DailyPlanSchedule };
+    response: DailyPlan;
   };
 }
 

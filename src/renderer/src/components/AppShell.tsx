@@ -1,17 +1,18 @@
-import { useState, useEffect } from 'react';
-import type { ViewName } from './Sidebar';
-import { Sidebar } from './Sidebar';
-import { Header } from './Header';
-import { BacklogView } from './BacklogView';
-import { TodayView } from './TodayView';
-import { SettingsView } from './SettingsView';
-import { StatusFooter } from './StatusFooter';
-import { useTimerStore } from '../stores/timerStore';
+import { useState, useEffect } from "react";
+import type { ViewName } from "./Sidebar";
+import { Sidebar } from "./Sidebar";
+import { Header } from "./Header";
+import { BacklogView } from "./BacklogView";
+import { TodayView } from "./TodayView";
+import { PlanView } from "./PlanView";
+import { SettingsView } from "./SettingsView";
+import { StatusFooter } from "./StatusFooter";
+import { useTimerStore } from "../stores/timerStore";
 
-const ENABLED_VIEWS: ViewName[] = ['backlog', 'today'];
+const ENABLED_VIEWS: ViewName[] = ["backlog", "today", "plan"];
 
 export function AppShell() {
-  const [activeView, setActiveView] = useState<ViewName>('backlog');
+  const [activeView, setActiveView] = useState<ViewName>("backlog");
 
   useEffect(() => {
     useTimerStore.getState().initTimer();
@@ -26,8 +27,8 @@ export function AppShell() {
         setActiveView(ENABLED_VIEWS[index]!);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   return (
@@ -36,11 +37,18 @@ export function AppShell() {
       <div className="flex flex-1 overflow-hidden border-t border-border">
         <Sidebar activeView={activeView} onNavigate={setActiveView} />
         <main className="flex-1 overflow-hidden">
-          {activeView === 'backlog'  && <BacklogView />}
-          {activeView === 'today'   && <TodayView />}
-          {activeView === 'plan'    && <PlaceholderView label="Daily Plan" sublabel="AI scheduling coming soon" />}
-          {activeView === 'reports' && <PlaceholderView label="Reports"    sublabel="Performance insights coming soon" />}
-          {activeView === 'settings'&& <SettingsView />}
+          {activeView === "backlog" && <BacklogView />}
+          {activeView === "today" && <TodayView />}
+          {activeView === "plan" && (
+            <PlanView onApproved={() => setActiveView("today")} />
+          )}
+          {activeView === "reports" && (
+            <PlaceholderView
+              label="Reports"
+              sublabel="Performance insights coming soon"
+            />
+          )}
+          {activeView === "settings" && <SettingsView />}
         </main>
       </div>
       <StatusFooter />
@@ -48,7 +56,13 @@ export function AppShell() {
   );
 }
 
-function PlaceholderView({ label, sublabel }: { label: string; sublabel: string }) {
+function PlaceholderView({
+  label,
+  sublabel,
+}: {
+  label: string;
+  sublabel: string;
+}) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-1">
       <p className="text-sm font-medium text-text-secondary">{label}</p>

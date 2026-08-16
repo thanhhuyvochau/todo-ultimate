@@ -63,4 +63,10 @@ export interface RendererApi {
   getTaskVariance: (
     params: IpcChannelMap["metrics:getTaskVariance"]["request"],
   ) => Promise<IpcResult<IpcChannelMap["metrics:getTaskVariance"]["response"]>>;
+  getTodayPlan: () => Promise<
+    IpcResult<IpcChannelMap["plan:getToday"]["response"]>
+  >;
+  approvePlan: (
+    schedule: IpcChannelMap["plan:approve"]["request"]["schedule"],
+  ) => Promise<IpcResult<IpcChannelMap["plan:approve"]["response"]>>;
 }

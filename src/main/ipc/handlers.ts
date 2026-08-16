@@ -9,6 +9,9 @@ import * as timerService from "@/main/services/timer-service";
 import * as varianceService from "@/main/services/variance-service";
 import * as deepseekService from "@/main/services/deepseekService";
 import * as dailyPlanService from "@/main/services/daily-plan-service";
+import * as dailyPlanRepo from "@/main/db/daily-plan-repository";
+import * as planApprovalService from "@/main/services/plan-approval-service";
+import { getStartOfDay } from "@/main/services/recurring-engine";
 
 const AI_IPC_ERROR_CODES = new Set<string>([
   "AI_TIMEOUT",
@@ -309,6 +312,34 @@ export const handlers: HandlerMap = {
       return ok(variance);
     } catch (err) {
       return fail("DB_READ_FAILED", "Failed to compute task variance.");
+    }
+  },
+
+  "plan:getToday": () => {
+    try {
+      const plan = dailyPlanRepo.getPlanForDate(getStartOfDay(Date.now()));
+      return ok(plan);
+    } catch (err) {
+      return fail("DB_READ_FAILED", "Failed to fetch today's plan.");
+    }
+  },
+
+  "plan:approve": ({ schedule }) => {
+    try {
+      const plan = planApprovalService.approvePlan(schedule);
+      return ok(plan);
+    } catch (err) {
+      const error = err as { code?: string; message?: string };
+      if (error.code === "VALIDATION_ERROR") {
+        return fail(
+          "VALIDATION_ERROR",
+          error.message ?? "The plan is invalid.",
+        );
+      }
+      if (error.code === "NOT_FOUND") {
+        return fail("NOT_FOUND", error.message ?? "A planned task is missing.");
+      }
+      return fail("DB_WRITE_FAILED", "Failed to approve the plan.");
     }
   },
 };

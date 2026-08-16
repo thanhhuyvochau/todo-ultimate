@@ -1,7 +1,7 @@
-import type { LucideIcon } from 'lucide-react';
-import { Inbox, Calendar, Lightbulb, BarChart2, Settings } from 'lucide-react';
+import type { LucideIcon } from "lucide-react";
+import { Inbox, Calendar, Lightbulb, BarChart2, Settings } from "lucide-react";
 
-export type ViewName = 'backlog' | 'today' | 'plan' | 'reports' | 'settings';
+export type ViewName = "backlog" | "today" | "plan" | "reports" | "settings";
 
 interface NavItem {
   id: ViewName;
@@ -11,11 +11,11 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'backlog',  label: 'Backlog',     icon: Inbox,      enabled: true  },
-  { id: 'today',   label: 'Today',       icon: Calendar,   enabled: true  },
-  { id: 'plan',    label: 'Daily Plan',  icon: Lightbulb,  enabled: false },
-  { id: 'reports', label: 'Reports',     icon: BarChart2,  enabled: false },
-  { id: 'settings',label: 'Settings',   icon: Settings,   enabled: true  },
+  { id: "backlog", label: "Backlog", icon: Inbox, enabled: true },
+  { id: "today", label: "Today", icon: Calendar, enabled: true },
+  { id: "plan", label: "Daily Plan", icon: Lightbulb, enabled: true },
+  { id: "reports", label: "Reports", icon: BarChart2, enabled: false },
+  { id: "settings", label: "Settings", icon: Settings, enabled: true },
 ];
 
 interface SidebarProps {
@@ -38,12 +38,14 @@ export function Sidebar({ activeView, onNavigate }: SidebarProps) {
               title={item.label}
               aria-label={item.label}
               className={[
-                'group relative flex h-9 w-9 items-center justify-center rounded-md transition-colors duration-100',
+                "group relative flex h-9 w-9 items-center justify-center rounded-md transition-colors duration-100",
                 isActive
-                  ? 'bg-accent-subtle text-accent'
-                  : 'text-text-muted hover:bg-bg-tertiary hover:text-text-secondary',
-                !item.enabled ? 'cursor-not-allowed opacity-30' : 'cursor-pointer',
-              ].join(' ')}
+                  ? "bg-accent-subtle text-accent"
+                  : "text-text-muted hover:bg-bg-tertiary hover:text-text-secondary",
+                !item.enabled
+                  ? "cursor-not-allowed opacity-30"
+                  : "cursor-pointer",
+              ].join(" ")}
             >
               <Icon className="h-4 w-4" strokeWidth={isActive ? 2 : 1.75} />
               {isActive && (
