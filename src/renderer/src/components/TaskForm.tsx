@@ -1,15 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  Loader2,
-  X,
-  Eye,
-  EyeOff,
-  Check,
-  RefreshCw,
-} from "lucide-react";
+import { Loader2, X, Eye, EyeOff, Check, RefreshCw } from "lucide-react";
 import type { Task, TaskPriority } from "@shared/models";
 import { useTaskStore } from "../stores/taskStore";
 import { MarkdownEditor } from "./MarkdownEditor";
+import { Tooltip } from "./ui/Tooltip";
 
 const DESCRIPTION_MAX_LENGTH = 100000;
 const AUTO_SAVE_DELAY = 1500;
@@ -246,15 +240,17 @@ export function TaskForm({
       <div className="relative w-full max-w-md rounded-lg border border-border bg-bg-elevated p-5 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
           <p className="text-sm font-semibold text-text-primary">
-            {isEditing ? 'Edit Task' : 'New Task'}
+            {isEditing ? "Edit Task" : "New Task"}
           </p>
-          <button
-            onClick={handleCloseRequest}
-            className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
-            aria-label="Close form"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+          <Tooltip label="Close form">
+            <button
+              onClick={handleCloseRequest}
+              className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
+              aria-label="Close form"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
         </div>
 
         <div className="flex flex-col gap-3.5">
@@ -273,7 +269,7 @@ export function TaskForm({
               onChange={(e) => handleTitleChange(e.target.value)}
               maxLength={200}
               placeholder="What needs to be done?"
-              className={`w-full rounded bg-bg-tertiary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 ${titleError ? 'ring-1 ring-danger' : 'ring-transparent focus:ring-border-focus'}`}
+              className={`w-full rounded bg-bg-tertiary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 ${titleError ? "ring-1 ring-danger" : "ring-transparent focus:ring-border-focus"}`}
             />
             {titleError && (
               <p className="mt-1 text-xs text-danger">{titleError}</p>
@@ -295,7 +291,7 @@ export function TaskForm({
               value={estimatedMinutes}
               onChange={(e) => handleMinutesChange(e.target.value)}
               placeholder="e.g. 30"
-              className={`w-full rounded bg-bg-tertiary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 ${minutesError ? 'ring-1 ring-danger' : 'ring-transparent focus:ring-border-focus'}`}
+              className={`w-full rounded bg-bg-tertiary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 ${minutesError ? "ring-1 ring-danger" : "ring-transparent focus:ring-border-focus"}`}
             />
             {minutesError && (
               <p className="mt-1 text-xs text-danger">{minutesError}</p>
@@ -313,11 +309,11 @@ export function TaskForm({
                   type="button"
                   onClick={() => setPriority(option.value)}
                   className={[
-                    'flex-1 rounded py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+                    "flex-1 rounded py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent",
                     priority === option.value
-                      ? 'bg-accent-subtle text-accent'
-                      : 'bg-bg-tertiary text-text-muted hover:text-text-secondary',
-                  ].join(' ')}
+                      ? "bg-accent-subtle text-accent"
+                      : "bg-bg-tertiary text-text-muted hover:text-text-secondary",
+                  ].join(" ")}
                 >
                   {option.label}
                 </button>
@@ -394,14 +390,16 @@ export function TaskForm({
             className="inline-flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40"
           >
             {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            {isEditing ? 'Save' : 'Create'}
+            {isEditing ? "Save" : "Create"}
           </button>
         </div>
 
         {showUnsavedWarning && (
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-bg-elevated/95 backdrop-blur-[1px]">
             <div className="w-full max-w-xs rounded-md border border-border bg-bg-elevated p-4 shadow-xl">
-              <p className="text-sm font-medium text-text-primary">Unsaved Changes</p>
+              <p className="text-sm font-medium text-text-primary">
+                Unsaved Changes
+              </p>
               <p className="mt-1 text-xs text-text-muted">
                 Description has unsaved edits. Discard them?
               </p>

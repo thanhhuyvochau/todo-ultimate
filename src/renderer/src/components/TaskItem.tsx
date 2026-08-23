@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, type KeyboardEvent } from "react";
 import {
   Pencil,
   Trash2,
@@ -11,12 +11,13 @@ import {
   Circle,
   CircleDot,
   CircleCheck,
-} from 'lucide-react';
-import type { Task, TaskStatus, TaskPriority } from '@shared/models';
-import { PriorityBadge } from './PriorityBadge';
-import { VarianceBadge } from './VarianceBadge';
+} from "lucide-react";
+import type { Task, TaskStatus, TaskPriority } from "@shared/models";
+import { PriorityBadge } from "./PriorityBadge";
+import { VarianceBadge } from "./VarianceBadge";
+import { Tooltip } from "./ui/Tooltip";
 
-const PRIORITY_CYCLE: TaskPriority[] = ['low', 'medium', 'high'];
+const PRIORITY_CYCLE: TaskPriority[] = ["low", "medium", "high"];
 
 function formatMinutes(minutes: number): string {
   const hours = Math.floor(minutes / 60);
@@ -32,18 +33,18 @@ interface StatusAction {
 }
 
 const STATUS_ACTIONS: Record<TaskStatus, StatusAction[]> = {
-  todo: [{ nextStatus: 'in_progress', label: 'Start' }],
+  todo: [{ nextStatus: "in_progress", label: "Start" }],
   in_progress: [
-    { nextStatus: 'todo',      label: 'Pause' },
-    { nextStatus: 'completed', label: 'Complete' },
+    { nextStatus: "todo", label: "Pause" },
+    { nextStatus: "completed", label: "Complete" },
   ],
   completed: [],
 };
 
 const CheckIcon: Record<TaskStatus, typeof Circle> = {
-  todo:        Circle,
+  todo: Circle,
   in_progress: CircleDot,
-  completed:   CircleCheck,
+  completed: CircleCheck,
 };
 
 interface InlineEditValues {
@@ -89,13 +90,13 @@ export function TaskItem({
       }
     };
     const handleKeyDown = (e: globalThis.KeyboardEvent) => {
-      if (e.key === 'Escape') setStatusOpen(false);
+      if (e.key === "Escape") setStatusOpen(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [statusOpen]);
 
@@ -115,7 +116,10 @@ export function TaskItem({
   }, [task.title, task.priority, task.estimatedMinutes, isEditing]);
 
   const handleStartEdit = () => {
-    if (!onInlineSave) { onEdit(task); return; }
+    if (!onInlineSave) {
+      onEdit(task);
+      return;
+    }
     setIsEditing(true);
   };
 
@@ -124,7 +128,11 @@ export function TaskItem({
     if (!trimmed || trimmed.length > 200) return;
     const minutes = parseInt(editMinutes, 10);
     if (isNaN(minutes) || minutes < 1 || minutes > 1440) return;
-    onInlineSave!(task, { title: trimmed, priority: editPriority, estimatedMinutes: minutes });
+    onInlineSave!(task, {
+      title: trimmed,
+      priority: editPriority,
+      estimatedMinutes: minutes,
+    });
     setIsEditing(false);
   };
 
@@ -136,8 +144,13 @@ export function TaskItem({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') { e.preventDefault(); handleSave(); }
-    else if (e.key === 'Escape') { e.preventDefault(); handleCancel(); }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      handleCancel();
+    }
   };
 
   const cyclePriority = () => {
@@ -145,17 +158,22 @@ export function TaskItem({
     setEditPriority(PRIORITY_CYCLE[(idx + 1) % PRIORITY_CYCLE.length]!);
   };
 
-  const isCompleted = task.status === 'completed';
-  const isInProgress = task.status === 'in_progress';
-  const showMoveToToday = !isEditing && onMoveToToday && task.status === 'todo' && task.scheduledDate === null;
-  const showReturnToBacklog = !isEditing && onReturnToBacklog && task.scheduledDate !== null;
+  const isCompleted = task.status === "completed";
+  const isInProgress = task.status === "in_progress";
+  const showMoveToToday =
+    !isEditing &&
+    onMoveToToday &&
+    task.status === "todo" &&
+    task.scheduledDate === null;
+  const showReturnToBacklog =
+    !isEditing && onReturnToBacklog && task.scheduledDate !== null;
 
   return (
     <div
       className={[
-        'group flex items-center gap-3 border-b border-border px-4 py-2.5 transition-colors duration-100',
-        isInProgress ? 'bg-accent-subtle/30' : 'hover:bg-bg-secondary',
-      ].join(' ')}
+        "group flex items-center gap-3 border-b border-border px-4 py-2.5 transition-colors duration-100",
+        isInProgress ? "bg-accent-subtle/30" : "hover:bg-bg-secondary",
+      ].join(" ")}
     >
       {/* Status circle */}
       <button
@@ -169,13 +187,13 @@ export function TaskItem({
         disabled={isCompleted || isEditing}
         aria-label={`Status: ${task.status}`}
         className={[
-          'shrink-0 transition-colors duration-100',
+          "shrink-0 transition-colors duration-100",
           isCompleted
-            ? 'cursor-default text-success'
+            ? "cursor-default text-success"
             : isInProgress
-              ? 'cursor-pointer text-accent hover:text-accent-hover'
-              : 'cursor-pointer text-text-muted hover:text-text-secondary',
-        ].join(' ')}
+              ? "cursor-pointer text-accent hover:text-accent-hover"
+              : "cursor-pointer text-text-muted hover:text-text-secondary",
+        ].join(" ")}
       >
         <CheckMark className="h-4 w-4" strokeWidth={1.5} />
       </button>
@@ -217,20 +235,24 @@ export function TaskItem({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            <button
-              onClick={handleSave}
-              className="flex h-6 w-6 items-center justify-center rounded text-accent hover:bg-accent-subtle"
-              aria-label="Save changes"
-            >
-              <Check className="h-3.5 w-3.5" />
-            </button>
-            <button
-              onClick={handleCancel}
-              className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
-              aria-label="Cancel editing"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+            <Tooltip label="Save changes">
+              <button
+                onClick={handleSave}
+                className="flex h-6 w-6 items-center justify-center rounded text-accent hover:bg-accent-subtle"
+                aria-label="Save changes"
+              >
+                <Check className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
+            <Tooltip label="Cancel editing">
+              <button
+                onClick={handleCancel}
+                className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
+                aria-label="Cancel editing"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
           </div>
         </>
       ) : (
@@ -246,13 +268,13 @@ export function TaskItem({
           >
             <p
               className={[
-                'truncate text-sm',
+                "truncate text-sm",
                 isCompleted
-                  ? 'text-text-muted line-through'
+                  ? "text-text-muted line-through"
                   : isInProgress
-                    ? 'font-medium text-text-primary'
-                    : 'text-text-primary',
-              ].join(' ')}
+                    ? "font-medium text-text-primary"
+                    : "text-text-primary",
+              ].join(" ")}
             >
               {task.title}
             </p>
@@ -267,37 +289,40 @@ export function TaskItem({
           {/* Actions (shown on hover) */}
           <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-100 group-hover:opacity-100">
             {showReturnToBacklog && (
-              <button
-                onClick={() => onReturnToBacklog!(task)}
-                className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
-                aria-label="Return to backlog"
-                title="Return to backlog"
-              >
-                <ArrowDownLeft className="h-3.5 w-3.5" />
-              </button>
+              <Tooltip label="Return to backlog">
+                <button
+                  onClick={() => onReturnToBacklog!(task)}
+                  className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
+                  aria-label="Return to backlog"
+                >
+                  <ArrowDownLeft className="h-3.5 w-3.5" />
+                </button>
+              </Tooltip>
             )}
             {showMoveToToday && (
-              <button
-                onClick={() => onMoveToToday!(task)}
-                className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-accent"
-                aria-label="Move to today"
-                title="Move to today"
-              >
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              </button>
+              <Tooltip label="Move to today">
+                <button
+                  onClick={() => onMoveToToday!(task)}
+                  className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-accent"
+                  aria-label="Move to today"
+                >
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </button>
+              </Tooltip>
             )}
 
             {/* Status change dropdown */}
             {actions.length > 0 && (
               <div className="relative" ref={menuRef}>
-                <button
-                  onClick={() => setStatusOpen(!statusOpen)}
-                  className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
-                  aria-label="Change status"
-                  title="Change status"
-                >
-                  <ChevronDown className="h-3.5 w-3.5" />
-                </button>
+                <Tooltip label="Change status">
+                  <button
+                    onClick={() => setStatusOpen(!statusOpen)}
+                    className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
+                    aria-label="Change status"
+                  >
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </button>
+                </Tooltip>
                 {statusOpen && (
                   <div className="absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-md border border-border bg-bg-elevated py-0.5 shadow-lg">
                     {actions.map((action) => (
@@ -309,7 +334,7 @@ export function TaskItem({
                         }}
                         className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-text-primary hover:bg-bg-tertiary"
                       >
-                        {action.nextStatus === 'completed' && (
+                        {action.nextStatus === "completed" && (
                           <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                         )}
                         {action.label}
@@ -320,22 +345,24 @@ export function TaskItem({
               </div>
             )}
 
-            <button
-              onClick={handleStartEdit}
-              className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
-              aria-label="Edit task"
-              title="Edit task"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
-            <button
-              onClick={() => onDelete(task)}
-              className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-danger-subtle hover:text-danger"
-              aria-label="Delete task"
-              title="Delete task"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            <Tooltip label="Edit task">
+              <button
+                onClick={handleStartEdit}
+                className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
+                aria-label="Edit task"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
+            <Tooltip label="Delete task">
+              <button
+                onClick={() => onDelete(task)}
+                className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-danger-subtle hover:text-danger"
+                aria-label="Delete task"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
           </div>
         </>
       )}

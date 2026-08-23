@@ -357,17 +357,19 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
   - ~~Builds output executable files for Windows/Mac/Linux.~~ _(pending — renderer build not producing output)_
 - **Remaining**: Fix renderer build pipeline; produce distributable artifacts.
 
-### TKT-024: Add Hover Tooltips to Icon Buttons ❌ Not Started
+### TKT-024: Add Hover Tooltips to Icon Buttons ✅ Done
 
 - **Spec**: [`23-icon-system.md`](./spec/23-icon-system.md)
 
 **As a** user, **I want to** see a text label when hovering over icon-only buttons **so that** I understand what each action does without trial-and-error.
 
-- **Status**: All 16 icon-only buttons already have `aria-label` attributes for screen readers, but no visible hover tooltip exists. Buttons without tooltips: `TaskItem` (Save, Cancel, Return-to-backlog, Move-to-today, Status-change, Edit, Delete), `DeleteConfirmationDialog` (Close), `RecurringRuleCard` (Toggle, Edit, Delete), `RecurringRulesPanel` (Refresh), `Sidebar` (Toggle), `TaskForm`/`RecurringRuleForm` (Close).
+- **Status**: Complete — `src/renderer/src/components/ui/Tooltip.tsx` (reusable CSS-only tooltip component: hover + keyboard-focus via `group-focus-within`, configurable `side`, theme tokens only). Wired into icon-only buttons: `TaskItem` (Save, Cancel, Return-to-backlog, Move-to-today, Change-status, Edit, Delete), `DeleteConfirmationDialog` (Close), `RecurringRuleCard` (Toggle, Edit, Delete), `RecurringRulesPanel` (Refresh), `Header` (Pause timer), `TaskForm`/`RecurringRuleForm` (Close). Redundant native `title` attributes removed in favor of the styled tooltip.
 - **Acceptance Criteria**:
-  - Hovering any icon button shows a short text label describing the action.
-  - Tooltip text matches existing `aria-label` values.
-  - Works in both light and dark themes.
+  - ✅ Hovering any icon button shows a short text label describing the action.
+  - ✅ Tooltip text matches existing `aria-label` values.
+  - ✅ Works in both light and dark themes (uses `bg-bg-elevated` / `text-text-primary` / `border-border` theme tokens).
+- **Notes**: Sidebar nav items retain native `title` tooltips (wrapping would clip against the shell's `overflow-hidden` container; no toggle button exists in the current icon-only sidebar).
+- **Tests**: `src/renderer/src/components/__tests__/Tooltip.test.tsx` (4 cases: renders children, tooltip role + label, default top position, custom side).
 - **INVEST Check**: Independent (standalone component), Valuable (improves discoverability), Small (~30 min, simple component + wiring).
 
 ### TKT-025: Settings — API Key Management ✅ Done

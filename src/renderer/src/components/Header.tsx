@@ -1,6 +1,7 @@
 import { Zap, Pause, Play } from "lucide-react";
 import { useTimerStore } from "../stores/timerStore";
 import { useTaskStore } from "../stores/taskStore";
+import { Tooltip } from "./ui/Tooltip";
 
 function formatSeconds(totalSec: number): string {
   const hours = Math.floor(totalSec / 3600);
@@ -14,7 +15,8 @@ function formatSeconds(totalSec: number): string {
 }
 
 export function Header() {
-  const { activeTaskId, elapsedSeconds, pauseTimer, startTimer } = useTimerStore();
+  const { activeTaskId, elapsedSeconds, pauseTimer, startTimer } =
+    useTimerStore();
   const tasks = useTaskStore((s) => s.tasks);
   const updateTask = useTaskStore((s) => s.updateTask);
 
@@ -48,14 +50,15 @@ export function Header() {
           <span className="font-mono text-text-secondary">
             {formatSeconds(elapsedSeconds)}
           </span>
-          <button
-            onClick={handleToggleTimer}
-            className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-tertiary text-text-primary transition-colors hover:bg-border"
-            aria-label="Pause timer"
-            title="Pause timer"
-          >
-            <Pause className="h-3 w-3 fill-current" />
-          </button>
+          <Tooltip label="Pause timer" side="bottom">
+            <button
+              onClick={handleToggleTimer}
+              className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-tertiary text-text-primary transition-colors hover:bg-border"
+              aria-label="Pause timer"
+            >
+              <Pause className="h-3 w-3 fill-current" />
+            </button>
+          </Tooltip>
         </div>
       ) : (
         <div className="flex items-center gap-1.5 text-xs text-text-muted">

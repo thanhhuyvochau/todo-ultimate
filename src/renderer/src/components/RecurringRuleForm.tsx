@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Loader2, X } from "lucide-react";
 import type { RecurringFrequency, TaskPriority } from "@shared/models";
 import { useRecurringRuleStore } from "../stores/recurringRuleStore";
+import { Tooltip } from "./ui/Tooltip";
 
 const PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
   { value: "low", label: "Low" },
@@ -228,13 +229,15 @@ export function RecurringRuleForm({
           <h2 className="text-xl font-semibold text-text-primary">
             {isEditing ? "Edit Rule" : "New Recurring Task"}
           </h2>
-          <button
-            onClick={onClose}
-            className="rounded-md p-1 text-text-muted transition-colors hover:text-text-primary"
-            aria-label="Close form"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <Tooltip label="Close form">
+            <button
+              onClick={onClose}
+              className="rounded-md p-1 text-text-muted transition-colors hover:text-text-primary"
+              aria-label="Close form"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </Tooltip>
         </div>
 
         <div className="flex flex-col gap-4">

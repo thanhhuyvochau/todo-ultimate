@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
+import { Tooltip } from "./ui/Tooltip";
 
 type DeleteItemType = "task" | "rule" | "key" | "report";
 
@@ -90,13 +91,15 @@ export function DeleteConfirmationDialog({
               )}
             </p>
           </div>
-          <button
-            onClick={onCancel}
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
-            aria-label="Close"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+          <Tooltip label="Close">
+            <button
+              onClick={onCancel}
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
+              aria-label="Close"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
         </div>
         <div className="flex justify-end gap-2">
           <button
