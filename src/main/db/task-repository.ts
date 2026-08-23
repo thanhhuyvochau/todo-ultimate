@@ -191,7 +191,6 @@ function applyTimeAnchor(startOfDay: number, timeAnchor: number): number {
 function validateStatusTransition(
   currentStatus: string,
   newStatus: string,
-  taskId: string,
 ): void {
   const allowedTransitions: Record<string, string[]> = {
     todo: ["in_progress"],
@@ -206,21 +205,6 @@ function validateStatusTransition(
       { code: "STATE_TRANSITION_ILLEGAL" },
     );
   }
-
-  if (newStatus === "in_progress") {
-    const db = getDb();
-    const activeTask = db
-      .prepare("SELECT id, title FROM tasks WHERE status = ? AND id != ?")
-      .get("in_progress", taskId) as Pick<TaskRow, "id" | "title"> | undefined;
-    if (activeTask) {
-      throw Object.assign(
-        new Error(
-          `Cannot start this task. "${activeTask.title}" is already in progress.`,
-        ),
-        { code: "TASK_ALREADY_ACTIVE" },
-      );
-    }
-  }
 }
 
 export function updateTask(patch: Partial<Task> & { id: string }): Task {
@@ -233,7 +217,7 @@ export function updateTask(patch: Partial<Task> & { id: string }): Task {
   }
 
   if (patch.status !== undefined && patch.status !== existing.status) {
-    validateStatusTransition(existing.status, patch.status, patch.id);
+    validateStatusTransition(existing.status, patch.status);
   }
 
   const now = Date.now();

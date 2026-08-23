@@ -67,6 +67,15 @@ export const handlers = {
 
   "tasks:update": (data) => {
     try {
+      if (data.status === "in_progress") {
+        timerService.startTimer(data.id);
+      }
+      if (data.status === "todo") {
+        const unclosed = timeLogRepo.getUnclosedTimeLog(data.id);
+        if (unclosed) {
+          timerService.pauseTimer(data.id);
+        }
+      }
       if (data.status === "completed") {
         const unclosed = timeLogRepo.getUnclosedTimeLog(data.id);
         if (unclosed) {
@@ -87,12 +96,6 @@ export const handlers = {
         return fail(
           "STATE_TRANSITION_ILLEGAL",
           error.message ?? "Invalid status transition.",
-        );
-      }
-      if (error.code === "TASK_ALREADY_ACTIVE") {
-        return fail(
-          "TASK_ALREADY_ACTIVE",
-          error.message ?? "Another task is already in progress.",
         );
       }
       return fail("DB_WRITE_FAILED", "Failed to update task.");

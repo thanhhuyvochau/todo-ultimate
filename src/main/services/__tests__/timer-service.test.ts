@@ -56,15 +56,19 @@ beforeEach(() => {
   `);
 
   // Insert two test tasks
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO tasks (id, title, priority, status, estimated_minutes, created_at, updated_at)
     VALUES ('task-1', 'Task One', 'medium', 'todo', 30, 1000, 1000)
-  `).run();
+  `,
+  ).run();
 
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO tasks (id, title, priority, status, estimated_minutes, created_at, updated_at)
     VALUES ('task-2', 'Task Two', 'high', 'todo', 45, 1000, 1000)
-  `).run();
+  `,
+  ).run();
 
   testDbReady.mockReturnValue(db);
 });
@@ -120,6 +124,20 @@ describe("timer-service", () => {
   it("throws NOT_FOUND when starting timer for non-existent task", async () => {
     const service = await getTimerService();
     expect(() => service.startTimer("invalid-task")).toThrow("Task not found.");
+  });
+
+  it("resets a stale in_progress task in the DB when starting another (no in-memory timer)", async () => {
+    const service = await getTimerService();
+    const taskRepo = await getTaskRepo();
+
+    taskRepo.updateTask({ id: "task-1", status: "in_progress" });
+
+    service.startTimer("task-2");
+
+    const task1 = taskRepo.getTasks().find((t) => t.id === "task-1");
+    const task2 = taskRepo.getTasks().find((t) => t.id === "task-2");
+    expect(task1?.status).toBe("todo");
+    expect(task2?.status).toBe("in_progress");
   });
 
   it("throws NOT_FOUND when pausing non-active timer", async () => {

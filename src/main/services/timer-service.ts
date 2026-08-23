@@ -52,14 +52,25 @@ export function startTimer(taskId: string): { logId: string } {
     throw Object.assign(new Error("Task not found."), { code: "NOT_FOUND" });
   }
 
-  // If another timer is active, pause it and reset its status
-  if (activeTimer && activeTimer.taskId !== taskId) {
-    const previousTaskId = activeTimer.taskId;
-    pauseTimer(previousTaskId);
-    const previousTask = tasks.find((t) => t.id === previousTaskId);
-    if (previousTask?.status === "in_progress") {
-      taskRepo.updateTask({ id: previousTaskId, status: "todo" });
+  // Pause and reset any other task still marked in_progress in the DB. The
+  // DB is the single source of truth for "one active task", so this also
+  // cleans up stale in_progress tasks left behind when the in-memory timer
+  // was lost (e.g. app restart) or when a previous start only flipped status.
+  for (const other of tasks) {
+    if (other.id === taskId || other.status !== "in_progress") {
+      continue;
     }
+    const unclosed = timeLogRepo.getUnclosedTimeLog(other.id);
+    if (unclosed) {
+      timeLogRepo.pauseTimeLog(unclosed.id);
+    }
+    taskRepo.updateTask({ id: other.id, status: "todo" });
+  }
+
+  // Reconcile the in-memory timer if it pointed at a task we just reset.
+  if (activeTimer && activeTimer.taskId !== taskId) {
+    stopTickLoop();
+    activeTimer = null;
   }
 
   // If already active for this task, return logId

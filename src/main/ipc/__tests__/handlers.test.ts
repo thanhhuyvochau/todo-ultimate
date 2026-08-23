@@ -385,6 +385,45 @@ describe("tasks:update", () => {
       expect(result.error.code).toBe("VALIDATION_ERROR");
     }
   });
+
+  it("auto-pauses previous in_progress task when starting another", () => {
+    const a = handlers["tasks:create"]({
+      title: "Task A",
+      description: null,
+      priority: "high",
+      estimatedMinutes: 30,
+    });
+    const b = handlers["tasks:create"]({
+      title: "Task B",
+      description: null,
+      priority: "medium",
+      estimatedMinutes: 45,
+    });
+    expect(a.ok).toBe(true);
+    expect(b.ok).toBe(true);
+    if (!a.ok || !b.ok) return;
+
+    const startA = handlers["tasks:update"]({
+      id: a.data.id,
+      status: "in_progress",
+    });
+    expect(startA.ok).toBe(true);
+
+    const startB = handlers["tasks:update"]({
+      id: b.data.id,
+      status: "in_progress",
+    });
+    expect(startB.ok).toBe(true);
+
+    const rows = handlers["tasks:getAll"]({});
+    expect(rows.ok).toBe(true);
+    if (!rows.ok) return;
+
+    const taskA = rows.data.find((t) => t.id === a.data.id);
+    const taskB = rows.data.find((t) => t.id === b.data.id);
+    expect(taskA?.status).toBe("todo");
+    expect(taskB?.status).toBe("in_progress");
+  });
 });
 
 describe("tasks:delete", () => {
