@@ -3,6 +3,7 @@ import type {
   RecurringRule,
   RecurringFrequency,
   TaskPriority,
+  CreateRuleInput,
 } from "@/shared/models";
 import { randomUUID } from "crypto";
 
@@ -134,7 +135,7 @@ export function getAllRules(): RecurringRule[] {
   return rows.map(rowToRule);
 }
 
-export function createRule(input: Omit<RecurringRule, "id">): RecurringRule {
+export function createRule(input: CreateRuleInput): RecurringRule {
   const db = getDb();
   const validationError = validateRuleInput(input);
   if (validationError) {

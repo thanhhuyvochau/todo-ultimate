@@ -20,6 +20,13 @@ export interface Task {
   updatedAt: number;
 }
 
+export interface CreateTaskInput {
+  title: string;
+  description?: string | null;
+  priority: TaskPriority;
+  estimatedMinutes: number;
+}
+
 export interface TimeLog {
   id: string;
   taskId: string;
@@ -43,6 +50,17 @@ export interface RecurringRule {
   isActive: boolean;
   lastInstantiatedDate: number | null;
   createdAt: number;
+}
+
+export interface CreateRuleInput {
+  title: string;
+  description?: string | null;
+  priority: TaskPriority;
+  estimatedMinutes: number;
+  frequency: RecurringFrequency;
+  timeAnchor?: number | null;
+  daysOfWeek?: number[] | null;
+  dayOfMonth?: number | null;
 }
 
 export interface DailyPlan {

@@ -51,21 +51,12 @@ export const useTaskStore = create<TaskStore>((set) => ({
 
   createTask: async (data) => {
     set({ isLoading: true, error: null });
-    const now = Date.now();
-    const taskData = {
+    const result = await window.api.createTask({
       title: data.title,
       description: data.description ?? null,
       priority: data.priority,
-      status: "todo" as TaskStatus,
       estimatedMinutes: data.estimatedMinutes,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: now,
-      updatedAt: now,
-    };
-    const result = await window.api.createTask(taskData);
+    });
     if (result.ok) {
       set((state) => ({
         tasks: [result.data, ...state.tasks],

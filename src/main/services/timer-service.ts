@@ -52,9 +52,14 @@ export function startTimer(taskId: string): { logId: string } {
     throw Object.assign(new Error("Task not found."), { code: "NOT_FOUND" });
   }
 
-  // If another timer is active, pause it
+  // If another timer is active, pause it and reset its status
   if (activeTimer && activeTimer.taskId !== taskId) {
-    pauseTimer(activeTimer.taskId);
+    const previousTaskId = activeTimer.taskId;
+    pauseTimer(previousTaskId);
+    const previousTask = tasks.find((t) => t.id === previousTaskId);
+    if (previousTask?.status === "in_progress") {
+      taskRepo.updateTask({ id: previousTaskId, status: "todo" });
+    }
   }
 
   // If already active for this task, return logId

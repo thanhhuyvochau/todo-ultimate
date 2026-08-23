@@ -21,6 +21,7 @@ import {
   useReportStore,
   type ReportTimeframePreset,
 } from "../stores/reportStore";
+import { useNetworkStore } from "../stores/networkStore";
 import { ReportHistory } from "./ReportHistory";
 
 const PRESETS: { id: ReportTimeframePreset; label: string }[] = [
@@ -229,6 +230,7 @@ export function ReportsView() {
     clearReport,
   } = useReportStore();
 
+  const isOnline = useNetworkStore((s) => s.isOnline);
   const [copied, setCopied] = useState(false);
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
 
@@ -384,7 +386,7 @@ export function ReportsView() {
 
               <button
                 onClick={handleGenerate}
-                disabled={isGenerating || customDisabled}
+                disabled={isGenerating || customDisabled || !isOnline}
                 className="flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isGenerating ? (
@@ -394,6 +396,11 @@ export function ReportsView() {
                 )}
                 Generate Report
               </button>
+              {!isOnline && (
+                <p className="text-center text-xs text-warning">
+                  Requires internet connection.
+                </p>
+              )}
             </div>
           </div>
 

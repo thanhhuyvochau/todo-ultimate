@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   RefreshCw,
   Check,
-  X,
   Loader2,
   Sparkles,
   Inbox,
@@ -11,6 +10,8 @@ import {
 import type { PlannedTaskBlock } from "@/shared/models";
 import { usePlanStore } from "../stores/planStore";
 import { useTaskStore } from "../stores/taskStore";
+import { useNetworkStore } from "../stores/networkStore";
+import { useToastStore } from "../stores/toastStore";
 import { PlanBlockRow } from "./PlanBlockRow";
 import { ApprovePlanDialog } from "./ApprovePlanDialog";
 import {
@@ -93,12 +94,10 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
   } = usePlanStore();
   const tasks = useTaskStore((s) => s.tasks);
   const fetchTasks = useTaskStore((s) => s.fetchTasks);
+  const isOnline = useNetworkStore((s) => s.isOnline);
+  const addToast = useToastStore((s) => s.addToast);
 
   const [showApprove, setShowApprove] = useState(false);
-  const [toast, setToast] = useState<{
-    msg: string;
-    type: "success" | "error";
-  } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -114,19 +113,13 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
     fetchTasks();
   }, [loadTodayPlan, fetchTasks]);
 
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 4000);
-    return () => clearTimeout(t);
-  }, [toast]);
-
   const handleGenerate = async () => {
     const ok = await generatePlan();
     if (!ok) {
-      setToast({
-        msg: usePlanStore.getState().error ?? "Plan generation failed.",
-        type: "error",
-      });
+      addToast(
+        "error",
+        usePlanStore.getState().error ?? "Plan generation failed.",
+      );
     }
   };
 
@@ -146,10 +139,7 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
       await fetchTasks();
       onApproved();
     } else {
-      setToast({
-        msg: usePlanStore.getState().error ?? "Approval failed.",
-        type: "error",
-      });
+      addToast("error", usePlanStore.getState().error ?? "Approval failed.");
     }
   };
 
@@ -213,7 +203,7 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
             </div>
             <button
               onClick={handleGenerate}
-              disabled={isGenerating || !(focusHours > 0)}
+              disabled={isGenerating || !(focusHours > 0) || !isOnline}
               className="flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isGenerating ? (
@@ -223,6 +213,11 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
               )}
               Generate Daily Plan
             </button>
+            {!isOnline && (
+              <p className="text-center text-xs text-warning">
+                Requires internet connection.
+              </p>
+            )}
             {existingTodayPlan?.isApproved && (
               <p className="text-center text-xs text-warning">
                 A plan is already approved for today. Generating a new one will
@@ -284,7 +279,7 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
             <div className="flex items-center gap-2 pb-4">
               <button
                 onClick={handleGenerate}
-                disabled={isGenerating}
+                disabled={isGenerating || !isOnline}
                 className="flex items-center gap-2 rounded-md bg-bg-tertiary px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-border disabled:opacity-50"
               >
                 {isGenerating ? (
@@ -316,25 +311,6 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {toast && (
-        <div
-          className={[
-            "fixed bottom-10 right-4 z-50 flex items-center gap-3 rounded-md border px-3 py-2 text-xs shadow-lg",
-            toast.type === "error"
-              ? "border-danger/20 bg-danger-subtle text-danger"
-              : "border-success/20 bg-success-subtle text-success",
-          ].join(" ")}
-        >
-          <span>{toast.msg}</span>
-          <button
-            onClick={() => setToast(null)}
-            className="opacity-60 hover:opacity-100"
-          >
-            <X className="h-3 w-3" />
-          </button>
         </div>
       )}
 

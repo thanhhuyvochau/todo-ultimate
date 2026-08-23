@@ -15,7 +15,7 @@ interface RecurringRuleStore {
     priority: TaskPriority;
     estimatedMinutes: number;
     frequency: RecurringFrequency;
-    description?: string;
+    description?: string | null;
     timeAnchor?: number | null;
     daysOfWeek?: number[] | null;
     dayOfMonth?: number | null;
@@ -58,8 +58,7 @@ export const useRecurringRuleStore = create<RecurringRuleStore>((set) => ({
 
   createRule: async (data) => {
     set({ isLoading: true, error: null });
-    const now = Date.now();
-    const ruleData = {
+    const result = await window.api.createRecurringRule({
       title: data.title,
       description: data.description ?? null,
       priority: data.priority,
@@ -68,11 +67,7 @@ export const useRecurringRuleStore = create<RecurringRuleStore>((set) => ({
       timeAnchor: data.timeAnchor ?? null,
       daysOfWeek: data.daysOfWeek ?? null,
       dayOfMonth: data.dayOfMonth ?? null,
-      isActive: true,
-      lastInstantiatedDate: null,
-      createdAt: now,
-    };
-    const result = await window.api.createRecurringRule(ruleData);
+    });
     if (result.ok) {
       set((state) => ({
         rules: [result.data, ...state.rules],

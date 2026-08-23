@@ -8,7 +8,9 @@ import { PlanView } from "./PlanView";
 import { SettingsView } from "./SettingsView";
 import { ReportsView } from "./ReportsView";
 import { StatusFooter } from "./StatusFooter";
+import { ToastContainer } from "./ToastContainer";
 import { useTimerStore } from "../stores/timerStore";
+import { useNetworkStore } from "../stores/networkStore";
 
 const ENABLED_VIEWS: ViewName[] = ["backlog", "today", "plan", "reports"];
 
@@ -17,6 +19,7 @@ export function AppShell() {
 
   useEffect(() => {
     useTimerStore.getState().initTimer();
+    useNetworkStore.getState().initNetwork();
   }, []);
 
   useEffect(() => {
@@ -48,6 +51,7 @@ export function AppShell() {
         </main>
       </div>
       <StatusFooter />
+      <ToastContainer />
     </div>
   );
 }

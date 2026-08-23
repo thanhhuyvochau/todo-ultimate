@@ -42,7 +42,7 @@ type HandlerMap = {
     | Promise<IpcResult<IpcChannelMap[K]["response"]>>;
 };
 
-export const handlers: HandlerMap = {
+export const handlers = {
   "tasks:getAll": (filters) => {
     try {
       const tasks = taskRepo.getTasks(filters);
@@ -138,7 +138,7 @@ export const handlers: HandlerMap = {
     }
   },
 
-  "timer:getActive": () => {
+  "timer:getActive": (_request) => {
     try {
       const active = timerService.getActiveTimer();
       return ok(active);
@@ -171,7 +171,7 @@ export const handlers: HandlerMap = {
     }
   },
 
-  "ai:testConnection": async () => {
+  "ai:testConnection": async (_request) => {
     try {
       const success = await deepseekService.testConnection();
       return ok({ success });
@@ -180,7 +180,7 @@ export const handlers: HandlerMap = {
     }
   },
 
-  "report:list": () => {
+  "report:list": (_request) => {
     try {
       const reports = reportService.listReports();
       return ok(reports);
@@ -243,7 +243,7 @@ export const handlers: HandlerMap = {
     }
   },
 
-  "key:get": () => {
+  "key:get": (_request) => {
     try {
       const hasKey = keychainService.isApiKeySet();
       return ok({ hasKey });
@@ -252,7 +252,7 @@ export const handlers: HandlerMap = {
     }
   },
 
-  "key:delete": () => {
+  "key:delete": (_request) => {
     try {
       keychainService.deleteApiKey();
       return ok({ success: true });
@@ -274,7 +274,7 @@ export const handlers: HandlerMap = {
     }
   },
 
-  "recurring:getAll": () => {
+  "recurring:getAll": (_request) => {
     try {
       const rules = recurringRuleRepo.getAllRules();
       return ok(rules);
@@ -365,7 +365,7 @@ export const handlers: HandlerMap = {
     }
   },
 
-  "plan:getToday": () => {
+  "plan:getToday": (_request) => {
     try {
       const plan = dailyPlanRepo.getPlanForDate(getStartOfDay(Date.now()));
       return ok(plan);
@@ -392,4 +392,4 @@ export const handlers: HandlerMap = {
       return fail("DB_WRITE_FAILED", "Failed to approve the plan.");
     }
   },
-};
+} satisfies HandlerMap;

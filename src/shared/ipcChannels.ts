@@ -2,12 +2,14 @@ import type {
   Task,
   TaskStatus,
   TaskPriority,
+  CreateTaskInput,
   DailyPlan,
   DailyPlanSchedule,
   PerformanceReportContent,
   PerformanceReportSummary,
   AIScheduleInput,
   RecurringRule,
+  CreateRuleInput,
   TaskVariance,
   VarianceMetrics,
 } from "./models";
@@ -17,7 +19,7 @@ export interface IpcChannelMap {
     request: { status?: TaskStatus; priority?: TaskPriority; query?: string };
     response: Task[];
   };
-  "tasks:create": { request: Omit<Task, "id">; response: Task };
+  "tasks:create": { request: CreateTaskInput; response: Task };
   "tasks:update": { request: Partial<Task> & { id: string }; response: Task };
   "tasks:delete": { request: { id: string }; response: { success: boolean } };
   "timer:start": { request: { taskId: string }; response: { logId: string } };
@@ -51,7 +53,7 @@ export interface IpcChannelMap {
   "key:delete": { request: object; response: { success: boolean } };
   "recurring:getAll": { request: object; response: RecurringRule[] };
   "recurring:create": {
-    request: Omit<RecurringRule, "id">;
+    request: CreateRuleInput;
     response: RecurringRule;
   };
   "recurring:update": {

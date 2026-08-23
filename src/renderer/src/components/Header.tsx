@@ -1,6 +1,7 @@
-import { Zap, Pause, Play } from "lucide-react";
+import { Zap, Pause, Sun, Moon } from "lucide-react";
 import { useTimerStore } from "../stores/timerStore";
 import { useTaskStore } from "../stores/taskStore";
+import { useThemeStore } from "../stores/themeStore";
 import { Tooltip } from "./ui/Tooltip";
 
 function formatSeconds(totalSec: number): string {
@@ -19,8 +20,12 @@ export function Header() {
     useTimerStore();
   const tasks = useTaskStore((s) => s.tasks);
   const updateTask = useTaskStore((s) => s.updateTask);
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
   const activeTask = tasks.find((t) => t.id === activeTaskId);
+  const themeLabel =
+    theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
 
   const handleToggleTimer = async () => {
     if (!activeTaskId) return;
@@ -41,31 +46,47 @@ export function Header() {
         </span>
       </div>
 
-      {activeTaskId ? (
-        <div className="flex items-center gap-2.5 rounded-full border border-border bg-bg-secondary px-3 py-1 text-xs">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-          <span className="truncate max-w-[180px] font-medium text-text-primary">
-            {activeTask?.title ?? "Active Task"}
-          </span>
-          <span className="font-mono text-text-secondary">
-            {formatSeconds(elapsedSeconds)}
-          </span>
-          <Tooltip label="Pause timer" side="bottom">
-            <button
-              onClick={handleToggleTimer}
-              className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-tertiary text-text-primary transition-colors hover:bg-border"
-              aria-label="Pause timer"
-            >
-              <Pause className="h-3 w-3 fill-current" />
-            </button>
-          </Tooltip>
-        </div>
-      ) : (
-        <div className="flex items-center gap-1.5 text-xs text-text-muted">
-          <span className="h-1.5 w-1.5 rounded-full bg-bg-tertiary" />
-          <span className="font-mono">No active timer</span>
-        </div>
-      )}
+      <div className="flex items-center gap-3">
+        {activeTaskId ? (
+          <div className="flex items-center gap-2.5 rounded-full border border-border bg-bg-secondary px-3 py-1 text-xs">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <span className="truncate max-w-[180px] font-medium text-text-primary">
+              {activeTask?.title ?? "Active Task"}
+            </span>
+            <span className="font-mono text-text-secondary">
+              {formatSeconds(elapsedSeconds)}
+            </span>
+            <Tooltip label="Pause timer" side="bottom">
+              <button
+                onClick={handleToggleTimer}
+                className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-tertiary text-text-primary transition-colors hover:bg-border"
+                aria-label="Pause timer"
+              >
+                <Pause className="h-3 w-3 fill-current" />
+              </button>
+            </Tooltip>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-xs text-text-muted">
+            <span className="h-1.5 w-1.5 rounded-full bg-bg-tertiary" />
+            <span className="font-mono">No active timer</span>
+          </div>
+        )}
+
+        <Tooltip label={themeLabel}>
+          <button
+            onClick={toggleTheme}
+            className="flex h-6 w-6 items-center justify-center rounded text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
+            aria-label={themeLabel}
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </button>
+        </Tooltip>
+      </div>
     </header>
   );
 }

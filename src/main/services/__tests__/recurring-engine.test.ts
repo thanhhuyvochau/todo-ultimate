@@ -3,7 +3,7 @@ import Database from "better-sqlite3";
 
 const testDbReady = vi.fn<() => Database.Database>();
 
-vi.mock("../db/database", () => ({
+vi.mock("../../db/database", () => ({
   getDb: () => testDbReady(),
   initDb: () => testDbReady(),
 }));
@@ -11,7 +11,7 @@ vi.mock("../db/database", () => ({
 let db: Database.Database;
 
 async function getEngine() {
-  return await import("../services/recurring-engine");
+  return await import("../recurring-engine");
 }
 
 async function createTasksTable() {
@@ -109,7 +109,7 @@ describe("matchesTodayFrequency", () => {
       id: "r1",
       title: "MWF",
       description: null,
-      priority: "medium",
+      priority: "medium" as const,
       estimatedMinutes: 30,
       frequency: "weekly" as const,
       timeAnchor: null,
@@ -133,7 +133,7 @@ describe("matchesTodayFrequency", () => {
       id: "r1",
       title: "Monthly",
       description: null,
-      priority: "medium",
+      priority: "medium" as const,
       estimatedMinutes: 30,
       frequency: "monthly" as const,
       timeAnchor: null,
@@ -157,7 +157,7 @@ describe("instantiateDailyTasks", () => {
   it("creates a task for a daily active rule", async () => {
     await createTasksTable();
 
-    const ruleRepo = await import("../db/recurring-rule-repository");
+    const ruleRepo = await import("../../db/recurring-rule-repository");
     ruleRepo.createRule({
       title: "Morning Standup",
       description: "Daily sync",
@@ -167,9 +167,6 @@ describe("instantiateDailyTasks", () => {
       timeAnchor: null,
       daysOfWeek: null,
       dayOfMonth: null,
-      isActive: true,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
 
     const engine = await getEngine();
@@ -193,7 +190,7 @@ describe("instantiateDailyTasks", () => {
   it("skips already instantiated rules (dedup)", async () => {
     await createTasksTable();
 
-    const ruleRepo = await import("../db/recurring-rule-repository");
+    const ruleRepo = await import("../../db/recurring-rule-repository");
     const rule = ruleRepo.createRule({
       title: "Daily",
       description: null,
@@ -203,9 +200,6 @@ describe("instantiateDailyTasks", () => {
       timeAnchor: null,
       daysOfWeek: null,
       dayOfMonth: null,
-      isActive: true,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
 
     const engine = await getEngine();
@@ -223,8 +217,8 @@ describe("instantiateDailyTasks", () => {
   it("skips inactive rules", async () => {
     await createTasksTable();
 
-    const ruleRepo = await import("../db/recurring-rule-repository");
-    ruleRepo.createRule({
+    const ruleRepo = await import("../../db/recurring-rule-repository");
+    const inactiveRule = ruleRepo.createRule({
       title: "Inactive",
       description: null,
       priority: "low",
@@ -233,10 +227,8 @@ describe("instantiateDailyTasks", () => {
       timeAnchor: null,
       daysOfWeek: null,
       dayOfMonth: null,
-      isActive: false,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
+    ruleRepo.toggleActive(inactiveRule.id);
 
     const engine = await getEngine();
     const now = new Date("2026-08-09T10:00:00").getTime();
@@ -248,7 +240,7 @@ describe("instantiateDailyTasks", () => {
   it("creates weekly only on matching days", async () => {
     await createTasksTable();
 
-    const ruleRepo = await import("../db/recurring-rule-repository");
+    const ruleRepo = await import("../../db/recurring-rule-repository");
     ruleRepo.createRule({
       title: "T/Th",
       description: null,
@@ -258,9 +250,6 @@ describe("instantiateDailyTasks", () => {
       timeAnchor: null,
       daysOfWeek: [2, 4],
       dayOfMonth: null,
-      isActive: true,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
 
     const engine = await getEngine();
@@ -275,7 +264,7 @@ describe("instantiateDailyTasks", () => {
   it("creates monthly only on matching day", async () => {
     await createTasksTable();
 
-    const ruleRepo = await import("../db/recurring-rule-repository");
+    const ruleRepo = await import("../../db/recurring-rule-repository");
     ruleRepo.createRule({
       title: "Rent",
       description: null,
@@ -285,9 +274,6 @@ describe("instantiateDailyTasks", () => {
       timeAnchor: null,
       daysOfWeek: null,
       dayOfMonth: 15,
-      isActive: true,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
 
     const engine = await getEngine();
@@ -302,7 +288,7 @@ describe("instantiateDailyTasks", () => {
   it("sets scheduledDate for time-anchored tasks", async () => {
     await createTasksTable();
 
-    const ruleRepo = await import("../db/recurring-rule-repository");
+    const ruleRepo = await import("../../db/recurring-rule-repository");
     ruleRepo.createRule({
       title: "Evening Read",
       description: null,
@@ -312,9 +298,6 @@ describe("instantiateDailyTasks", () => {
       timeAnchor: new Date("2026-01-01T20:00:00").getTime(),
       daysOfWeek: null,
       dayOfMonth: null,
-      isActive: true,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
 
     const engine = await getEngine();
@@ -337,7 +320,7 @@ describe("instantiateDailyTasks", () => {
   it("returns correct count for multiple rules", async () => {
     await createTasksTable();
 
-    const ruleRepo = await import("../db/recurring-rule-repository");
+    const ruleRepo = await import("../../db/recurring-rule-repository");
     ruleRepo.createRule({
       title: "Daily 1",
       description: null,
@@ -347,9 +330,6 @@ describe("instantiateDailyTasks", () => {
       timeAnchor: null,
       daysOfWeek: null,
       dayOfMonth: null,
-      isActive: true,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
     ruleRepo.createRule({
       title: "Daily 2",
@@ -360,11 +340,8 @@ describe("instantiateDailyTasks", () => {
       timeAnchor: null,
       daysOfWeek: null,
       dayOfMonth: null,
-      isActive: true,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
-    ruleRepo.createRule({
+    const inactiveRule = ruleRepo.createRule({
       title: "Inactive",
       description: null,
       priority: "medium",
@@ -373,10 +350,8 @@ describe("instantiateDailyTasks", () => {
       timeAnchor: null,
       daysOfWeek: null,
       dayOfMonth: null,
-      isActive: false,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
+    ruleRepo.toggleActive(inactiveRule.id);
 
     const engine = await getEngine();
     const now = new Date("2026-08-09T10:00:00").getTime();

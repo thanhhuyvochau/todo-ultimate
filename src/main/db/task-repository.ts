@@ -1,5 +1,10 @@
 import { getDb } from "./database";
-import type { Task, TaskStatus, TaskPriority } from "@/shared/models";
+import type {
+  Task,
+  TaskStatus,
+  TaskPriority,
+  CreateTaskInput,
+} from "@/shared/models";
 import { randomUUID } from "crypto";
 
 interface TaskRow {
@@ -103,7 +108,7 @@ export function getTasks(filters?: {
   return rows.map(rowToTask);
 }
 
-export function createTask(input: Omit<Task, "id">): Task {
+export function createTask(input: CreateTaskInput): Task {
   const db = getDb();
   const validationError = validateTaskInput(
     input.title,

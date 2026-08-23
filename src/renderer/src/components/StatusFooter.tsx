@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { KeyRound, Key } from "lucide-react";
+import { KeyRound, Key, WifiOff } from "lucide-react";
 import { useSettingsStore } from "../stores/settingsStore";
+import { useNetworkStore } from "../stores/networkStore";
 
 export function StatusFooter() {
   const hasApiKey = useSettingsStore((s) => s.hasKey);
   const loadStatus = useSettingsStore((s) => s.loadStatus);
+  const isOnline = useNetworkStore((s) => s.isOnline);
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -24,6 +26,12 @@ export function StatusFooter() {
   return (
     <footer className="flex h-7 shrink-0 items-center justify-between border-t border-border px-4">
       <div className="flex items-center gap-3">
+        {!isOnline && (
+          <span className="flex items-center gap-1.5 text-2xs text-warning">
+            <WifiOff className="h-2.5 w-2.5" />
+            Offline — AI features unavailable
+          </span>
+        )}
         <span className="flex items-center gap-1.5 text-2xs text-text-muted">
           <span className="h-1 w-1 rounded-full bg-success opacity-70" />
           Saved

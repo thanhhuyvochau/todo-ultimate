@@ -60,9 +60,6 @@ describe("recurring-rule-repository", () => {
         timeAnchor: null,
         daysOfWeek: null,
         dayOfMonth: null,
-        isActive: true,
-        lastInstantiatedDate: null,
-        createdAt: 1000,
       });
       const r2 = repo.createRule({
         title: "Rule 2",
@@ -73,9 +70,6 @@ describe("recurring-rule-repository", () => {
         timeAnchor: null,
         daysOfWeek: [1, 3],
         dayOfMonth: null,
-        isActive: true,
-        lastInstantiatedDate: null,
-        createdAt: 2000,
       });
 
       const rules = repo.getAllRules();
@@ -96,9 +90,6 @@ describe("recurring-rule-repository", () => {
         timeAnchor: null,
         daysOfWeek: null,
         dayOfMonth: null,
-        isActive: true,
-        lastInstantiatedDate: null,
-        createdAt: Date.now(),
       });
 
       expect(rule.id).toBeTruthy();
@@ -122,9 +113,6 @@ describe("recurring-rule-repository", () => {
         timeAnchor: null,
         daysOfWeek: [1, 3, 5],
         dayOfMonth: null,
-        isActive: true,
-        lastInstantiatedDate: null,
-        createdAt: Date.now(),
       });
 
       expect(rule.frequency).toBe("weekly");
@@ -142,9 +130,6 @@ describe("recurring-rule-repository", () => {
         timeAnchor: null,
         daysOfWeek: null,
         dayOfMonth: 15,
-        isActive: true,
-        lastInstantiatedDate: null,
-        createdAt: Date.now(),
       });
 
       expect(rule.frequency).toBe("monthly");
@@ -164,9 +149,6 @@ describe("recurring-rule-repository", () => {
         timeAnchor: d.getTime(),
         daysOfWeek: null,
         dayOfMonth: null,
-        isActive: true,
-        lastInstantiatedDate: null,
-        createdAt: Date.now(),
       });
 
       expect(rule.timeAnchor).toBe(d.getTime());
@@ -184,9 +166,6 @@ describe("recurring-rule-repository", () => {
           timeAnchor: null,
           daysOfWeek: null,
           dayOfMonth: null,
-          isActive: true,
-          lastInstantiatedDate: null,
-          createdAt: Date.now(),
         }),
       ).toThrow("Title is required");
     });
@@ -203,9 +182,6 @@ describe("recurring-rule-repository", () => {
           timeAnchor: null,
           daysOfWeek: null,
           dayOfMonth: null,
-          isActive: true,
-          lastInstantiatedDate: null,
-          createdAt: Date.now(),
         }),
       ).toThrow("Title is required");
     });
@@ -222,9 +198,6 @@ describe("recurring-rule-repository", () => {
           timeAnchor: null,
           daysOfWeek: null,
           dayOfMonth: null,
-          isActive: true,
-          lastInstantiatedDate: null,
-          createdAt: Date.now(),
         }),
       ).toThrow("Priority");
     });
@@ -241,9 +214,6 @@ describe("recurring-rule-repository", () => {
           timeAnchor: null,
           daysOfWeek: null,
           dayOfMonth: null,
-          isActive: true,
-          lastInstantiatedDate: null,
-          createdAt: Date.now(),
         }),
       ).toThrow("Estimated minutes");
     });
@@ -260,9 +230,6 @@ describe("recurring-rule-repository", () => {
           timeAnchor: null,
           daysOfWeek: null,
           dayOfMonth: null,
-          isActive: true,
-          lastInstantiatedDate: null,
-          createdAt: Date.now(),
         }),
       ).toThrow("Estimated minutes");
     });
@@ -279,9 +246,6 @@ describe("recurring-rule-repository", () => {
           timeAnchor: null,
           daysOfWeek: null,
           dayOfMonth: null,
-          isActive: true,
-          lastInstantiatedDate: null,
-          createdAt: Date.now(),
         }),
       ).toThrow("Frequency");
     });
@@ -298,9 +262,6 @@ describe("recurring-rule-repository", () => {
           timeAnchor: null,
           daysOfWeek: [],
           dayOfMonth: null,
-          isActive: true,
-          lastInstantiatedDate: null,
-          createdAt: Date.now(),
         }),
       ).toThrow("Weekly frequency");
     });
@@ -317,9 +278,6 @@ describe("recurring-rule-repository", () => {
           timeAnchor: null,
           daysOfWeek: null,
           dayOfMonth: null,
-          isActive: true,
-          lastInstantiatedDate: null,
-          createdAt: Date.now(),
         }),
       ).toThrow("Monthly frequency");
     });
@@ -336,9 +294,6 @@ describe("recurring-rule-repository", () => {
           timeAnchor: null,
           daysOfWeek: null,
           dayOfMonth: 32,
-          isActive: true,
-          lastInstantiatedDate: null,
-          createdAt: Date.now(),
         }),
       ).toThrow("dayOfMonth");
     });
@@ -355,9 +310,6 @@ describe("recurring-rule-repository", () => {
           timeAnchor: null,
           daysOfWeek: null,
           dayOfMonth: null,
-          isActive: true,
-          lastInstantiatedDate: null,
-          createdAt: Date.now(),
         }),
       ).toThrow("Description");
     });
@@ -374,9 +326,6 @@ describe("recurring-rule-repository", () => {
         timeAnchor: anchor,
         daysOfWeek: null,
         dayOfMonth: null,
-        isActive: true,
-        lastInstantiatedDate: null,
-        createdAt: Date.now(),
       });
 
       expect(() =>
@@ -389,9 +338,6 @@ describe("recurring-rule-repository", () => {
           timeAnchor: anchor,
           daysOfWeek: null,
           dayOfMonth: null,
-          isActive: true,
-          lastInstantiatedDate: null,
-          createdAt: Date.now(),
         }),
       ).toThrow("Another active rule already uses this time anchor");
     });
@@ -409,9 +355,6 @@ describe("recurring-rule-repository", () => {
         timeAnchor: null,
         daysOfWeek: null,
         dayOfMonth: null,
-        isActive: true,
-        lastInstantiatedDate: null,
-        createdAt: Date.now(),
       });
 
       const updated = repo.updateRule({ id: rule.id, title: "Updated" });
@@ -437,9 +380,6 @@ describe("recurring-rule-repository", () => {
         timeAnchor: null,
         daysOfWeek: null,
         dayOfMonth: null,
-        isActive: true,
-        lastInstantiatedDate: null,
-        createdAt: Date.now(),
       });
 
       expect(() => repo.updateRule({ id: rule.id, title: "" })).toThrow(
@@ -458,9 +398,6 @@ describe("recurring-rule-repository", () => {
         timeAnchor: null,
         daysOfWeek: null,
         dayOfMonth: null,
-        isActive: true,
-        lastInstantiatedDate: null,
-        createdAt: Date.now(),
       });
 
       const updated = repo.updateRule({
@@ -484,9 +421,6 @@ describe("recurring-rule-repository", () => {
         timeAnchor: anchor,
         daysOfWeek: null,
         dayOfMonth: null,
-        isActive: true,
-        lastInstantiatedDate: null,
-        createdAt: Date.now(),
       });
 
       const rule2 = repo.createRule({
@@ -498,9 +432,6 @@ describe("recurring-rule-repository", () => {
         timeAnchor: new Date("2026-01-01T08:00:00").getTime(),
         daysOfWeek: null,
         dayOfMonth: null,
-        isActive: true,
-        lastInstantiatedDate: null,
-        createdAt: Date.now(),
       });
 
       expect(() =>
@@ -521,9 +452,6 @@ describe("recurring-rule-repository", () => {
         timeAnchor: null,
         daysOfWeek: null,
         dayOfMonth: null,
-        isActive: true,
-        lastInstantiatedDate: null,
-        createdAt: Date.now(),
       });
 
       const result = repo.deleteRule(rule.id);
@@ -551,9 +479,6 @@ describe("recurring-rule-repository", () => {
         timeAnchor: null,
         daysOfWeek: null,
         dayOfMonth: null,
-        isActive: true,
-        lastInstantiatedDate: null,
-        createdAt: Date.now(),
       });
 
       expect(rule.isActive).toBe(true);
@@ -572,9 +497,6 @@ describe("recurring-rule-repository", () => {
         timeAnchor: null,
         daysOfWeek: null,
         dayOfMonth: null,
-        isActive: true,
-        lastInstantiatedDate: null,
-        createdAt: Date.now(),
       });
       const toggled1 = repo.toggleActive(rule.id);
       expect(toggled1.isActive).toBe(false);

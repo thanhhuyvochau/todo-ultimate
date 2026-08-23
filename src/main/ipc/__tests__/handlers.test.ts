@@ -133,14 +133,7 @@ describe("tasks:getAll", () => {
       title: "Task 1",
       description: null,
       priority: "high",
-      status: "todo",
       estimatedMinutes: 30,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
 
     const result = handlers["tasks:getAll"]({});
@@ -155,27 +148,13 @@ describe("tasks:getAll", () => {
       title: "High Task",
       description: null,
       priority: "high",
-      status: "todo",
       estimatedMinutes: 30,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
     handlers["tasks:create"]({
       title: "Low Task",
       description: null,
       priority: "low",
-      status: "todo",
       estimatedMinutes: 15,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
 
     const result = handlers["tasks:getAll"]({ priority: "high" });
@@ -191,27 +170,13 @@ describe("tasks:getAll", () => {
       title: "Buy groceries",
       description: null,
       priority: "medium",
-      status: "todo",
       estimatedMinutes: 20,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
     handlers["tasks:create"]({
       title: "Write report",
       description: null,
       priority: "medium",
-      status: "todo",
       estimatedMinutes: 60,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
 
     const result = handlers["tasks:getAll"]({ query: "groceries" });
@@ -227,27 +192,13 @@ describe("tasks:getAll", () => {
       title: "High todo",
       description: null,
       priority: "high",
-      status: "todo",
       estimatedMinutes: 30,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
     handlers["tasks:create"]({
       title: "Low todo",
       description: null,
       priority: "low",
-      status: "todo",
       estimatedMinutes: 15,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
 
     const result = handlers["tasks:getAll"]({
@@ -268,14 +219,7 @@ describe("tasks:create", () => {
       title: "Test Task",
       description: "A test",
       priority: "high",
-      status: "todo",
       estimatedMinutes: 30,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
 
     expect(result.ok).toBe(true);
@@ -292,14 +236,7 @@ describe("tasks:create", () => {
       title: "",
       description: null,
       priority: "medium",
-      status: "todo",
       estimatedMinutes: 10,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
 
     expect(result.ok).toBe(false);
@@ -313,14 +250,7 @@ describe("tasks:create", () => {
       title: "Valid Title",
       description: null,
       priority: "urgent" as never,
-      status: "todo",
       estimatedMinutes: 10,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
 
     expect(result.ok).toBe(false);
@@ -334,14 +264,7 @@ describe("tasks:create", () => {
       title: "Valid Title",
       description: "x".repeat(100001),
       priority: "medium",
-      status: "todo",
       estimatedMinutes: 10,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
 
     expect(result.ok).toBe(false);
@@ -357,14 +280,7 @@ describe("tasks:update", () => {
       title: "Original",
       description: null,
       priority: "low",
-      status: "todo",
       estimatedMinutes: 15,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
     expect(create.ok).toBe(true);
     if (!create.ok) return;
@@ -395,14 +311,7 @@ describe("tasks:update", () => {
       title: "Original",
       description: null,
       priority: "low",
-      status: "todo",
       estimatedMinutes: 15,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
     expect(create.ok).toBe(true);
     if (!create.ok) return;
@@ -422,14 +331,7 @@ describe("tasks:update", () => {
       title: "Original",
       description: null,
       priority: "low",
-      status: "todo",
       estimatedMinutes: 15,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
     expect(create.ok).toBe(true);
     if (!create.ok) return;
@@ -449,14 +351,7 @@ describe("tasks:update", () => {
       title: "Original",
       description: null,
       priority: "low",
-      status: "todo",
       estimatedMinutes: 15,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
     expect(create.ok).toBe(true);
     if (!create.ok) return;
@@ -476,14 +371,7 @@ describe("tasks:update", () => {
       title: "Original",
       description: null,
       priority: "low",
-      status: "todo",
       estimatedMinutes: 15,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
     expect(create.ok).toBe(true);
     if (!create.ok) return;
@@ -513,14 +401,7 @@ describe("tasks:delete", () => {
       title: "To Delete",
       description: null,
       priority: "medium",
-      status: "todo",
       estimatedMinutes: 5,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
     expect(create.ok).toBe(true);
     if (!create.ok) return;
@@ -825,9 +706,6 @@ describe("recurring rule handlers", () => {
       timeAnchor: null,
       daysOfWeek: null,
       dayOfMonth: null,
-      isActive: true,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
 
     expect(result.ok).toBe(true);
@@ -848,9 +726,6 @@ describe("recurring rule handlers", () => {
       timeAnchor: null,
       daysOfWeek: [1, 3, 5],
       dayOfMonth: null,
-      isActive: true,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
 
     expect(result.ok).toBe(true);
@@ -870,9 +745,6 @@ describe("recurring rule handlers", () => {
       timeAnchor: null,
       daysOfWeek: null,
       dayOfMonth: 15,
-      isActive: true,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
 
     expect(result.ok).toBe(true);
@@ -892,9 +764,6 @@ describe("recurring rule handlers", () => {
       timeAnchor: null,
       daysOfWeek: null,
       dayOfMonth: null,
-      isActive: true,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
 
     expect(result.ok).toBe(false);
@@ -913,9 +782,6 @@ describe("recurring rule handlers", () => {
       timeAnchor: null,
       daysOfWeek: [],
       dayOfMonth: null,
-      isActive: true,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
 
     expect(result.ok).toBe(false);
@@ -934,9 +800,6 @@ describe("recurring rule handlers", () => {
       timeAnchor: null,
       daysOfWeek: null,
       dayOfMonth: null,
-      isActive: true,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
     expect(create.ok).toBe(true);
     if (!create.ok) return;
@@ -972,9 +835,6 @@ describe("recurring rule handlers", () => {
       timeAnchor: null,
       daysOfWeek: null,
       dayOfMonth: null,
-      isActive: true,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
     expect(create.ok).toBe(true);
     if (!create.ok) return;
@@ -1010,9 +870,6 @@ describe("recurring rule handlers", () => {
       timeAnchor: null,
       daysOfWeek: null,
       dayOfMonth: null,
-      isActive: true,
-      lastInstantiatedDate: null,
-      createdAt: Date.now(),
     });
     expect(create.ok).toBe(true);
     if (!create.ok) return;
@@ -1046,14 +903,7 @@ describe("timer IPC handlers", () => {
       title: "Timer Task",
       description: null,
       priority: "high",
-      status: "todo",
       estimatedMinutes: 20,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
     expect(taskRes.ok).toBe(true);
     if (!taskRes.ok) return;
@@ -1076,14 +926,7 @@ describe("timer IPC handlers", () => {
       title: "Pause Task",
       description: null,
       priority: "low",
-      status: "todo",
       estimatedMinutes: 15,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
     if (!taskRes.ok) return;
 
@@ -1144,14 +987,7 @@ describe("metrics handlers", () => {
       title: "To Complete",
       description: null,
       priority: "medium",
-      status: "todo",
       estimatedMinutes: 30,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
     expect(create.ok).toBe(true);
     if (!create.ok) return;
@@ -1199,14 +1035,7 @@ describe("plan handlers", () => {
       title: "Write code",
       description: null,
       priority: "high",
-      status: "todo",
       estimatedMinutes: 30,
-      actualMinutes: null,
-      isRecurringChild: false,
-      recurringRuleId: null,
-      scheduledDate: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
     expect(create.ok).toBe(true);
     if (!create.ok) return;
@@ -1219,7 +1048,7 @@ describe("plan handlers", () => {
         {
           taskId: create.data.id,
           title: "Write code",
-          priority: "high",
+          priority: "high" as const,
           estimatedMinutes: 30,
           budgetedMinutes: 25,
           scheduledStart: startOfToday() + 9 * 60 * 60 * 1000,

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { KeyRound, Loader2, Trash2, Zap } from "lucide-react";
 import { useSettingsStore } from "../stores/settingsStore";
+import { useNetworkStore } from "../stores/networkStore";
 import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
 
 export function ApiKeySettings() {
@@ -17,6 +18,7 @@ export function ApiKeySettings() {
     clearError,
   } = useSettingsStore();
 
+  const isOnline = useNetworkStore((s) => s.isOnline);
   const [apiKey, setApiKey] = useState("");
   const [showDelete, setShowDelete] = useState(false);
 
@@ -100,7 +102,7 @@ export function ApiKeySettings() {
       <div className="mt-2 flex items-center gap-2">
         <button
           onClick={() => testConnection()}
-          disabled={isTesting || !hasKey}
+          disabled={isTesting || !hasKey || !isOnline}
           className="flex h-8 items-center gap-1.5 rounded-md bg-bg-tertiary px-3 text-xs font-medium text-text-primary transition-colors hover:bg-border disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isTesting ? (

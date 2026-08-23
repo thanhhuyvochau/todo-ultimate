@@ -1,20 +1,23 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-const mockExistsSync = vi.fn<() => boolean>();
-const mockReadFileSync = vi.fn<() => string>();
-const mockWriteFileSync = vi.fn<() => void>();
-const mockUnlinkSync = vi.fn<() => void>();
+const mockExistsSync = vi.fn<(...args: unknown[]) => boolean>();
+const mockReadFileSync = vi.fn<(...args: unknown[]) => string>();
+const mockWriteFileSync = vi.fn<(...args: unknown[]) => void>();
+const mockUnlinkSync = vi.fn<(...args: unknown[]) => void>();
 const mockIsEncryptionAvailable = vi.fn<() => boolean>();
 const mockEncryptString = vi.fn<(value: string) => Buffer>();
 const mockDecryptString = vi.fn<(buffer: Buffer) => string>();
 const mockGetPath = vi.fn<(name: string) => string>();
 
-vi.mock("fs", () => ({
-  existsSync: (...args: unknown[]) => mockExistsSync(...args),
-  readFileSync: (...args: unknown[]) => mockReadFileSync(...args),
-  writeFileSync: (...args: unknown[]) => mockWriteFileSync(...args),
-  unlinkSync: (...args: unknown[]) => mockUnlinkSync(...args),
-}));
+vi.mock("fs", () => {
+  const mockedFs = {
+    existsSync: (...args: unknown[]) => mockExistsSync(...args),
+    readFileSync: (...args: unknown[]) => mockReadFileSync(...args),
+    writeFileSync: (...args: unknown[]) => mockWriteFileSync(...args),
+    unlinkSync: (...args: unknown[]) => mockUnlinkSync(...args),
+  };
+  return { ...mockedFs, default: mockedFs };
+});
 
 vi.mock("electron", () => ({
   safeStorage: {

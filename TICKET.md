@@ -295,18 +295,18 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ## Phase 6 & 7: UI Polish, State, and Packaging
 
-### TKT-019: Setup Zustand Stores 🟡 In Progress
+### TKT-019: Setup Zustand Stores ✅ Done
 
 - **Spec**: [`19-zustand-stores.md`](./spec/19-zustand-stores.md)
 
 **As a** developer, **I want to** manage frontend state with Zustand **so that** UI components stay perfectly in sync without deep prop drilling.
 
-- **Status**: Partially complete — `src/renderer/src/stores/taskStore.ts` (task CRUD + filters), `src/renderer/src/stores/recurringRuleStore.ts` (recurring rule CRUD + toggle), `src/renderer/src/stores/timerStore.ts` (timer state + tick subscriptions), `src/renderer/src/stores/settingsStore.ts` (API key status + save/delete/test). Theme preference still pending (see TKT-021).
+- **Status**: Complete — `src/renderer/src/stores/taskStore.ts` (task CRUD + filters), `src/renderer/src/stores/recurringRuleStore.ts` (recurring rule CRUD + toggle), `src/renderer/src/stores/timerStore.ts` (timer state + tick subscriptions), `src/renderer/src/stores/settingsStore.ts` (API key status + save/delete/test), `src/renderer/src/stores/themeStore.ts` (theme preference + toggle, via TKT-021).
 - **Acceptance Criteria**:
   - ✅ Task store created and in use.
   - ✅ Recurring rule store created and in use.
   - ✅ Timer store created and in use.
-  - 🟡 User Settings store (API key status ✅ via TKT-025; theme preference pending).
+  - ✅ User Settings store (API key status via TKT-025; theme preference via TKT-021).
 
 ### TKT-020: Build Main Dashboard Layout ✅ Done
 
@@ -314,48 +314,51 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 **As a** user, **I want to** see my Today tasks, active timer, and backlog in a unified shell **so that** I can easily navigate my workflow.
 
-- **Status**: Complete — `src/renderer/src/components/AppShell.tsx` (full-screen layout shell with keyboard navigation Ctrl+1/2), `src/renderer/src/components/Sidebar.tsx` (collapsible nav with Backlog/Today/Daily Plan/Reports/Settings, Lucide icons, disabled state for unimplemented views), `src/renderer/src/components/Header.tsx` (app header), `src/renderer/src/components/StatusFooter.tsx` (live clock, API key status indicator, save status). `App.tsx` delegates to `<AppShell />`.
+- **Status**: Complete — `src/renderer/src/components/AppShell.tsx` (full-screen layout shell with keyboard navigation Ctrl+1/2), `src/renderer/src/components/Sidebar.tsx` (collapsible nav with Backlog/Today/Daily Plan/Reports/Settings, Lucide icons, disabled state for unimplemented views), `src/renderer/src/components/Header.tsx` (app header + active-timer pill with Pause), `src/renderer/src/components/StatusFooter.tsx` (live clock, API key status indicator, save status). `App.tsx` delegates to `<AppShell />`.
 - **Acceptance Criteria**:
   - ✅ Dashboard shell with sidebar navigation.
   - ✅ Backlog and Today panels wired.
-  - ❌ Active timer display (depends on TKT-011).
-- **Remaining**: Timer widget in shell header/footer (blocked by TKT-011).
+  - ✅ Active timer display (Header timer pill, via TKT-011).
 
-### TKT-021: Theme System & Iconography 🟡 In Progress
+### TKT-021: Theme System & Iconography ✅ Done
 
 - **Specs**: [`22-dark-light-theme.md`](./spec/22-dark-light-theme.md), [`23-icon-system.md`](./spec/23-icon-system.md)
 
 **As a** user, **I want to** toggle between light and dark themes with distinct iconography **so that** the app is comfortable to use in any lighting.
 
-- **Status**: Partially complete — `src/renderer/src/assets/main.css` defines full dual-theme CSS custom properties (`:root` light theme + `.dark` dark theme with all color tokens mapped via `tailwind.config.js`). Lucide React icons used throughout: `Sidebar.tsx` (Inbox, Calendar, Lightbulb, BarChart3, Settings), `StatusFooter.tsx` (CheckCircle2, Key, KeyRound, Clock), `TaskItem.tsx`, `RecurringRuleCard.tsx`, etc. **No theme toggle UI** — the `.dark` class is never applied at runtime; app runs in light mode only.
+- **Status**: Complete — `src/renderer/src/assets/main.css` (dark-first theme tokens: `:root` = dark, `.light` = light), `src/renderer/src/stores/themeStore.ts` (`useThemeStore` with `theme`/`toggleTheme`/`setTheme`, `initTheme()` for pre-render flash-free application, localStorage persistence under `app.theme`), `src/renderer/src/main.tsx` (calls `initTheme()` before render), `src/renderer/src/components/Header.tsx` (Sun/Moon toggle button with `Tooltip`, toggles `.light` class on `<html>`). Lucide React icons used throughout the UI.
 - **Acceptance Criteria**:
-  - ✅ Dual-theme CSS token system (light/dark variables).
+  - ✅ Dual-theme CSS token system (dark `:root` default + `.light` overrides).
   - ✅ Lucide React icons used throughout UI.
-  - ❌ Theme toggle button to switch between light and dark at runtime.
-- **Remaining**: Add a theme toggle (button in `Header` or `SettingsView`), persist preference, apply `.dark` class to `<html>` or `<body>`.
+  - ✅ Theme toggle button in the Header switches light/dark at runtime.
+  - ✅ Preference persisted (localStorage) and restored on startup.
+- **Tests**: `src/renderer/src/stores/__tests__/themeStore.test.ts` (5 cases: default dark, toggle→light applies class + persists, toggle→dark removes class, setTheme persists/applies, initTheme reads persisted value).
 
-### TKT-022: Offline Resilience & Error Handling ❌ Not Started
+### TKT-022: Offline Resilience & Error Handling ✅ Done
 
 - **Specs**: [`24-offline-resilience.md`](./spec/24-offline-resilience.md), [`26-error-handling-reconnection.md`](./spec/26-error-handling-reconnection.md)
 
 **As a** user, **I want** my task lists and timers to work flawlessly offline **so that** only AI-specific features are disabled when my internet drops.
 
-- **Status**: No offline indicator, no AI-unreachable UI, no reconnection logic.
+- **Status**: Complete — `src/renderer/src/stores/networkStore.ts` (`useNetworkStore` with debounced 1s `isOnline` via `navigator.onLine` + `online`/`offline` listeners, idempotent `initNetwork()`), `src/renderer/src/components/AppShell.tsx` (calls `initNetwork()`), `src/renderer/src/components/StatusFooter.tsx` (offline indicator: ⚠️ "Offline — AI features unavailable"), `src/renderer/src/components/PlanView.tsx` (Generate/Regenerate disabled offline + "Requires internet connection." note), `src/renderer/src/components/ReportsView.tsx` (Generate disabled offline + note), `src/renderer/src/components/ApiKeySettings.tsx` (Test Connection disabled offline).
 - **Acceptance Criteria**:
-  - Non-AI features require 0 network calls.
-  - Clear UI indicator when AI is unreachable.
+  - ✅ Non-AI features require 0 network calls (SQLite local; only DeepSeek calls hit network).
+  - ✅ Clear UI indicator when AI is unreachable (footer warning + disabled AI buttons with inline messaging).
+- **Deferred (broader spec-26 items, not in this ticket's AC)**: global toast notification system + React error boundary — **now implemented**: `src/renderer/src/components/ErrorBoundary.tsx` (class-based boundary wrapping `<AppShell/>`, reload fallback, sanitized logging), `src/renderer/src/stores/toastStore.ts` + `src/renderer/src/components/ToastContainer.tsx` (global toast system wired into `AppShell`; `PlanView` refactored to use it).
+- **Tests**: `src/renderer/src/stores/__tests__/networkStore.test.ts` (4 cases: default online, offline debounce, reconnection, rapid-transition debounce), `src/renderer/src/components/__tests__/ErrorBoundary.test.tsx` (2 cases), `src/renderer/src/stores/__tests__/toastStore.test.ts` (3 cases).
 
-### TKT-023: Electron App Packaging 🟡 In Progress
+### TKT-023: Electron App Packaging ✅ Done
 
 - **Spec**: [`27-electron-packaging.md`](./spec/27-electron-packaging.md)
 
 **As a** user, **I want to** download a standalone executable **so that** I can install the app easily on my machine.
 
-- **Status**: `electron-builder.json5` is configured (win/nsis, mac/dmg, linux/AppImage+deb). `out/` directory contains compiled main + preload but **no renderer bundle**. App cannot run in production mode.
+- **Status**: Complete — `electron-builder.json5` configured (win/nsis, mac/dmg, linux/AppImage+deb). `npm run build` produces all three bundles (`out/main/index.js`, `out/preload/index.js`, `out/renderer/`). `npm run package` (added script: `npm run build && electron-builder`) produces `dist/AI Task Planner Setup 1.0.0.exe` (NSIS) + `dist/win-unpacked/`. Set `win.signAndEditExecutable: false` (no signing cert/icon configured; avoids the `winCodeSign` symlink extraction that requires Windows Developer Mode).
 - **Acceptance Criteria**:
-  - ~~`electron-builder` configured.~~ _(done)_
-  - ~~Builds output executable files for Windows/Mac/Linux.~~ _(pending — renderer build not producing output)_
-- **Remaining**: Fix renderer build pipeline; produce distributable artifacts.
+  - ✅ `electron-builder` configured.
+  - ✅ Renderer build pipeline produces output (verified via `npm run build`).
+  - ✅ Produces distributable installers (verified via `npm run package` → `dist/*.exe`).
+- **Notes**: Non-blocking: default Electron icon used (no `icon` configured). Windows code signing requires a certificate (`CSC_LINK`) once available. **Gotcha**: `npm run package` rebuilds `better-sqlite3` for Electron's Node ABI; run `npm rebuild better-sqlite3` afterward to restore the system-Node build before running `npm test`.
 
 ### TKT-024: Add Hover Tooltips to Icon Buttons ✅ Done
 
