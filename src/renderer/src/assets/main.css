@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -6,96 +6,104 @@
 
 /* ─── Dark theme (default) ──────────────────────────────── */
 :root {
-  --color-bg-primary:    #0c0c0e;
-  --color-bg-secondary:  #111114;
-  --color-bg-tertiary:   #1a1a1f;
-  --color-bg-surface:    #111114;
-  --color-bg-elevated:   #1a1a1f;
+  --color-bg-primary: #0b1020;
+  --color-bg-secondary: #121830;
+  --color-bg-tertiary: #1d2440;
+  --color-bg-surface: #131a33;
+  --color-bg-elevated: #1e2747;
 
-  --color-text-primary:  rgba(255,255,255,0.92);
-  --color-text-secondary: rgba(255,255,255,0.50);
-  --color-text-muted:    rgba(255,255,255,0.28);
-  --color-text-inverse:  #0c0c0e;
+  --color-text-primary: rgba(235, 240, 255, 0.94);
+  --color-text-secondary: rgba(200, 210, 235, 0.62);
+  --color-text-muted: rgba(190, 200, 230, 0.38);
+  --color-text-inverse: #0b1020;
 
-  --color-border:        rgba(255,255,255,0.07);
-  --color-border-subtle: rgba(255,255,255,0.04);
-  --color-border-focus:  #4f7cf8;
+  --color-border: rgba(150, 170, 220, 0.14);
+  --color-border-subtle: rgba(150, 170, 220, 0.08);
+  --color-border-focus: #818cf8;
 
-  --color-accent:        #4f7cf8;
-  --color-accent-hover:  #6b93ff;
-  --color-accent-subtle: rgba(79,124,248,0.12);
+  --color-accent: #818cf8;
+  --color-accent-hover: #a5b4fc;
+  --color-accent-subtle: rgba(129, 140, 248, 0.16);
 
-  --color-success:       #34d399;
-  --color-success-subtle: rgba(52,211,153,0.10);
+  --color-success: #34d399;
+  --color-success-subtle: rgba(52, 211, 153, 0.12);
 
-  --color-warning:       #fbbf24;
-  --color-warning-subtle: rgba(251,191,36,0.10);
+  --color-warning: #fbbf24;
+  --color-warning-subtle: rgba(251, 191, 36, 0.12);
 
-  --color-danger:        #f87171;
-  --color-danger-subtle: rgba(248,113,113,0.10);
+  --color-danger: #f87171;
+  --color-danger-subtle: rgba(248, 113, 113, 0.12);
 
-  --color-info:          #818cf8;
-  --color-info-subtle:   rgba(129,140,248,0.10);
+  --color-info: #818cf8;
+  --color-info-subtle: rgba(129, 140, 248, 0.12);
 
   /* Priority dot colors */
-  --color-priority-high:   #f87171;
+  --color-priority-high: #f87171;
   --color-priority-medium: #fbbf24;
-  --color-priority-low:    rgba(255,255,255,0.20);
+  --color-priority-low: rgba(255, 255, 255, 0.22);
 }
 
 /* ─── Light theme ────────────────────────────────────────── */
 .light {
-  --color-bg-primary:    #fafafa;
-  --color-bg-secondary:  #f4f4f5;
-  --color-bg-tertiary:   #e4e4e7;
-  --color-bg-surface:    #ffffff;
-  --color-bg-elevated:   #ffffff;
+  --color-bg-primary: #f6f7fb;
+  --color-bg-secondary: #eef0f8;
+  --color-bg-tertiary: #e3e6f2;
+  --color-bg-surface: #ffffff;
+  --color-bg-elevated: #ffffff;
 
-  --color-text-primary:  #09090b;
-  --color-text-secondary: #52525b;
-  --color-text-muted:    #a1a1aa;
-  --color-text-inverse:  #ffffff;
+  --color-text-primary: #16192e;
+  --color-text-secondary: #4a5072;
+  --color-text-muted: #9499b5;
+  --color-text-inverse: #ffffff;
 
-  --color-border:        #e4e4e7;
-  --color-border-subtle: #f4f4f5;
-  --color-border-focus:  #4f7cf8;
+  --color-border: #dde1ef;
+  --color-border-subtle: #eef0f8;
+  --color-border-focus: #6366f1;
 
-  --color-accent:        #4f7cf8;
-  --color-accent-hover:  #3b6ef0;
-  --color-accent-subtle: rgba(79,124,248,0.08);
+  --color-accent: #6366f1;
+  --color-accent-hover: #4f46e5;
+  --color-accent-subtle: rgba(99, 102, 241, 0.1);
 
-  --color-success:       #10b981;
-  --color-success-subtle: rgba(16,185,129,0.08);
+  --color-success: #10b981;
+  --color-success-subtle: rgba(16, 185, 129, 0.1);
 
-  --color-warning:       #d97706;
-  --color-warning-subtle: rgba(217,119,6,0.08);
+  --color-warning: #d97706;
+  --color-warning-subtle: rgba(217, 119, 6, 0.1);
 
-  --color-danger:        #ef4444;
-  --color-danger-subtle: rgba(239,68,68,0.08);
+  --color-danger: #ef4444;
+  --color-danger-subtle: rgba(239, 68, 68, 0.1);
 
-  --color-info:          #6366f1;
-  --color-info-subtle:   rgba(99,102,241,0.08);
+  --color-info: #6366f1;
+  --color-info-subtle: rgba(99, 102, 241, 0.1);
 
-  --color-priority-high:   #ef4444;
+  --color-priority-high: #ef4444;
   --color-priority-medium: #d97706;
-  --color-priority-low:    #d4d4d8;
+  --color-priority-low: #c9cddd;
 }
 
 /* ─── Base ───────────────────────────────────────────────── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 13px;
-  line-height: 1.5;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--color-bg-primary);
@@ -115,7 +123,7 @@ body {
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* ─── Selection ──────────────────────────────────────────── */
@@ -134,7 +142,7 @@ body {
 .ProseMirror {
   outline: none;
   min-height: 140px;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.65;
   color: var(--color-text-primary);
 }
@@ -152,7 +160,7 @@ body {
 }
 
 .ProseMirror h1 {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 600;
   line-height: 1.3;
   margin-top: 1rem;
@@ -162,7 +170,7 @@ body {
 }
 
 .ProseMirror h2 {
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   font-weight: 600;
   line-height: 1.35;
   margin-top: 0.75rem;
@@ -171,7 +179,7 @@ body {
 }
 
 .ProseMirror h3 {
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 600;
   line-height: 1.4;
   margin-top: 0.5rem;
@@ -226,7 +234,7 @@ body {
   border-radius: 3px;
   padding: 0.1em 0.35em;
   font-size: 0.8125em;
-  font-family: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
+  font-family: "SF Mono", "Fira Code", Menlo, Consolas, monospace;
   color: var(--color-accent);
 }
 

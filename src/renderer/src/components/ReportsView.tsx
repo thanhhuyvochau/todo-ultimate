@@ -92,8 +92,8 @@ function EfficiencyGauge({ score }: { score: number }) {
   const clamped = Math.max(0, Math.min(100, Math.round(score)));
   return (
     <div className="flex flex-col items-center rounded-lg border border-border bg-bg-surface p-5">
-      <span className="text-xs text-text-muted">Efficiency score</span>
-      <span className="mt-1 text-3xl font-semibold text-text-primary">
+      <span className="text-sm text-text-muted">Efficiency score</span>
+      <span className="mt-1 text-4xl font-semibold text-text-primary">
         {clamped}
       </span>
       <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-bg-tertiary">
@@ -108,9 +108,9 @@ function EfficiencyGauge({ score }: { score: number }) {
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-border bg-bg-surface p-4">
-      <span className="text-xs text-text-muted">{label}</span>
-      <p className="mt-1 text-lg font-semibold text-text-primary">{value}</p>
+    <div className="rounded-lg border border-border bg-bg-surface p-5">
+      <span className="text-sm text-text-muted">{label}</span>
+      <p className="mt-1 text-xl font-semibold text-text-primary">{value}</p>
     </div>
   );
 }
@@ -125,8 +125,8 @@ function PriorityBreakdown({
     ...PRIORITIES.map((p) => Math.abs(byPriority[p].meanVariance)),
   );
   return (
-    <div className="rounded-lg border border-border bg-bg-surface p-4">
-      <span className="text-xs font-medium text-text-secondary">
+    <div className="rounded-lg border border-border bg-bg-surface p-5">
+      <span className="text-sm font-medium text-text-secondary">
         Mean variance by priority
       </span>
       <div className="mt-3 space-y-3">
@@ -138,7 +138,7 @@ function PriorityBreakdown({
             value > 0 ? "bg-danger" : value < 0 ? "bg-success" : "bg-border";
           return (
             <div key={priority}>
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-text-secondary">
                   {PRIORITY_LABELS[priority]}
                   <span className="ml-1 text-text-muted">({bucket.count})</span>
@@ -163,8 +163,8 @@ function PriorityBreakdown({
 
 function PatternsSection({ patterns }: { patterns: ReportPattern[] }) {
   return (
-    <div className="rounded-lg border border-border bg-bg-surface p-4">
-      <span className="text-xs font-medium text-text-secondary">Patterns</span>
+    <div className="rounded-lg border border-border bg-bg-surface p-5">
+      <span className="text-sm font-medium text-text-secondary">Patterns</span>
       <ul className="mt-3 space-y-3">
         {patterns.map((pattern, i) => {
           const { icon: Icon, className } = SEVERITY_STYLES[pattern.severity];
@@ -172,10 +172,10 @@ function PatternsSection({ patterns }: { patterns: ReportPattern[] }) {
             <li key={i} className="flex gap-2">
               <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${className}`} />
               <div>
-                <p className="text-sm font-medium text-text-primary">
+                <p className="text-base font-medium text-text-primary">
                   {pattern.title}
                 </p>
-                <p className="text-xs text-text-secondary">
+                <p className="text-sm text-text-secondary">
                   {pattern.description}
                 </p>
               </div>
@@ -189,20 +189,20 @@ function PatternsSection({ patterns }: { patterns: ReportPattern[] }) {
 
 function AdviceSection({ advice }: { advice: ReportAdvice[] }) {
   return (
-    <div className="rounded-lg border border-border bg-bg-surface p-4">
-      <span className="text-xs font-medium text-text-secondary">Advice</span>
+    <div className="rounded-lg border border-border bg-bg-surface p-5">
+      <span className="text-sm font-medium text-text-secondary">Advice</span>
       <ul className="mt-3 space-y-3">
         {advice.map((item, i) => (
           <li key={i} className="rounded-md bg-bg-tertiary p-3">
             <div className="flex items-center gap-2">
-              <span className="rounded bg-bg-surface px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-accent">
+              <span className="rounded bg-bg-surface px-1.5 py-0.5 text-[11px] uppercase tracking-wide text-accent">
                 {item.category}
               </span>
-              <p className="text-sm font-medium text-text-primary">
+              <p className="text-base font-medium text-text-primary">
                 {item.recommendation}
               </p>
             </div>
-            <p className="mt-1 text-xs text-text-secondary">
+            <p className="mt-1 text-sm text-text-secondary">
               {item.actionableTip}
             </p>
           </li>
@@ -281,22 +281,22 @@ export function ReportsView() {
 
   return (
     <div className="flex h-full flex-col bg-bg-primary">
-      <div className="flex h-11 shrink-0 items-center justify-between border-b border-border px-4">
-        <span className="text-sm font-semibold text-text-primary">Reports</span>
+      <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-5">
+        <span className="text-lg font-semibold text-text-primary">Reports</span>
         {report && (
           <div className="flex items-center gap-3">
             {viewingCachedId && (
               <button
                 onClick={clearReport}
-                className="flex items-center gap-1 text-xs font-medium text-text-secondary hover:text-text-primary"
+                className="flex items-center gap-1 text-sm font-medium text-text-secondary hover:text-text-primary"
               >
-                <ArrowLeft className="h-3.5 w-3.5" />
+                <ArrowLeft className="h-4 w-4" />
                 Back
               </button>
             )}
             <button
               onClick={clearReport}
-              className="text-xs font-medium text-text-secondary hover:text-text-primary"
+              className="text-sm font-medium text-text-secondary hover:text-text-primary"
             >
               New report
             </button>
@@ -305,11 +305,11 @@ export function ReportsView() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 border-b border-danger/20 bg-danger-subtle px-4 py-2">
-          <span className="flex-1 text-xs text-danger">{error}</span>
+        <div className="flex items-center gap-2 border-b border-danger/20 bg-danger-subtle px-5 py-2.5">
+          <span className="flex-1 text-sm text-danger">{error}</span>
           <button
             onClick={clearError}
-            className="text-xs text-danger underline"
+            className="text-sm text-danger underline"
           >
             Dismiss
           </button>
@@ -320,11 +320,11 @@ export function ReportsView() {
         <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
           <div className="flex flex-col items-center gap-6">
             <div className="text-center">
-              <Sparkles className="mx-auto h-8 w-8 text-accent" />
-              <h2 className="mt-3 text-lg font-medium text-text-primary">
+              <Sparkles className="mx-auto h-9 w-9 text-accent" />
+              <h2 className="mt-3 text-xl font-semibold text-text-primary">
                 Generate a performance report
               </h2>
-              <p className="mt-1 max-w-sm text-xs text-text-muted">
+              <p className="mt-1 max-w-sm text-sm text-text-muted">
                 The AI analyzes your completed tasks to coach you on estimation
                 accuracy.
               </p>
@@ -332,7 +332,7 @@ export function ReportsView() {
 
             <div className="w-full max-w-sm space-y-4">
               <div>
-                <label className="mb-1 block text-xs text-text-secondary">
+                <label className="mb-1 block text-sm text-text-secondary">
                   Timeframe
                 </label>
                 <div className="flex gap-1 rounded-md bg-bg-tertiary p-1">
@@ -341,7 +341,7 @@ export function ReportsView() {
                       key={item.id}
                       onClick={() => setPreset(item.id)}
                       className={[
-                        "flex-1 rounded px-2 py-1.5 text-xs font-medium transition-colors",
+                        "flex-1 rounded px-2 py-2 text-sm font-medium transition-colors",
                         preset === item.id
                           ? "bg-bg-surface text-text-primary shadow-sm"
                           : "text-text-muted hover:text-text-secondary",
@@ -356,7 +356,7 @@ export function ReportsView() {
               {preset === "custom" && (
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <label className="mb-1 block text-xs text-text-secondary">
+                    <label className="mb-1 block text-sm text-text-secondary">
                       From
                     </label>
                     <input
@@ -365,11 +365,11 @@ export function ReportsView() {
                       onChange={(e) =>
                         setCustomRange(e.target.value, customEnd)
                       }
-                      className="w-full rounded-md border border-border bg-bg-surface px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                      className="w-full rounded-md border border-border bg-bg-surface px-3 py-2.5 text-base text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="mb-1 block text-xs text-text-secondary">
+                    <label className="mb-1 block text-sm text-text-secondary">
                       To
                     </label>
                     <input
@@ -378,7 +378,7 @@ export function ReportsView() {
                       onChange={(e) =>
                         setCustomRange(customStart, e.target.value)
                       }
-                      className="w-full rounded-md border border-border bg-bg-surface px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                      className="w-full rounded-md border border-border bg-bg-surface px-3 py-2.5 text-base text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                     />
                   </div>
                 </div>
@@ -387,7 +387,7 @@ export function ReportsView() {
               <button
                 onClick={handleGenerate}
                 disabled={isGenerating || customDisabled || !isOnline}
-                className="flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isGenerating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -397,7 +397,7 @@ export function ReportsView() {
                 Generate Report
               </button>
               {!isOnline && (
-                <p className="text-center text-xs text-warning">
+                <p className="text-center text-sm text-warning">
                   Requires internet connection.
                 </p>
               )}
@@ -406,7 +406,7 @@ export function ReportsView() {
 
           <div className="mx-auto w-full max-w-2xl">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-medium text-text-secondary">
+              <span className="text-sm font-medium text-text-secondary">
                 Report history ({reports.length})
               </span>
             </div>
@@ -418,29 +418,29 @@ export function ReportsView() {
           <div className="mx-auto max-w-2xl space-y-4">
             {viewingCachedId && (
               <div className="flex items-center gap-2 rounded-lg border border-accent/30 bg-accent-subtle px-3 py-2">
-                <span className="text-xs font-medium text-accent">
+                <span className="text-sm font-medium text-accent">
                   Cached report — generated {formatDate(report.generatedAt)}
                 </span>
               </div>
             )}
-            <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-bg-surface p-4">
+            <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-bg-surface p-5">
               <div>
-                <p className="text-sm font-medium text-text-primary">
+                <p className="text-base font-medium text-text-primary">
                   {formatDate(report.timeframe.start)} –{" "}
                   {formatDate(report.timeframe.end)}
                 </p>
-                <p className="mt-1 text-xs text-text-muted">
+                <p className="mt-1 text-sm text-text-muted">
                   Generated {formatDate(report.generatedAt)}
                 </p>
               </div>
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+                className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
               >
                 {copied ? (
-                  <Check className="h-3.5 w-3.5 text-success" />
+                  <Check className="h-4 w-4 text-success" />
                 ) : (
-                  <Copy className="h-3.5 w-3.5" />
+                  <Copy className="h-4 w-4" />
                 )}
                 {copied ? "Copied" : "Copy"}
               </button>
@@ -471,11 +471,11 @@ export function ReportsView() {
 
             <AdviceSection advice={report.advice} />
 
-            <div className="rounded-lg border border-border bg-bg-surface p-4">
-              <span className="text-xs font-medium text-text-secondary">
+            <div className="rounded-lg border border-border bg-bg-surface p-5">
+              <span className="text-sm font-medium text-text-secondary">
                 Summary
               </span>
-              <p className="mt-2 text-sm leading-relaxed text-text-primary">
+              <p className="mt-2 text-base leading-relaxed text-text-primary">
                 {report.summary}
               </p>
             </div>
@@ -486,23 +486,23 @@ export function ReportsView() {
       {showReplaceConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[2px]">
           <div className="w-full max-w-sm rounded-lg border border-border bg-bg-elevated p-5 shadow-2xl">
-            <p className="text-sm font-medium text-text-primary">
+            <p className="text-base font-medium text-text-primary">
               Replace existing report?
             </p>
-            <p className="mt-1 text-xs text-text-muted">
+            <p className="mt-1 text-sm text-text-muted">
               A report for this timeframe already exists. Generating a new one
               will replace it.
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
                 onClick={() => setShowReplaceConfirm(false)}
-                className="rounded-md px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-bg-tertiary hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-bg-tertiary hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 Cancel
               </button>
               <button
                 onClick={runGenerate}
-                className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 Replace
               </button>

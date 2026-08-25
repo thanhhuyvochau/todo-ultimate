@@ -21,93 +21,95 @@ The application uses CSS Custom Properties (`:root` and `.dark`) wired directly 
 
 ### 2.1 CSS Variables Definitions
 
+The design system uses an indigo-tinted dual theme. The dark theme is the default and is bound to `:root`; the light theme overrides via the `.light` class. All values below are the **current implemented palette** in `src/renderer/src/assets/main.css`.
+
 ```css
 :root {
   /* Backgrounds */
-  --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f9fafb;
-  --color-bg-tertiary: #f3f4f6;
+  --color-bg-primary: #0b1020;
+  --color-bg-secondary: #121830;
+  --color-bg-tertiary: #1d2440;
+  --color-bg-surface: #131a33;
+  --color-bg-elevated: #1e2747;
+
+  /* Typography */
+  --color-text-primary: rgba(235, 240, 255, 0.94);
+  --color-text-secondary: rgba(200, 210, 235, 0.62);
+  --color-text-muted: rgba(190, 200, 230, 0.38);
+  --color-text-inverse: #0b1020;
+
+  /* Borders & Dividers */
+  --color-border: rgba(150, 170, 220, 0.14);
+  --color-border-subtle: rgba(150, 170, 220, 0.08);
+  --color-border-focus: #818cf8;
+
+  /* Accents & Statuses */
+  --color-accent: #818cf8;
+  --color-accent-hover: #a5b4fc;
+  --color-accent-subtle: rgba(129, 140, 248, 0.16);
+
+  --color-success: #34d399;
+  --color-success-subtle: rgba(52, 211, 153, 0.12);
+
+  --color-warning: #fbbf24;
+  --color-warning-subtle: rgba(251, 191, 36, 0.12);
+
+  --color-danger: #f87171;
+  --color-danger-subtle: rgba(248, 113, 113, 0.12);
+
+  --color-info: #818cf8;
+  --color-info-subtle: rgba(129, 140, 248, 0.12);
+}
+
+.light {
+  /* Backgrounds */
+  --color-bg-primary: #f6f7fb;
+  --color-bg-secondary: #eef0f8;
+  --color-bg-tertiary: #e3e6f2;
   --color-bg-surface: #ffffff;
   --color-bg-elevated: #ffffff;
 
   /* Typography */
-  --color-text-primary: #111827;
-  --color-text-secondary: #4b5563;
-  --color-text-muted: #9ca3af;
+  --color-text-primary: #16192e;
+  --color-text-secondary: #4a5072;
+  --color-text-muted: #9499b5;
   --color-text-inverse: #ffffff;
 
   /* Borders & Dividers */
-  --color-border: #e5e7eb;
-  --color-border-subtle: #f3f4f6;
-  --color-border-focus: #3b82f6;
+  --color-border: #dde1ef;
+  --color-border-subtle: #eef0f8;
+  --color-border-focus: #6366f1;
 
   /* Accents & Statuses */
-  --color-accent: #3b82f6;
-  --color-accent-hover: #2563eb;
-  --color-accent-subtle: #eff6ff;
+  --color-accent: #6366f1;
+  --color-accent-hover: #4f46e5;
+  --color-accent-subtle: rgba(99, 102, 241, 0.1);
 
   --color-success: #10b981;
-  --color-success-subtle: #ecfdf5;
+  --color-success-subtle: rgba(16, 185, 129, 0.1);
 
-  --color-warning: #f59e0b;
-  --color-warning-subtle: #fffbeb;
+  --color-warning: #d97706;
+  --color-warning-subtle: rgba(217, 119, 6, 0.1);
 
   --color-danger: #ef4444;
-  --color-danger-subtle: #fef2f2;
+  --color-danger-subtle: rgba(239, 68, 68, 0.1);
 
   --color-info: #6366f1;
-  --color-info-subtle: #eef2ff;
-}
-
-.dark {
-  /* Backgrounds */
-  --color-bg-primary: #0f172a;
-  --color-bg-secondary: #1e293b;
-  --color-bg-tertiary: #334155;
-  --color-bg-surface: #1e293b;
-  --color-bg-elevated: #334155;
-
-  /* Typography */
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #64748b;
-  --color-text-inverse: #0f172a;
-
-  /* Borders & Dividers */
-  --color-border: #334155;
-  --color-border-subtle: #1e293b;
-  --color-border-focus: #60a5fa;
-
-  /* Accents & Statuses */
-  --color-accent: #60a5fa;
-  --color-accent-hover: #3b82f6;
-  --color-accent-subtle: #1e3a8a33;
-
-  --color-success: #34d399;
-  --color-success-subtle: #064e3b33;
-
-  --color-warning: #fbbf24;
-  --color-warning-subtle: #78350f33;
-
-  --color-danger: #f87171;
-  --color-danger-subtle: #7f1d1d33;
-
-  --color-info: #818cf8;
-  --color-info-subtle: #312e8133;
+  --color-info-subtle: rgba(99, 102, 241, 0.1);
 }
 ```
 
 ### 2.2 Domain Semantic Badges
 
-| Badge Category | Priority / Status | Dark Theme Style | Light Theme Style |
-| :--- | :--- | :--- | :--- |
-| **Priority** | High | `bg-red-500/10 text-red-400 border-red-500/20` | `bg-red-50 text-red-700 border-red-200` |
-| **Priority** | Medium | `bg-amber-500/10 text-amber-400 border-amber-500/20` | `bg-amber-50 text-amber-700 border-amber-200` |
-| **Priority** | Low | `bg-slate-500/10 text-slate-400 border-slate-500/20` | `bg-slate-100 text-slate-600 border-slate-200` |
-| **Status** | Backlog / Todo | `bg-slate-500/10 text-slate-400` | `bg-slate-100 text-slate-700` |
-| **Status** | In Progress | `bg-blue-500/10 text-blue-400 border-blue-500/20` | `bg-blue-50 text-blue-700 border-blue-200` |
-| **Status** | Completed | `bg-emerald-500/10 text-emerald-400 border-emerald-500/20` | `bg-emerald-50 text-emerald-700 border-emerald-200` |
-| **Type** | Fixed Recurring Block | `bg-purple-500/10 text-purple-400 border-purple-500/20` | `bg-purple-50 text-purple-700 border-purple-200` |
+| Badge Category | Priority / Status     | Dark Theme Style                                           | Light Theme Style                                   |
+| :------------- | :-------------------- | :--------------------------------------------------------- | :-------------------------------------------------- |
+| **Priority**   | High                  | `bg-red-500/10 text-red-400 border-red-500/20`             | `bg-red-50 text-red-700 border-red-200`             |
+| **Priority**   | Medium                | `bg-amber-500/10 text-amber-400 border-amber-500/20`       | `bg-amber-50 text-amber-700 border-amber-200`       |
+| **Priority**   | Low                   | `bg-slate-500/10 text-slate-400 border-slate-500/20`       | `bg-slate-100 text-slate-600 border-slate-200`      |
+| **Status**     | Backlog / Todo        | `bg-slate-500/10 text-slate-400`                           | `bg-slate-100 text-slate-700`                       |
+| **Status**     | In Progress           | `bg-blue-500/10 text-blue-400 border-blue-500/20`          | `bg-blue-50 text-blue-700 border-blue-200`          |
+| **Status**     | Completed             | `bg-emerald-500/10 text-emerald-400 border-emerald-500/20` | `bg-emerald-50 text-emerald-700 border-emerald-200` |
+| **Type**       | Fixed Recurring Block | `bg-purple-500/10 text-purple-400 border-purple-500/20`    | `bg-purple-50 text-purple-700 border-purple-200`    |
 
 ---
 
@@ -117,14 +119,17 @@ The application uses standard sans-serif font family stack with tabular monospac
 
 ### 3.1 Typographic Scale
 
-| Role | Class Name | Font Size / Weight | Line Height | Usage |
-| :--- | :--- | :--- | :--- | :--- |
-| **Title 1** | `text-2xl font-bold` | 24px / Bold (700) | 1.25 | Primary View Headers (Backlog, Today, Reports) |
-| **Title 2** | `text-xl font-semibold` | 20px / SemiBold (600) | 1.3 | Modal Headers, Section Titles |
-| **Title 3** | `text-lg font-medium` | 18px / Medium (500) | 1.4 | Card Titles, Task Names |
-| **Body Primary** | `text-sm font-normal` | 14px / Regular (400) | 1.5 | Task descriptions, table contents, primary inputs |
-| **Body Muted** | `text-xs font-normal` | 12px / Regular (400) | 1.5 | Subtitles, help texts, timestamp annotations |
-| **Timer / Code** | `font-mono text-sm` | 14px / Monospace | 1.4 | Live Header Timer readout (`00:45:12`), estimate pilling |
+| Role               | Class Name              | Font Size / Weight    | Line Height | Usage                                                    |
+| :----------------- | :---------------------- | :-------------------- | :---------- | :------------------------------------------------------- |
+| **Title 1**        | `text-2xl font-bold`    | 24px / Bold (700)     | 1.33        | Primary View Headers (Backlog, Today, Reports)           |
+| **Title 2**        | `text-xl font-semibold` | 20px / SemiBold (600) | 1.4         | Modal Headers, Section Titles                            |
+| **Title 3**        | `text-lg font-medium`   | 18px / Medium (500)   | 1.55        | View toolbar titles, prominent card titles               |
+| **Body Primary**   | `text-base font-normal` | 16px / Regular (400)  | 1.625       | Task names, descriptions, primary inputs                 |
+| **Body Secondary** | `text-sm font-normal`   | 14px / Regular (400)  | 1.43        | Secondary text, button labels, timestamps                |
+| **Body Muted**     | `text-xs font-normal`   | 13px / Regular (400)  | 1.38        | Subtitles, help texts, annotations                       |
+| **Timer / Code**   | `font-mono text-sm`     | 14px / Monospace      | 1.4         | Live Header Timer readout (`00:45:12`), estimate pilling |
+
+> **Base font**: the document body is `15px` with `1.6` line-height. The Tailwind `fontSize` tokens are overridden as follows: `2xs` 11px, `xs` 13px, `sm` 14px, `base` 16px, `lg` 18px, `xl` 20px, `2xl` 24px.
 
 ---
 
@@ -139,7 +144,7 @@ The screen layout consists of 4 distinct regions:
 │ Header Bar (h-14)                                                      │
 │ [☰ Toggle Sidebar] App Logo & Name             [⏱ Active Task Timer]   │
 ├─────────────────┬──────────────────────────────────────────────────────┤
-│ Sidebar (w-64)  │ Main Scrollable Content Area                         │
+│ Sidebar (w-56)  │ Main Scrollable Content Area                         │
 │                 │ (flex-1 overflow-y-auto p-6)                         │
 │ 📥 Backlog      │                                                      │
 │ 📅 Today        │                                                      │
@@ -157,7 +162,7 @@ The screen layout consists of 4 distinct regions:
 - **Grid Baseline**: 4px scaling (`p-1`=4px, `p-2`=8px, `p-3`=12px, `p-4`=16px, `p-6`=24px).
 - **View Padding**: All main view content containers MUST use `p-6` (24px) for page padding.
 - **Card Spacing**: Task lists and card grids use `space-y-3` or `gap-3` (12px spacing).
-- **Responsive Breakpoint**: Below 1024px, the sidebar collapses into icon-only mode (`w-16`). Minimum app window dimensions are `900x600px`.
+- **Responsive Breakpoint**: Below 1024px, the sidebar collapses into icon-only mode (`w-16`). Minimum app window dimensions are `900x600px`. (Current implementation uses a persistent labeled `w-56` sidebar.)
 
 ---
 
@@ -174,20 +179,20 @@ The screen layout consists of 4 distinct regions:
 
 ### 5.2 Key Icon Map
 
-| Context / Element | Icon Component | Usage Example |
-| :--- | :--- | :--- |
-| Backlog View | `Inbox` | `<Inbox className="size-5" />` |
-| Today View | `Calendar` | `<Calendar className="size-5" />` |
-| Daily Plan View | `Lightbulb` | `<Lightbulb className="size-5" />` |
-| Reports View | `BarChart3` | `<BarChart3 className="size-5" />` |
-| Settings | `Settings` | `<Settings className="size-5" />` |
-| Add Task | `Plus` | `<Plus className="size-4" />` |
-| Start / Play Timer | `Play` | `<Play className="size-4 text-emerald-500" />` |
-| Pause Timer | `Pause` | `<Pause className="size-4 text-amber-500" />` |
-| Complete Task | `CheckCircle2` | `<CheckCircle2 className="size-4" />` |
-| High Priority Warning | `AlertTriangle` | `<AlertTriangle className="size-4 text-red-500" />` |
-| Drag Handle | `GripVertical` | `<GripVertical className="size-4 text-slate-400" />` |
-| Loading Spinner | `Loader2` | `<Loader2 className="size-4 animate-spin" />` |
+| Context / Element     | Icon Component  | Usage Example                                        |
+| :-------------------- | :-------------- | :--------------------------------------------------- |
+| Backlog View          | `Inbox`         | `<Inbox className="size-5" />`                       |
+| Today View            | `Calendar`      | `<Calendar className="size-5" />`                    |
+| Daily Plan View       | `Lightbulb`     | `<Lightbulb className="size-5" />`                   |
+| Reports View          | `BarChart3`     | `<BarChart3 className="size-5" />`                   |
+| Settings              | `Settings`      | `<Settings className="size-5" />`                    |
+| Add Task              | `Plus`          | `<Plus className="size-4" />`                        |
+| Start / Play Timer    | `Play`          | `<Play className="size-4 text-emerald-500" />`       |
+| Pause Timer           | `Pause`         | `<Pause className="size-4 text-amber-500" />`        |
+| Complete Task         | `CheckCircle2`  | `<CheckCircle2 className="size-4" />`                |
+| High Priority Warning | `AlertTriangle` | `<AlertTriangle className="size-4 text-red-500" />`  |
+| Drag Handle           | `GripVertical`  | `<GripVertical className="size-4 text-slate-400" />` |
+| Loading Spinner       | `Loader2`       | `<Loader2 className="size-4 animate-spin" />`        |
 
 ---
 

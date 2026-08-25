@@ -1,15 +1,15 @@
-import type { TaskPriority } from '@shared/models';
+import type { TaskPriority } from "@shared/models";
 
 const dotClass: Record<TaskPriority, string> = {
-  high:   'bg-priority-high',
-  medium: 'bg-priority-medium',
-  low:    'bg-priority-low',
+  high: "bg-priority-high",
+  medium: "bg-priority-medium",
+  low: "bg-priority-low",
 };
 
 const label: Record<TaskPriority, string> = {
-  high:   'High',
-  medium: 'Med',
-  low:    'Low',
+  high: "High",
+  medium: "Med",
+  low: "Low",
 };
 
 interface PriorityBadgeProps {
@@ -17,12 +17,17 @@ interface PriorityBadgeProps {
   showLabel?: boolean;
 }
 
-export function PriorityBadge({ priority, showLabel = false }: PriorityBadgeProps) {
+export function PriorityBadge({
+  priority,
+  showLabel = false,
+}: PriorityBadgeProps) {
   return (
     <span className="inline-flex items-center gap-1">
-      <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${dotClass[priority]}`} />
+      <span
+        className={`inline-block h-2 w-2 shrink-0 rounded-full ${dotClass[priority]}`}
+      />
       {showLabel && (
-        <span className="text-2xs text-text-muted">{label[priority]}</span>
+        <span className="text-xs text-text-muted">{label[priority]}</span>
       )}
     </span>
   );

@@ -38,19 +38,19 @@ export function Header() {
   };
 
   return (
-    <header className="flex h-11 shrink-0 items-center justify-between px-4">
-      <div className="flex items-center gap-2">
-        <Zap className="h-4 w-4 text-accent" strokeWidth={2.5} />
-        <span className="text-sm font-semibold tracking-tight text-text-primary">
+    <header className="flex h-14 shrink-0 items-center justify-between px-5">
+      <div className="flex items-center gap-2.5">
+        <Zap className="h-5 w-5 text-accent" strokeWidth={2.5} />
+        <span className="text-base font-semibold tracking-tight text-text-primary">
           Focus
         </span>
       </div>
 
       <div className="flex items-center gap-3">
         {activeTaskId ? (
-          <div className="flex items-center gap-2.5 rounded-full border border-border bg-bg-secondary px-3 py-1 text-xs">
+          <div className="flex items-center gap-2.5 rounded-full border border-border bg-bg-secondary px-4 py-1.5 text-sm">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-            <span className="truncate max-w-[180px] font-medium text-text-primary">
+            <span className="truncate max-w-[200px] font-medium text-text-primary">
               {activeTask?.title ?? "Active Task"}
             </span>
             <span className="font-mono text-text-secondary">
@@ -59,15 +59,15 @@ export function Header() {
             <Tooltip label="Pause timer" side="bottom">
               <button
                 onClick={handleToggleTimer}
-                className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-tertiary text-text-primary transition-colors hover:bg-border"
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-bg-tertiary text-text-primary transition-colors hover:bg-border"
                 aria-label="Pause timer"
               >
-                <Pause className="h-3 w-3 fill-current" />
+                <Pause className="h-3.5 w-3.5 fill-current" />
               </button>
             </Tooltip>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 text-xs text-text-muted">
+          <div className="flex items-center gap-1.5 text-sm text-text-muted">
             <span className="h-1.5 w-1.5 rounded-full bg-bg-tertiary" />
             <span className="font-mono">No active timer</span>
           </div>
@@ -76,7 +76,7 @@ export function Header() {
         <Tooltip label={themeLabel}>
           <button
             onClick={toggleTheme}
-            className="flex h-6 w-6 items-center justify-center rounded text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
+            className="flex h-8 w-8 items-center justify-center rounded text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
             aria-label={themeLabel}
           >
             {theme === "dark" ? (

@@ -41,7 +41,7 @@ function ToolbarButton({ onClick, isActive, label, icon }: ToolbarButtonProps) {
       type="button"
       onClick={onClick}
       title={label}
-      className={`rounded p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary ${
+      className={`rounded p-1.5 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary ${
         isActive ? "bg-accent-subtle text-accent" : ""
       }`}
     >
@@ -88,7 +88,7 @@ export function MarkdownEditor({
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm max-w-none focus:outline-none p-3 text-sm text-text-primary placeholder-muted",
+          "prose prose-base max-w-none focus:outline-none p-3 text-base text-text-primary placeholder-muted",
         "data-placeholder": placeholder,
         style: `min-height: ${minHeight}px;`,
       },
@@ -110,17 +110,17 @@ export function MarkdownEditor({
   const headingLevels = [
     {
       level: 1 as const,
-      icon: <Heading1 className="h-3.5 w-3.5" />,
+      icon: <Heading1 className="h-4 w-4" />,
       label: "Heading 1",
     },
     {
       level: 2 as const,
-      icon: <Heading2 className="h-3.5 w-3.5" />,
+      icon: <Heading2 className="h-4 w-4" />,
       label: "Heading 2",
     },
     {
       level: 3 as const,
-      icon: <Heading3 className="h-3.5 w-3.5" />,
+      icon: <Heading3 className="h-4 w-4" />,
       label: "Heading 3",
     },
   ];
@@ -137,19 +137,19 @@ export function MarkdownEditor({
             onClick={() => editor.chain().focus().toggleBold().run()}
             isActive={editor.isActive("bold")}
             label="Bold"
-            icon={<Bold className="h-3.5 w-3.5" />}
+            icon={<Bold className="h-4 w-4" />}
           />
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleItalic().run()}
             isActive={editor.isActive("italic")}
             label="Italic"
-            icon={<Italic className="h-3.5 w-3.5" />}
+            icon={<Italic className="h-4 w-4" />}
           />
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleStrike().run()}
             isActive={editor.isActive("strike")}
             label="Strikethrough"
-            icon={<Strikethrough className="h-3.5 w-3.5" />}
+            icon={<Strikethrough className="h-4 w-4" />}
           />
 
           <ToolbarDivider />
@@ -172,19 +172,19 @@ export function MarkdownEditor({
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             isActive={editor.isActive("bulletList")}
             label="Bullet List"
-            icon={<List className="h-3.5 w-3.5" />}
+            icon={<List className="h-4 w-4" />}
           />
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
             isActive={editor.isActive("orderedList")}
             label="Ordered List"
-            icon={<ListOrdered className="h-3.5 w-3.5" />}
+            icon={<ListOrdered className="h-4 w-4" />}
           />
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleTaskList().run()}
             isActive={editor.isActive("taskList")}
             label="Task List"
-            icon={<ListTodo className="h-3.5 w-3.5" />}
+            icon={<ListTodo className="h-4 w-4" />}
           />
 
           <ToolbarDivider />
@@ -193,13 +193,13 @@ export function MarkdownEditor({
             onClick={() => editor.chain().focus().toggleBlockquote().run()}
             isActive={editor.isActive("blockquote")}
             label="Blockquote"
-            icon={<Quote className="h-3.5 w-3.5" />}
+            icon={<Quote className="h-4 w-4" />}
           />
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleCodeBlock().run()}
             isActive={editor.isActive("codeBlock")}
             label="Code Block"
-            icon={<Code2 className="h-3.5 w-3.5" />}
+            icon={<Code2 className="h-4 w-4" />}
           />
 
           <ToolbarDivider />
@@ -220,7 +220,7 @@ export function MarkdownEditor({
             }}
             isActive={editor.isActive("link")}
             label="Link"
-            icon={<Link2 className="h-3.5 w-3.5" />}
+            icon={<Link2 className="h-4 w-4" />}
           />
         </div>
       )}
@@ -242,7 +242,7 @@ export function MarkdownEditor({
         </>
       ) : (
         <div
-          className="min-h-[150px] px-3 py-2 text-sm text-text-primary prose prose-sm max-w-none"
+          className="min-h-[150px] px-3 py-2 text-base text-text-primary prose prose-base max-w-none"
           style={{ minHeight: `${minHeight}px` }}
           dangerouslySetInnerHTML={{
             __html:

@@ -27,11 +27,11 @@ export function ReportHistory() {
   if (reports.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border bg-bg-surface p-6 text-center">
-        <BarChart2 className="mx-auto h-6 w-6 text-text-muted" />
-        <p className="mt-2 text-sm font-medium text-text-primary">
+        <BarChart2 className="mx-auto h-7 w-7 text-text-muted" />
+        <p className="mt-2 text-base font-medium text-text-primary">
           No reports yet
         </p>
-        <p className="mt-1 text-xs text-text-muted">
+        <p className="mt-1 text-sm text-text-muted">
           Generate your first performance report to see it here.
         </p>
       </div>
@@ -43,13 +43,13 @@ export function ReportHistory() {
       {reports.map((item) => (
         <div
           key={item.id}
-          className="flex items-center justify-between gap-3 rounded-lg border border-border bg-bg-surface p-3"
+          className="flex items-center justify-between gap-3 rounded-lg border border-border bg-bg-surface p-4"
         >
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-text-primary">
+            <p className="truncate text-base font-medium text-text-primary">
               {formatTimeframe(item)}
             </p>
-            <p className="mt-0.5 text-xs text-text-muted">
+            <p className="mt-0.5 text-sm text-text-muted">
               Score {Math.round(item.efficiencyScore)}/100 ·{" "}
               {item.totalCompleted} task{item.totalCompleted === 1 ? "" : "s"} ·{" "}
               {formatDate(item.createdAt)}
@@ -58,16 +58,16 @@ export function ReportHistory() {
           <div className="flex shrink-0 items-center gap-1">
             <button
               onClick={() => void viewReport(item.id)}
-              className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+              className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
             >
               View
             </button>
             <button
               onClick={() => setPendingDelete(item)}
               aria-label="Delete report"
-              className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-bg-tertiary hover:text-danger"
+              className="flex h-8 w-8 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-bg-tertiary hover:text-danger"
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Trash2 className="h-4 w-4" />
             </button>
           </div>
         </div>

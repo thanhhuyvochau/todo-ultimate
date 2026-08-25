@@ -73,15 +73,15 @@ export function PlanBlockRow({
   const endTime = block.scheduledStart + block.budgetedMinutes * 60_000;
 
   return (
-    <div className="group flex items-center gap-3 border-b border-border px-4 py-2.5 transition-colors duration-100 hover:bg-bg-secondary">
+    <div className="group flex items-center gap-3 border-b border-border px-5 py-3.5 transition-colors duration-100 hover:bg-bg-secondary">
       <div className="flex w-6 shrink-0 justify-center">
         {dragHandle ?? (
-          <Lock className="h-3.5 w-3.5 text-text-muted" strokeWidth={1.5} />
+          <Lock className="h-4 w-4 text-text-muted" strokeWidth={1.5} />
         )}
       </div>
 
-      <div className="flex w-32 shrink-0 items-center gap-1.5 font-mono text-xs text-text-muted">
-        <Clock className="h-3 w-3" strokeWidth={1.5} />
+      <div className="flex w-32 shrink-0 items-center gap-1.5 font-mono text-sm text-text-muted">
+        <Clock className="h-3.5 w-3.5" strokeWidth={1.5} />
         <span>
           {formatTime(block.scheduledStart)} – {formatTime(endTime)}
         </span>
@@ -89,11 +89,11 @@ export function PlanBlockRow({
 
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <PriorityBadge priority={block.priority} />
-        <span className="truncate text-sm text-text-primary">
+        <span className="truncate text-base text-text-primary">
           {block.title}
         </span>
         {block.rationale && (
-          <span className="hidden truncate text-2xs text-text-muted md:inline">
+          <span className="hidden truncate text-xs text-text-muted md:inline">
             · {block.rationale}
           </span>
         )}
@@ -110,20 +110,20 @@ export function PlanBlockRow({
             onBlur={handleSave}
             min={1}
             max={1440}
-            className="w-16 rounded bg-bg-elevated px-1.5 py-0.5 text-xs text-text-primary ring-1 ring-border-focus focus:outline-none"
+            className="w-20 rounded bg-bg-elevated px-2 py-1 text-sm text-text-primary ring-1 ring-border-focus focus:outline-none"
           />
           <button
             onClick={handleSave}
-            className="flex h-6 w-6 items-center justify-center rounded text-accent hover:bg-accent-subtle"
+            className="flex h-8 w-8 items-center justify-center rounded text-accent hover:bg-accent-subtle"
             aria-label="Save budget"
           >
-            <Check className="h-3.5 w-3.5" />
+            <Check className="h-4 w-4" />
           </button>
         </div>
       ) : (
         <button
           onClick={() => setIsEditing(true)}
-          className="shrink-0 font-mono text-xs text-text-muted hover:text-accent"
+          className="shrink-0 font-mono text-sm text-text-muted hover:text-accent"
           aria-label="Edit time budget"
           title="Edit time budget"
         >
@@ -134,11 +134,11 @@ export function PlanBlockRow({
       {!block.isFixed && (
         <button
           onClick={() => onRemove(block.taskId)}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-text-muted opacity-0 transition-opacity duration-100 hover:bg-danger-subtle hover:text-danger group-hover:opacity-100"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-text-muted opacity-0 transition-opacity duration-100 hover:bg-danger-subtle hover:text-danger group-hover:opacity-100"
           aria-label={`Remove ${block.title} from plan`}
           title="Remove from plan"
         >
-          <X className="h-3.5 w-3.5" />
+          <X className="h-4 w-4" />
         </button>
       )}
     </div>

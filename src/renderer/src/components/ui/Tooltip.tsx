@@ -22,7 +22,7 @@ export function Tooltip({ label, side = "top", children }: TooltipProps) {
       <span
         role="tooltip"
         className={[
-          "pointer-events-none absolute z-50 whitespace-nowrap rounded-md border border-border bg-bg-elevated px-2 py-1 text-xs text-text-primary shadow-lg",
+          "pointer-events-none absolute z-50 whitespace-nowrap rounded-md border border-border bg-bg-elevated px-2.5 py-1.5 text-sm text-text-primary shadow-lg",
           "opacity-0 transition-opacity duration-100",
           "group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100",
           SIDE_POSITIONS[side],

@@ -61,11 +61,11 @@ export function DeleteConfirmationDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[2px]">
       <div
         data-delete-dialog
-        className="w-full max-w-sm rounded-lg border border-border bg-bg-elevated p-5 shadow-2xl"
+        className="w-full max-w-sm rounded-xl border border-border bg-bg-elevated p-6 shadow-2xl"
       >
-        <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="mb-5 flex items-start justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-text-primary">
+            <p className="text-base font-medium text-text-primary">
               {itemType === "rule"
                 ? "Delete rule?"
                 : itemType === "key"
@@ -74,7 +74,7 @@ export function DeleteConfirmationDialog({
                     ? "Delete report?"
                     : "Delete task?"}
             </p>
-            <p className="mt-1 text-xs text-text-muted">
+            <p className="mt-1 text-sm text-text-muted">
               {itemType === "key" ? (
                 "The stored API key will be permanently removed."
               ) : itemType === "report" ? (
@@ -94,10 +94,10 @@ export function DeleteConfirmationDialog({
           <Tooltip label="Close">
             <button
               onClick={onCancel}
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
               aria-label="Close"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
             </button>
           </Tooltip>
         </div>
@@ -105,13 +105,13 @@ export function DeleteConfirmationDialog({
           <button
             ref={cancelRef}
             onClick={onCancel}
-            className="rounded-md px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-bg-tertiary hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="rounded-md px-4 py-2 text-sm font-medium text-text-secondary hover:bg-bg-tertiary hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="rounded-md bg-danger px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-danger"
+            className="rounded-md bg-danger px-4 py-2 text-sm font-medium text-white hover:bg-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-danger"
           >
             {itemType === "key" ? "Remove" : "Delete"}
           </button>

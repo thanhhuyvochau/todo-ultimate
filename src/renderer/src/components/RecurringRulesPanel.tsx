@@ -35,13 +35,13 @@ export function RecurringRulesPanel() {
   return (
     <div>
       {/* Section header */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-5 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-text-primary">
+          <span className="text-base font-semibold text-text-primary">
             Recurring Rules
           </span>
           {rules.length > 0 && (
-            <span className="text-xs text-text-muted">{rules.length}</span>
+            <span className="text-sm text-text-muted">{rules.length}</span>
           )}
         </div>
         <div className="flex items-center gap-1.5">
@@ -49,11 +49,11 @@ export function RecurringRulesPanel() {
             <button
               onClick={() => fetchRules()}
               disabled={isLoading}
-              className="flex h-7 w-7 items-center justify-center rounded text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
+              className="flex h-9 w-9 items-center justify-center rounded text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
               aria-label="Refresh"
             >
               <RefreshCw
-                className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`}
+                className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
               />
             </button>
           </Tooltip>
@@ -62,9 +62,9 @@ export function RecurringRulesPanel() {
               setEditingRule(null);
               setFormOpen(true);
             }}
-            className="flex h-7 items-center gap-1 rounded bg-accent px-2.5 text-xs font-medium text-white hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="flex h-9 items-center gap-1.5 rounded-md bg-accent px-3.5 text-sm font-medium text-white hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
-            <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+            <Plus className="h-4 w-4" strokeWidth={2.5} />
             New
           </button>
         </div>
@@ -72,7 +72,7 @@ export function RecurringRulesPanel() {
 
       {/* Error */}
       {error && (
-        <div className="mb-3 rounded border border-danger/20 bg-danger-subtle px-3 py-2 text-xs text-danger">
+        <div className="mb-3 rounded border border-danger/20 bg-danger-subtle px-3 py-2 text-sm text-danger">
           {error}
         </div>
       )}
@@ -80,8 +80,8 @@ export function RecurringRulesPanel() {
       {/* Empty state */}
       {!isLoading && rules.length === 0 && !error && (
         <div className="py-10 text-center">
-          <p className="text-xs text-text-muted">No recurring rules yet.</p>
-          <p className="mt-0.5 text-2xs text-text-muted opacity-60">
+          <p className="text-sm text-text-muted">No recurring rules yet.</p>
+          <p className="mt-0.5 text-xs text-text-muted opacity-60">
             Create templates for tasks that repeat on a schedule.
           </p>
         </div>

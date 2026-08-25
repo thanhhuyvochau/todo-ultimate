@@ -171,7 +171,7 @@ export function TaskItem({
   return (
     <div
       className={[
-        "group flex items-center gap-3 border-b border-border px-4 py-2.5 transition-colors duration-100",
+        "group flex items-center gap-3 border-b border-border px-5 py-3.5 transition-colors duration-100",
         isInProgress ? "bg-accent-subtle/30" : "hover:bg-bg-secondary",
       ].join(" ")}
     >
@@ -195,7 +195,7 @@ export function TaskItem({
               : "cursor-pointer text-text-muted hover:text-text-secondary",
         ].join(" ")}
       >
-        <CheckMark className="h-4 w-4" strokeWidth={1.5} />
+        <CheckMark className="h-5 w-5" strokeWidth={1.5} />
       </button>
 
       {isEditing ? (
@@ -209,13 +209,13 @@ export function TaskItem({
               onChange={(e) => setEditTitle(e.target.value)}
               onKeyDown={handleKeyDown}
               maxLength={200}
-              className="w-full rounded bg-bg-elevated px-2 py-1 text-sm text-text-primary ring-1 ring-border-focus focus:outline-none"
+              className="w-full rounded bg-bg-elevated px-2.5 py-1.5 text-base text-text-primary ring-1 ring-border-focus focus:outline-none"
             />
             <div className="flex items-center gap-3">
               <button
                 onClick={cyclePriority}
                 type="button"
-                className="flex items-center gap-1 text-xs text-text-muted hover:text-text-secondary"
+                className="flex items-center gap-1 text-sm text-text-muted hover:text-text-secondary"
               >
                 <PriorityBadge priority={editPriority} />
                 <span className="capitalize">{editPriority}</span>
@@ -228,9 +228,9 @@ export function TaskItem({
                   onKeyDown={handleKeyDown}
                   min={1}
                   max={1440}
-                  className="w-16 rounded bg-bg-elevated px-1.5 py-0.5 text-xs text-text-primary ring-1 ring-border focus:outline-none focus:ring-border-focus"
+                  className="w-20 rounded bg-bg-elevated px-2 py-1 text-sm text-text-primary ring-1 ring-border focus:outline-none focus:ring-border-focus"
                 />
-                <span className="text-xs text-text-muted">min</span>
+                <span className="text-sm text-text-muted">min</span>
               </div>
             </div>
           </div>
@@ -238,19 +238,19 @@ export function TaskItem({
             <Tooltip label="Save changes">
               <button
                 onClick={handleSave}
-                className="flex h-6 w-6 items-center justify-center rounded text-accent hover:bg-accent-subtle"
+                className="flex h-8 w-8 items-center justify-center rounded text-accent hover:bg-accent-subtle"
                 aria-label="Save changes"
               >
-                <Check className="h-3.5 w-3.5" />
+                <Check className="h-4 w-4" />
               </button>
             </Tooltip>
             <Tooltip label="Cancel editing">
               <button
                 onClick={handleCancel}
-                className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
+                className="flex h-8 w-8 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
                 aria-label="Cancel editing"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-4 w-4" />
               </button>
             </Tooltip>
           </div>
@@ -268,7 +268,7 @@ export function TaskItem({
           >
             <p
               className={[
-                "truncate text-sm",
+                "truncate text-base",
                 isCompleted
                   ? "text-text-muted line-through"
                   : isInProgress
@@ -281,7 +281,7 @@ export function TaskItem({
           </div>
 
           {/* Estimate */}
-          <span className="shrink-0 font-mono text-xs text-text-muted">
+          <span className="shrink-0 font-mono text-sm text-text-muted">
             {formatMinutes(task.estimatedMinutes)}
           </span>
           <VarianceBadge task={task} />
@@ -292,10 +292,10 @@ export function TaskItem({
               <Tooltip label="Return to backlog">
                 <button
                   onClick={() => onReturnToBacklog!(task)}
-                  className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
+                  className="flex h-8 w-8 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
                   aria-label="Return to backlog"
                 >
-                  <ArrowDownLeft className="h-3.5 w-3.5" />
+                  <ArrowDownLeft className="h-4 w-4" />
                 </button>
               </Tooltip>
             )}
@@ -303,10 +303,10 @@ export function TaskItem({
               <Tooltip label="Move to today">
                 <button
                   onClick={() => onMoveToToday!(task)}
-                  className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-accent"
+                  className="flex h-8 w-8 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-accent"
                   aria-label="Move to today"
                 >
-                  <ArrowUpRight className="h-3.5 w-3.5" />
+                  <ArrowUpRight className="h-4 w-4" />
                 </button>
               </Tooltip>
             )}
@@ -317,14 +317,14 @@ export function TaskItem({
                 <Tooltip label="Change status">
                   <button
                     onClick={() => setStatusOpen(!statusOpen)}
-                    className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
+                    className="flex h-8 w-8 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
                     aria-label="Change status"
                   >
-                    <ChevronDown className="h-3.5 w-3.5" />
+                    <ChevronDown className="h-4 w-4" />
                   </button>
                 </Tooltip>
                 {statusOpen && (
-                  <div className="absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-md border border-border bg-bg-elevated py-0.5 shadow-lg">
+                  <div className="absolute right-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-md border border-border bg-bg-elevated py-1 shadow-lg">
                     {actions.map((action) => (
                       <button
                         key={action.nextStatus}
@@ -332,10 +332,10 @@ export function TaskItem({
                           onStatusChange(task, action.nextStatus);
                           setStatusOpen(false);
                         }}
-                        className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-text-primary hover:bg-bg-tertiary"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-bg-tertiary"
                       >
                         {action.nextStatus === "completed" && (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                          <CheckCircle2 className="h-4 w-4 text-success" />
                         )}
                         {action.label}
                       </button>
@@ -348,19 +348,19 @@ export function TaskItem({
             <Tooltip label="Edit task">
               <button
                 onClick={handleStartEdit}
-                className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
+                className="flex h-8 w-8 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
                 aria-label="Edit task"
               >
-                <Pencil className="h-3.5 w-3.5" />
+                <Pencil className="h-4 w-4" />
               </button>
             </Tooltip>
             <Tooltip label="Delete task">
               <button
                 onClick={() => onDelete(task)}
-                className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-danger-subtle hover:text-danger"
+                className="flex h-8 w-8 items-center justify-center rounded text-text-muted hover:bg-danger-subtle hover:text-danger"
                 aria-label="Delete task"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-4 w-4" />
               </button>
             </Tooltip>
           </div>

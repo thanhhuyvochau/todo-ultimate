@@ -25,8 +25,8 @@ interface SidebarProps {
 
 export function Sidebar({ activeView, onNavigate }: SidebarProps) {
   return (
-    <aside className="flex w-12 shrink-0 flex-col border-r border-border py-2">
-      <nav className="flex flex-1 flex-col items-center gap-0.5 px-1">
+    <aside className="flex w-56 shrink-0 flex-col border-r border-border py-3">
+      <nav className="flex flex-1 flex-col gap-1 px-2">
         {NAV_ITEMS.map((item) => {
           const isActive = activeView === item.id;
           const Icon = item.icon;
@@ -35,21 +35,24 @@ export function Sidebar({ activeView, onNavigate }: SidebarProps) {
               key={item.id}
               onClick={() => item.enabled && onNavigate(item.id)}
               disabled={!item.enabled}
-              title={item.label}
               aria-label={item.label}
               className={[
-                "group relative flex h-9 w-9 items-center justify-center rounded-md transition-colors duration-100",
+                "group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors duration-100",
                 isActive
                   ? "bg-accent-subtle text-accent"
-                  : "text-text-muted hover:bg-bg-tertiary hover:text-text-secondary",
+                  : "text-text-secondary hover:bg-bg-tertiary hover:text-text-primary",
                 !item.enabled
                   ? "cursor-not-allowed opacity-30"
                   : "cursor-pointer",
               ].join(" ")}
             >
-              <Icon className="h-4 w-4" strokeWidth={isActive ? 2 : 1.75} />
+              <Icon
+                className="h-5 w-5 shrink-0"
+                strokeWidth={isActive ? 2 : 1.75}
+              />
+              <span className="truncate">{item.label}</span>
               {isActive && (
-                <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-accent" />
+                <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-accent" />
               )}
             </button>
           );

@@ -29,7 +29,7 @@ export function VarianceBadge({ task }: VarianceBadgeProps) {
 
   return (
     <span
-      className={`shrink-0 font-mono text-xs ${color}`}
+      className={`shrink-0 font-mono text-sm ${color}`}
       title={title}
       aria-label={title}
     >

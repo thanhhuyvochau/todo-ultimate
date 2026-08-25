@@ -24,29 +24,29 @@ export function StatusFooter() {
   });
 
   return (
-    <footer className="flex h-7 shrink-0 items-center justify-between border-t border-border px-4">
-      <div className="flex items-center gap-3">
+    <footer className="flex h-8 shrink-0 items-center justify-between border-t border-border px-5">
+      <div className="flex items-center gap-4">
         {!isOnline && (
-          <span className="flex items-center gap-1.5 text-2xs text-warning">
-            <WifiOff className="h-2.5 w-2.5" />
+          <span className="flex items-center gap-1.5 text-xs text-warning">
+            <WifiOff className="h-3.5 w-3.5" />
             Offline — AI features unavailable
           </span>
         )}
-        <span className="flex items-center gap-1.5 text-2xs text-text-muted">
-          <span className="h-1 w-1 rounded-full bg-success opacity-70" />
+        <span className="flex items-center gap-1.5 text-xs text-text-muted">
+          <span className="h-1.5 w-1.5 rounded-full bg-success opacity-70" />
           Saved
         </span>
       </div>
-      <div className="flex items-center gap-4">
-        <span className="flex items-center gap-1 text-2xs text-text-muted">
+      <div className="flex items-center gap-5">
+        <span className="flex items-center gap-1.5 text-xs text-text-muted">
           {hasApiKey ? (
-            <KeyRound className="h-2.5 w-2.5 text-success opacity-60" />
+            <KeyRound className="h-3.5 w-3.5 text-success opacity-60" />
           ) : (
-            <Key className="h-2.5 w-2.5 text-warning opacity-60" />
+            <Key className="h-3.5 w-3.5 text-warning opacity-60" />
           )}
           {hasApiKey ? "API ready" : "No API key"}
         </span>
-        <span className="font-mono text-2xs text-text-muted">{timeStr}</span>
+        <span className="font-mono text-xs text-text-muted">{timeStr}</span>
       </div>
     </footer>
   );

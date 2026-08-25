@@ -45,7 +45,7 @@ export function RecurringRuleCard({
   return (
     <div
       className={[
-        "group flex items-center gap-3 border-b border-border px-0 py-3 transition-opacity",
+        "group flex items-center gap-3 border-b border-border px-0 py-3.5 transition-opacity",
         !rule.isActive ? "opacity-40" : "",
       ].join(" ")}
     >
@@ -57,13 +57,13 @@ export function RecurringRuleCard({
           aria-checked={rule.isActive}
           aria-label={rule.isActive ? "Disable rule" : "Enable rule"}
           className={[
-            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+            "relative inline-flex h-6 w-10 shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
             rule.isActive ? "bg-accent" : "bg-bg-tertiary",
           ].join(" ")}
         >
           <span
             className={[
-              "inline-block h-4 w-4 translate-y-0.5 rounded-full bg-white shadow transition-transform duration-200",
+              "inline-block h-5 w-5 translate-y-0.5 rounded-full bg-white shadow transition-transform duration-200",
               rule.isActive ? "translate-x-4" : "translate-x-0.5",
             ].join(" ")}
           />
@@ -75,13 +75,13 @@ export function RecurringRuleCard({
 
       {/* Content */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm text-text-primary">{rule.title}</p>
-        <div className="mt-0.5 flex items-center gap-2 text-xs text-text-muted">
+        <p className="truncate text-base text-text-primary">{rule.title}</p>
+        <div className="mt-0.5 flex items-center gap-2 text-sm text-text-muted">
           <span>{FREQUENCY_LABELS[rule.frequency] ?? rule.frequency}</span>
           {frequencyDetail && <span>· {frequencyDetail}</span>}
           {timeLabel && (
             <span className="flex items-center gap-0.5">
-              <Clock className="h-2.5 w-2.5" />
+              <Clock className="h-3.5 w-3.5" />
               {timeLabel}
             </span>
           )}
@@ -94,19 +94,19 @@ export function RecurringRuleCard({
         <Tooltip label="Edit rule">
           <button
             onClick={() => onEdit(rule)}
-            className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
+            className="flex h-8 w-8 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
             aria-label="Edit rule"
           >
-            <Edit2 className="h-3.5 w-3.5" />
+            <Edit2 className="h-4 w-4" />
           </button>
         </Tooltip>
         <Tooltip label="Delete rule">
           <button
             onClick={() => onDeleteRequest(rule)}
-            className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-danger-subtle hover:text-danger"
+            className="flex h-8 w-8 items-center justify-center rounded text-text-muted hover:bg-danger-subtle hover:text-danger"
             aria-label="Delete rule"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className="h-4 w-4" />
           </button>
         </Tooltip>
       </div>

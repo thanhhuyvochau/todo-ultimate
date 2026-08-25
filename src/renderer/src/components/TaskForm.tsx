@@ -237,18 +237,18 @@ export function TaskForm({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[2px]">
-      <div className="relative w-full max-w-md rounded-lg border border-border bg-bg-elevated p-5 shadow-2xl">
-        <div className="mb-4 flex items-center justify-between">
-          <p className="text-sm font-semibold text-text-primary">
+      <div className="relative w-full max-w-md rounded-xl border border-border bg-bg-elevated p-6 shadow-2xl">
+        <div className="mb-5 flex items-center justify-between">
+          <p className="text-base font-semibold text-text-primary">
             {isEditing ? "Edit Task" : "New Task"}
           </p>
           <Tooltip label="Close form">
             <button
               onClick={handleCloseRequest}
-              className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
+              className="flex h-8 w-8 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
               aria-label="Close form"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
             </button>
           </Tooltip>
         </div>
@@ -256,7 +256,7 @@ export function TaskForm({
         <div className="flex flex-col gap-3.5">
           <div>
             <label
-              className="mb-1 block text-xs font-medium text-text-muted"
+              className="mb-1 block text-sm font-medium text-text-muted"
               htmlFor="task-title"
             >
               Title
@@ -269,16 +269,16 @@ export function TaskForm({
               onChange={(e) => handleTitleChange(e.target.value)}
               maxLength={200}
               placeholder="What needs to be done?"
-              className={`w-full rounded bg-bg-tertiary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 ${titleError ? "ring-1 ring-danger" : "ring-transparent focus:ring-border-focus"}`}
+              className={`w-full rounded bg-bg-tertiary px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 ${titleError ? "ring-1 ring-danger" : "ring-transparent focus:ring-border-focus"}`}
             />
             {titleError && (
-              <p className="mt-1 text-xs text-danger">{titleError}</p>
+              <p className="mt-1 text-sm text-danger">{titleError}</p>
             )}
           </div>
 
           <div>
             <label
-              className="mb-1 block text-xs font-medium text-text-muted"
+              className="mb-1 block text-sm font-medium text-text-muted"
               htmlFor="task-minutes"
             >
               Estimated Time (minutes)
@@ -291,15 +291,15 @@ export function TaskForm({
               value={estimatedMinutes}
               onChange={(e) => handleMinutesChange(e.target.value)}
               placeholder="e.g. 30"
-              className={`w-full rounded bg-bg-tertiary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 ${minutesError ? "ring-1 ring-danger" : "ring-transparent focus:ring-border-focus"}`}
+              className={`w-full rounded bg-bg-tertiary px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 ${minutesError ? "ring-1 ring-danger" : "ring-transparent focus:ring-border-focus"}`}
             />
             {minutesError && (
-              <p className="mt-1 text-xs text-danger">{minutesError}</p>
+              <p className="mt-1 text-sm text-danger">{minutesError}</p>
             )}
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-text-muted">
+            <label className="mb-1 block text-sm font-medium text-text-muted">
               Priority
             </label>
             <div className="flex gap-1.5">
@@ -309,7 +309,7 @@ export function TaskForm({
                   type="button"
                   onClick={() => setPriority(option.value)}
                   className={[
-                    "flex-1 rounded py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+                    "flex-1 rounded py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent",
                     priority === option.value
                       ? "bg-accent-subtle text-accent"
                       : "bg-bg-tertiary text-text-muted hover:text-text-secondary",
@@ -323,24 +323,24 @@ export function TaskForm({
 
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <label className="text-xs font-medium text-text-muted">
+              <label className="text-sm font-medium text-text-muted">
                 Description
                 <span className="ml-1 opacity-60">(optional)</span>
               </label>
               <button
                 type="button"
                 onClick={() => setIsPreview((p) => !p)}
-                className="inline-flex items-center gap-1 rounded p-0.5 text-xs text-text-muted transition-colors hover:text-text-primary"
+                className="inline-flex items-center gap-1 rounded p-0.5 text-sm text-text-muted transition-colors hover:text-text-primary"
                 title={isPreview ? "Switch to edit mode" : "Preview"}
               >
                 {isPreview ? (
                   <>
-                    <EyeOff className="h-3.5 w-3.5" />
+                    <EyeOff className="h-4 w-4" />
                     Edit
                   </>
                 ) : (
                   <>
-                    <Eye className="h-3.5 w-3.5" />
+                    <Eye className="h-4 w-4" />
                     Preview
                   </>
                 )}
@@ -355,20 +355,20 @@ export function TaskForm({
               maxLength={DESCRIPTION_MAX_LENGTH}
             />
             {isEditing && lastSavedAt !== null && !descriptionDirty && (
-              <div className="mt-1 flex items-center gap-1 text-xs text-success">
-                <Check className="h-3 w-3" />
+              <div className="mt-1 flex items-center gap-1 text-sm text-success">
+                <Check className="h-3.5 w-3.5" />
                 <span>{getRelativeTime(lastSavedAt)}</span>
               </div>
             )}
             {autoSaveError && (
-              <div className="mt-1 flex items-center gap-1 text-xs text-danger">
+              <div className="mt-1 flex items-center gap-1 text-sm text-danger">
                 <span>{autoSaveError}</span>
                 <button
                   type="button"
                   onClick={handleRetryAutoSave}
                   className="inline-flex items-center gap-0.5 font-medium underline hover:text-red-500"
                 >
-                  <RefreshCw className="h-3 w-3" />
+                  <RefreshCw className="h-3.5 w-3.5" />
                   Retry
                 </button>
               </div>
@@ -380,16 +380,16 @@ export function TaskForm({
           <button
             onClick={handleCloseRequest}
             disabled={isSubmitting}
-            className="rounded px-3 py-1.5 text-xs font-medium text-text-muted hover:bg-bg-tertiary hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="rounded-md px-4 py-2 text-sm font-medium text-text-muted hover:bg-bg-tertiary hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="inline-flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40"
           >
-            {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {isEditing ? "Save" : "Create"}
           </button>
         </div>
@@ -397,22 +397,22 @@ export function TaskForm({
         {showUnsavedWarning && (
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-bg-elevated/95 backdrop-blur-[1px]">
             <div className="w-full max-w-xs rounded-md border border-border bg-bg-elevated p-4 shadow-xl">
-              <p className="text-sm font-medium text-text-primary">
+              <p className="text-base font-medium text-text-primary">
                 Unsaved Changes
               </p>
-              <p className="mt-1 text-xs text-text-muted">
+              <p className="mt-1 text-sm text-text-muted">
                 Description has unsaved edits. Discard them?
               </p>
               <div className="mt-4 flex justify-end gap-2">
                 <button
                   onClick={() => setShowUnsavedWarning(false)}
-                  className="rounded px-3 py-1.5 text-xs font-medium text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
+                  className="rounded-md px-4 py-2 text-sm font-medium text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
                 >
                   Keep Editing
                 </button>
                 <button
                   onClick={handleDiscardUnsaved}
-                  className="rounded bg-warning px-3 py-1.5 text-xs font-medium text-white hover:bg-yellow-600"
+                  className="rounded-md bg-warning px-4 py-2 text-sm font-medium text-white hover:bg-yellow-600"
                 >
                   Discard
                 </button>

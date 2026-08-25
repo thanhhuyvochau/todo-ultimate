@@ -259,7 +259,7 @@ export function RecurringRuleForm({
               }}
               maxLength={200}
               placeholder="What repeats?"
-              className={`w-full rounded-md border bg-bg-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary ${
+              className={`w-full rounded-md border bg-bg-elevated px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary ${
                 titleError ? "border-danger" : "border-border"
               }`}
             />
@@ -286,7 +286,7 @@ export function RecurringRuleForm({
                 setMinutesError(validateEstimatedMinutes(e.target.value));
               }}
               placeholder="e.g. 30"
-              className={`w-full rounded-md border bg-bg-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary ${
+              className={`w-full rounded-md border bg-bg-elevated px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary ${
                 minutesError ? "border-danger" : "border-border"
               }`}
             />
@@ -350,7 +350,7 @@ export function RecurringRuleForm({
                     key={idx}
                     type="button"
                     onClick={() => handleDayToggle(idx)}
-                    className={`h-9 w-9 rounded-md text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary ${
+                    className={`h-10 w-10 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary ${
                       daysOfWeek.includes(idx)
                         ? "bg-accent text-white"
                         : "bg-bg-tertiary text-text-secondary hover:bg-bg-elevated"
@@ -386,7 +386,7 @@ export function RecurringRuleForm({
                   setDayOfMonthError(validateDayOfMonth(e.target.value));
                 }}
                 placeholder="1–31"
-                className={`w-full rounded-md border bg-bg-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary ${
+                className={`w-full rounded-md border bg-bg-elevated px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary ${
                   dayOfMonthError ? "border-danger" : "border-border"
                 }`}
               />
@@ -420,7 +420,7 @@ export function RecurringRuleForm({
               type="time"
               value={timeAnchor}
               onChange={(e) => setTimeAnchor(e.target.value)}
-              className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary"
+              className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2.5 text-base text-text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary"
             />
           </div>
 
@@ -439,7 +439,7 @@ export function RecurringRuleForm({
               maxLength={100000}
               rows={3}
               placeholder="Notes about this recurring task..."
-              className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary"
+              className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-primary"
             />
           </div>
         </div>

@@ -57,11 +57,11 @@ function SortableBlockRow({
             <button
               {...attributes}
               {...listeners}
-              className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
+              className="flex h-8 w-8 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-text-secondary"
               aria-label="Reorder"
               title="Drag to reorder"
             >
-              <GripVertical className="h-3.5 w-3.5" />
+              <GripVertical className="h-4 w-4" />
             </button>
           )
         }
@@ -145,18 +145,18 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
 
   return (
     <div className="flex h-full flex-col bg-bg-primary">
-      <div className="flex h-11 shrink-0 items-center border-b border-border px-4">
-        <span className="text-sm font-semibold text-text-primary">
+      <div className="flex h-14 shrink-0 items-center border-b border-border px-5">
+        <span className="text-lg font-semibold text-text-primary">
           Daily Plan
         </span>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 border-b border-danger/20 bg-danger-subtle px-4 py-2">
-          <span className="flex-1 text-xs text-danger">{error}</span>
+        <div className="flex items-center gap-2 border-b border-danger/20 bg-danger-subtle px-5 py-2.5">
+          <span className="flex-1 text-sm text-danger">{error}</span>
           <button
             onClick={clearError}
-            className="text-xs text-danger underline"
+            className="text-sm text-danger underline"
           >
             Dismiss
           </button>
@@ -166,18 +166,18 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
       {!plan ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto p-6">
           <div className="text-center">
-            <Sparkles className="mx-auto h-8 w-8 text-accent" />
-            <h2 className="mt-3 text-lg font-medium text-text-primary">
+            <Sparkles className="mx-auto h-9 w-9 text-accent" />
+            <h2 className="mt-3 text-xl font-semibold text-text-primary">
               Plan your day
             </h2>
-            <p className="mt-1 max-w-sm text-xs text-text-muted">
+            <p className="mt-1 max-w-sm text-sm text-text-muted">
               The AI proposes a schedule from your backlog, fixed commitments,
               and historical accuracy.
             </p>
           </div>
           <div className="w-full max-w-sm space-y-4">
             <div>
-              <label className="mb-1 block text-xs text-text-secondary">
+              <label className="mb-1 block text-sm text-text-secondary">
                 Available focus hours
               </label>
               <input
@@ -186,11 +186,11 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
                 step={0.5}
                 value={Number.isFinite(focusHours) ? focusHours : ""}
                 onChange={(e) => setFocusHours(Number(e.target.value))}
-                className="w-full rounded-md border border-border bg-bg-surface px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-md border border-border bg-bg-surface px-3 py-2.5 text-base text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-text-secondary">
+              <label className="mb-1 block text-sm text-text-secondary">
                 Primary goal (optional)
               </label>
               <input
@@ -198,13 +198,13 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
                 value={primaryGoal}
                 onChange={(e) => setPrimaryGoal(e.target.value)}
                 placeholder="e.g. Finish API integration"
-                className="w-full rounded-md border border-border bg-bg-surface px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-md border border-border bg-bg-surface px-3 py-2.5 text-base text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
             <button
               onClick={handleGenerate}
               disabled={isGenerating || !(focusHours > 0) || !isOnline}
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isGenerating ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -214,12 +214,12 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
               Generate Daily Plan
             </button>
             {!isOnline && (
-              <p className="text-center text-xs text-warning">
+              <p className="text-center text-sm text-warning">
                 Requires internet connection.
               </p>
             )}
             {existingTodayPlan?.isApproved && (
-              <p className="text-center text-xs text-warning">
+              <p className="text-center text-sm text-warning">
                 A plan is already approved for today. Generating a new one will
                 replace it on approval.
               </p>
@@ -229,12 +229,12 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
       ) : (
         <div className="flex-1 overflow-y-auto p-6">
           <div className="space-y-4">
-            <div className="rounded-lg border border-border bg-bg-surface p-4">
-              <p className="text-sm font-medium text-text-primary">
+            <div className="rounded-lg border border-border bg-bg-surface p-5">
+              <p className="text-base font-semibold text-text-primary">
                 {plan.primaryGoal || "Daily plan"}
               </p>
               <p className="mt-1 text-sm text-text-secondary">{plan.summary}</p>
-              <p className="mt-2 text-xs text-text-muted">
+              <p className="mt-2 text-sm text-text-muted">
                 {plan.schedule.length} scheduled ·{" "}
                 {plan.unscheduledTasks.length} unscheduled · {plan.focusHours}h
                 focus
@@ -242,7 +242,7 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
             </div>
 
             {plan.schedule.length === 0 ? (
-              <p className="py-8 text-center text-xs text-text-muted">
+              <p className="py-8 text-center text-sm text-text-muted">
                 No tasks were scheduled.
               </p>
             ) : (
@@ -263,12 +263,12 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
             )}
 
             {plan.unscheduledTasks.length > 0 && (
-              <div className="rounded-lg border border-border bg-bg-surface p-4">
-                <div className="flex items-center gap-2 text-xs text-text-muted">
-                  <Inbox className="h-3.5 w-3.5" />
+              <div className="rounded-lg border border-border bg-bg-surface p-5">
+                <div className="flex items-center gap-2 text-sm text-text-muted">
+                  <Inbox className="h-4 w-4" />
                   <span>Not scheduled ({plan.unscheduledTasks.length})</span>
                 </div>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-text-secondary">
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-text-secondary">
                   {plan.unscheduledTasks.map((id) => (
                     <li key={id}>{titleMap.get(id) ?? id}</li>
                   ))}
@@ -280,7 +280,7 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
               <button
                 onClick={handleGenerate}
                 disabled={isGenerating || !isOnline}
-                className="flex items-center gap-2 rounded-md bg-bg-tertiary px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-border disabled:opacity-50"
+                className="flex items-center gap-2 rounded-md bg-bg-tertiary px-4 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-border disabled:opacity-50"
               >
                 {isGenerating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -292,7 +292,7 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
               <button
                 onClick={discardPlan}
                 disabled={isApproving}
-                className="rounded-md px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary disabled:opacity-50"
+                className="rounded-md px-4 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary disabled:opacity-50"
               >
                 Discard
               </button>
@@ -300,7 +300,7 @@ export function PlanView({ onApproved }: { onApproved: () => void }) {
               <button
                 onClick={() => setShowApprove(true)}
                 disabled={isApproving || plan.schedule.length === 0}
-                className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isApproving ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
