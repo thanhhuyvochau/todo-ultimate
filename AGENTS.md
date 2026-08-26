@@ -192,6 +192,7 @@ This file serves as the core rules and principles guide. For detailed domain spe
 
 ### Technical Docs
 
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — High-level architecture deep-dive: process model, startup boot sequence, SQLite schema & repository pattern, service layer dependency graph, typed IPC bridge (23 channels), all 9 Zustand stores, React component tree, background services (timer, recurring engine), 4 end-to-end data flow diagrams, DeepSeek AI engine, and security architecture.
 - [`DESIGN.md`](./DESIGN.md) — UI design system & component guidelines: dual-theme color tokens, typography scale, shell wireframe layout, Lucide React icon system, and component standards.
 - [`TECHNICAL_STACK.md`](./TECHNICAL_STACK.md) — Full engineering stack: desktop shell, frontend (React/Tailwind/Zustand/TipTap), SQLite, DeepSeek AI engine, safeStorage security, IPC channels, and QA toolchain.
 - [`TICKET.md`](./TICKET.md) — Agile ticket tracker: 23 INVEST stories across 7 phases with implementation status, acceptance criteria, and file references.
