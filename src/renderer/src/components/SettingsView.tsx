@@ -1,5 +1,5 @@
 import { RecurringRulesPanel } from "./RecurringRulesPanel";
-import { ApiKeySettings } from "./ApiKeySettings";
+import { AiProviderSettings } from "./AiProviderSettings";
 
 export function SettingsView() {
   return (
@@ -10,7 +10,7 @@ export function SettingsView() {
         </span>
       </div>
       <div className="space-y-8 p-6">
-        <ApiKeySettings />
+        <AiProviderSettings />
         <RecurringRulesPanel />
       </div>
     </div>

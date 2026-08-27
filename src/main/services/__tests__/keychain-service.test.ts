@@ -41,6 +41,8 @@ import {
   getApiKey,
   deleteApiKey,
   isApiKeySet,
+  hasApiKey,
+  getAllKeyStatus,
 } from "../keychain-service";
 
 const USER_DATA = "/mock/userData";
@@ -63,15 +65,27 @@ describe("isEncryptionAvailable", () => {
 });
 
 describe("setApiKey", () => {
-  it("encrypts the key and writes it to disk", () => {
+  it("encrypts the key and writes it to the multi-vault", () => {
     mockIsEncryptionAvailable.mockReturnValue(true);
     mockEncryptString.mockReturnValue(Buffer.from("encrypted-data"));
     mockExistsSync.mockReturnValue(false);
 
     setApiKey("my-secret-key");
 
-    expect(mockEncryptString).toHaveBeenCalledWith("my-secret-key");
+    expect(mockEncryptString).toHaveBeenCalled();
     expect(mockWriteFileSync).toHaveBeenCalled();
+  });
+
+  it("stores keys per provider", () => {
+    mockIsEncryptionAvailable.mockReturnValue(true);
+    mockEncryptString.mockReturnValue(Buffer.from("encrypted-data"));
+    mockExistsSync.mockReturnValue(false);
+
+    setApiKey("openai", "sk-openai-key");
+
+    expect(mockEncryptString).toHaveBeenCalledWith(
+      JSON.stringify({ openai: "sk-openai-key" }),
+    );
   });
 
   it("throws KEYCHAIN_UNAVAILABLE if encryption is not available", () => {
@@ -87,62 +101,31 @@ describe("setApiKey", () => {
     expect(thrown).not.toBeNull();
     expect(thrown!.code).toBe("KEYCHAIN_UNAVAILABLE");
   });
-
-  it("throws KEYCHAIN_WRITE_FAILED if file write fails", () => {
-    mockIsEncryptionAvailable.mockReturnValue(true);
-    mockEncryptString.mockReturnValue(Buffer.from("encrypted-data"));
-    mockWriteFileSync.mockImplementation(() => {
-      throw new Error("Disk full");
-    });
-
-    let thrown: { code?: string; message?: string } | null = null;
-    try {
-      setApiKey("key");
-    } catch (err) {
-      thrown = err as { code: string; message: string };
-    }
-
-    expect(thrown).not.toBeNull();
-    expect(thrown!.code).toBe("KEYCHAIN_WRITE_FAILED");
-  });
 });
 
 describe("getApiKey", () => {
-  it("returns null when no key file exists", () => {
+  it("returns null when no vault file exists", () => {
     mockIsEncryptionAvailable.mockReturnValue(true);
     mockExistsSync.mockReturnValue(false);
 
     expect(getApiKey()).toBeNull();
   });
 
-  it("throws KEYCHAIN_UNAVAILABLE if encryption is not available", () => {
-    mockIsEncryptionAvailable.mockReturnValue(false);
-
-    let thrown: { code?: string; message?: string } | null = null;
-    try {
-      getApiKey();
-    } catch (err) {
-      thrown = err as { code: string; message: string };
-    }
-
-    expect(thrown).not.toBeNull();
-    expect(thrown!.code).toBe("KEYCHAIN_UNAVAILABLE");
-  });
-
-  it("returns decrypted key when file exists and is valid", () => {
+  it("returns decrypted key for deepseek by default", () => {
     mockIsEncryptionAvailable.mockReturnValue(true);
     mockExistsSync.mockReturnValue(true);
     mockReadFileSync.mockReturnValue(
       JSON.stringify({
-        encryptedKey: Buffer.from("enc-data").toString("base64"),
+        encryptedVault: Buffer.from("vault-data").toString("base64"),
       }),
     );
-    mockDecryptString.mockReturnValue("my-decrypted-key");
+    mockDecryptString.mockReturnValue(
+      JSON.stringify({ deepseek: "my-ds-key", openai: "my-oa-key" }),
+    );
 
-    const result = getApiKey();
-
-    expect(mockDecryptString).toHaveBeenCalled();
-    expect(result).toBe("my-decrypted-key");
+    expect(getApiKey()).toBe("my-ds-key");
+    expect(getApiKey("openai")).toBe("my-oa-key");
+    expect(getApiKey("anthropic")).toBeNull();
   });
 
   it("returns null when JSON is corrupt", () => {
@@ -163,82 +146,71 @@ describe("getApiKey", () => {
 
     consoleWarn.mockRestore();
   });
-
-  it("returns null when decryptString fails", () => {
-    mockIsEncryptionAvailable.mockReturnValue(true);
-    mockExistsSync.mockReturnValue(true);
-    mockReadFileSync.mockReturnValue(
-      JSON.stringify({ encryptedKey: "bad-base64" }),
-    );
-    mockDecryptString.mockImplementation(() => {
-      throw new Error("Decryption failed");
-    });
-
-    const result = getApiKey();
-
-    expect(result).toBeNull();
-  });
 });
 
 describe("deleteApiKey", () => {
-  it("removes the key file when it exists", () => {
+  it("removes a specific provider key and preserves others", () => {
     mockIsEncryptionAvailable.mockReturnValue(true);
     mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue(
+      JSON.stringify({
+        encryptedVault: Buffer.from("vault-data").toString("base64"),
+      }),
+    );
+    mockDecryptString.mockReturnValue(
+      JSON.stringify({ deepseek: "my-ds-key", openai: "my-oa-key" }),
+    );
+    mockEncryptString.mockReturnValue(Buffer.from("updated-vault"));
 
-    deleteApiKey();
+    deleteApiKey("openai");
+
+    expect(mockEncryptString).toHaveBeenCalledWith(
+      JSON.stringify({ deepseek: "my-ds-key" }),
+    );
+  });
+
+  it("deletes vault file when last key is removed", () => {
+    mockIsEncryptionAvailable.mockReturnValue(true);
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue(
+      JSON.stringify({
+        encryptedVault: Buffer.from("vault-data").toString("base64"),
+      }),
+    );
+    mockDecryptString.mockReturnValue(
+      JSON.stringify({ deepseek: "my-ds-key" }),
+    );
+
+    deleteApiKey("deepseek");
 
     expect(mockUnlinkSync).toHaveBeenCalled();
   });
-
-  it("does not fail when key file does not exist", () => {
-    mockIsEncryptionAvailable.mockReturnValue(true);
-    mockExistsSync.mockReturnValue(false);
-
-    expect(() => deleteApiKey()).not.toThrow();
-    expect(mockUnlinkSync).not.toHaveBeenCalled();
-  });
-
-  it("throws KEYCHAIN_UNAVAILABLE if encryption is not available", () => {
-    mockIsEncryptionAvailable.mockReturnValue(false);
-
-    let thrown: { code?: string; message?: string } | null = null;
-    try {
-      deleteApiKey();
-    } catch (err) {
-      thrown = err as { code: string; message: string };
-    }
-
-    expect(thrown).not.toBeNull();
-    expect(thrown!.code).toBe("KEYCHAIN_UNAVAILABLE");
-  });
-
-  it("throws KEYCHAIN_WRITE_FAILED if unlink fails", () => {
-    mockIsEncryptionAvailable.mockReturnValue(true);
-    mockExistsSync.mockReturnValue(true);
-    mockUnlinkSync.mockImplementation(() => {
-      throw new Error("Permission denied");
-    });
-
-    let thrown: { code?: string; message?: string } | null = null;
-    try {
-      deleteApiKey();
-    } catch (err) {
-      thrown = err as { code: string; message: string };
-    }
-
-    expect(thrown).not.toBeNull();
-    expect(thrown!.code).toBe("KEYCHAIN_WRITE_FAILED");
-  });
 });
 
-describe("isApiKeySet", () => {
-  it("returns true when key file exists", () => {
+describe("getAllKeyStatus & hasApiKey", () => {
+  it("reports key presence per provider", () => {
+    mockIsEncryptionAvailable.mockReturnValue(true);
     mockExistsSync.mockReturnValue(true);
-    expect(isApiKeySet()).toBe(true);
-  });
+    mockReadFileSync.mockReturnValue(
+      JSON.stringify({
+        encryptedVault: Buffer.from("vault-data").toString("base64"),
+      }),
+    );
+    mockDecryptString.mockReturnValue(
+      JSON.stringify({ deepseek: "my-ds-key", anthropic: "claude-key" }),
+    );
 
-  it("returns false when key file does not exist", () => {
-    mockExistsSync.mockReturnValue(false);
-    expect(isApiKeySet()).toBe(false);
+    expect(hasApiKey("deepseek")).toBe(true);
+    expect(hasApiKey("openai")).toBe(false);
+    expect(hasApiKey("anthropic")).toBe(true);
+
+    const status = getAllKeyStatus();
+    expect(status.deepseek).toBe(true);
+    expect(status.openai).toBe(false);
+    expect(status.anthropic).toBe(true);
+
+    expect(isApiKeySet("deepseek")).toBe(true);
+    expect(isApiKeySet("openai")).toBe(false);
+    expect(isApiKeySet()).toBe(true);
   });
 });

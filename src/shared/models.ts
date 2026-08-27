@@ -122,6 +122,8 @@ export interface DailyPlanSchedule {
   schedule: PlannedTaskBlock[];
   unscheduledTasks: string[];
   summary: string;
+  provider?: AiProviderId;
+  model?: string;
 }
 
 export interface DailyPlanRequest {
@@ -171,6 +173,8 @@ export interface PerformanceReportContent {
   patterns: ReportPattern[];
   advice: ReportAdvice[];
   summary: string;
+  provider?: AiProviderId;
+  model?: string;
 }
 
 export interface ReportParams {
@@ -214,3 +218,102 @@ export interface VarianceMetrics {
   onPointRate: number;
   outlierCount: number;
 }
+
+export type AiProviderId =
+  "deepseek" | "openai" | "anthropic" | "gemini" | "custom";
+
+export interface ProviderPreset {
+  id: AiProviderId;
+  name: string;
+  defaultBaseUrl: string;
+  defaultModel: string;
+  presetModels: string[];
+  isCustomUrlAllowed: boolean;
+  requiresKey: boolean;
+}
+
+export interface ProviderConfig {
+  providerId: AiProviderId;
+  selectedModel: string;
+  baseUrl?: string;
+  hasKey: boolean;
+}
+
+export interface AiSettings {
+  activeProvider: AiProviderId;
+  providers: Record<AiProviderId, ProviderConfig>;
+}
+
+export interface UpdateAiSettingsInput {
+  activeProvider?: AiProviderId;
+  providerConfig?: {
+    providerId: AiProviderId;
+    selectedModel?: string;
+    baseUrl?: string;
+  };
+}
+
+export interface AiKeyInput {
+  providerId: AiProviderId;
+  apiKey: string;
+}
+
+export interface AiKeyDeleteInput {
+  providerId: AiProviderId;
+}
+
+export const DEFAULT_PROVIDER_PRESETS: Record<AiProviderId, ProviderPreset> = {
+  deepseek: {
+    id: "deepseek",
+    name: "DeepSeek",
+    defaultBaseUrl: "https://api.deepseek.com/v1",
+    defaultModel: "deepseek-chat",
+    presetModels: ["deepseek-chat", "deepseek-reasoner"],
+    isCustomUrlAllowed: true,
+    requiresKey: true,
+  },
+  openai: {
+    id: "openai",
+    name: "OpenAI",
+    defaultBaseUrl: "https://api.openai.com/v1",
+    defaultModel: "gpt-4o",
+    presetModels: ["gpt-4o", "gpt-4o-mini", "gpt-4.5-preview", "o3-mini"],
+    isCustomUrlAllowed: true,
+    requiresKey: true,
+  },
+  anthropic: {
+    id: "anthropic",
+    name: "Anthropic (Claude)",
+    defaultBaseUrl: "https://api.anthropic.com/v1",
+    defaultModel: "claude-3-7-sonnet-latest",
+    presetModels: [
+      "claude-3-7-sonnet-latest",
+      "claude-3-5-sonnet-latest",
+      "claude-3-5-haiku-latest",
+    ],
+    isCustomUrlAllowed: false,
+    requiresKey: true,
+  },
+  gemini: {
+    id: "gemini",
+    name: "Google Gemini",
+    defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta",
+    defaultModel: "gemini-2.0-flash",
+    presetModels: [
+      "gemini-2.0-flash",
+      "gemini-2.0-flash-lite",
+      "gemini-1.5-pro",
+    ],
+    isCustomUrlAllowed: false,
+    requiresKey: true,
+  },
+  custom: {
+    id: "custom",
+    name: "Custom / Local (Ollama)",
+    defaultBaseUrl: "http://localhost:11434/v1",
+    defaultModel: "llama3.2",
+    presetModels: ["llama3.2", "mistral", "qwen2.5", "deepseek-r1"],
+    isCustomUrlAllowed: true,
+    requiresKey: false,
+  },
+};

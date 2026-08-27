@@ -32,9 +32,21 @@ export interface RendererApi {
   generateReport: (
     params: IpcChannelMap["ai:generateReport"]["request"],
   ) => Promise<IpcResult<IpcChannelMap["ai:generateReport"]["response"]>>;
-  testConnection: () => Promise<
-    IpcResult<IpcChannelMap["ai:testConnection"]["response"]>
+  testConnection: (params?: {
+    providerId?: string;
+  }) => Promise<IpcResult<IpcChannelMap["ai:testConnection"]["response"]>>;
+  getAiSettings: () => Promise<
+    IpcResult<IpcChannelMap["ai:getSettings"]["response"]>
   >;
+  updateAiSettings: (
+    input: IpcChannelMap["ai:updateSettings"]["request"],
+  ) => Promise<IpcResult<IpcChannelMap["ai:updateSettings"]["response"]>>;
+  setAiKey: (
+    input: IpcChannelMap["ai:setKey"]["request"],
+  ) => Promise<IpcResult<IpcChannelMap["ai:setKey"]["response"]>>;
+  deleteAiKey: (
+    input: IpcChannelMap["ai:deleteKey"]["request"],
+  ) => Promise<IpcResult<IpcChannelMap["ai:deleteKey"]["response"]>>;
   listReports: () => Promise<
     IpcResult<IpcChannelMap["report:list"]["response"]>
   >;

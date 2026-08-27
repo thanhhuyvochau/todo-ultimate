@@ -12,6 +12,7 @@ import * as dailyPlanService from "@/main/services/daily-plan-service";
 import * as dailyPlanRepo from "@/main/db/daily-plan-repository";
 import * as planApprovalService from "@/main/services/plan-approval-service";
 import * as reportService from "@/main/services/report-service";
+import * as settingsRepo from "@/main/db/settings-repository";
 import { getStartOfDay } from "@/main/services/recurring-engine";
 
 const AI_IPC_ERROR_CODES = new Set<string>([
@@ -47,7 +48,7 @@ export const handlers = {
     try {
       const tasks = taskRepo.getTasks(filters);
       return ok(tasks);
-    } catch (err) {
+    } catch {
       return fail("DB_READ_FAILED", "Failed to fetch tasks.");
     }
   },
@@ -145,7 +146,7 @@ export const handlers = {
     try {
       const active = timerService.getActiveTimer();
       return ok(active);
-    } catch (err) {
+    } catch {
       return fail("TIMER_READ_FAILED", "Failed to fetch active timer.");
     }
   },
@@ -174,12 +175,77 @@ export const handlers = {
     }
   },
 
-  "ai:testConnection": async (_request) => {
+  "ai:testConnection": async (request) => {
     try {
-      const success = await deepseekService.testConnection();
+      const providerId = (
+        request as { providerId?: import("@/shared/models").AiProviderId }
+      )?.providerId;
+      const success = await deepseekService.testConnection(providerId);
       return ok({ success });
-    } catch (err) {
+    } catch {
       return fail("INTERNAL_ERROR", "Failed to test the AI connection.");
+    }
+  },
+
+  "ai:getSettings": (_request) => {
+    try {
+      const settings = settingsRepo.getAiSettings();
+      return ok(settings);
+    } catch {
+      return fail("INTERNAL_ERROR", "Failed to fetch AI settings.");
+    }
+  },
+
+  "ai:updateSettings": (input) => {
+    try {
+      const settings = settingsRepo.updateAiSettings(input);
+      return ok(settings);
+    } catch {
+      return fail("INTERNAL_ERROR", "Failed to update AI settings.");
+    }
+  },
+
+  "ai:setKey": ({ providerId, apiKey }) => {
+    try {
+      keychainService.setApiKey(providerId, apiKey);
+      return ok({ success: true });
+    } catch (err) {
+      const error = err as { code?: string; message?: string };
+      if (error.code === "KEYCHAIN_UNAVAILABLE") {
+        return fail(
+          "KEYCHAIN_UNAVAILABLE",
+          error.message ?? "Keychain unavailable.",
+        );
+      }
+      if (error.code === "KEYCHAIN_WRITE_FAILED") {
+        return fail(
+          "KEYCHAIN_WRITE_FAILED",
+          error.message ?? "Failed to write API key.",
+        );
+      }
+      return fail("INTERNAL_ERROR", "Failed to save API key.");
+    }
+  },
+
+  "ai:deleteKey": ({ providerId }) => {
+    try {
+      keychainService.deleteApiKey(providerId);
+      return ok({ success: true });
+    } catch (err) {
+      const error = err as { code?: string; message?: string };
+      if (error.code === "KEYCHAIN_UNAVAILABLE") {
+        return fail(
+          "KEYCHAIN_UNAVAILABLE",
+          error.message ?? "Keychain unavailable.",
+        );
+      }
+      if (error.code === "KEYCHAIN_WRITE_FAILED") {
+        return fail(
+          "KEYCHAIN_WRITE_FAILED",
+          error.message ?? "Failed to delete API key file.",
+        );
+      }
+      return fail("INTERNAL_ERROR", "Failed to delete API key.");
     }
   },
 
@@ -187,7 +253,7 @@ export const handlers = {
     try {
       const reports = reportService.listReports();
       return ok(reports);
-    } catch (err) {
+    } catch {
       return fail("DB_READ_FAILED", "Failed to fetch cached reports.");
     }
   },
@@ -250,7 +316,7 @@ export const handlers = {
     try {
       const hasKey = keychainService.isApiKeySet();
       return ok({ hasKey });
-    } catch (err) {
+    } catch {
       return fail("INTERNAL_ERROR", "Failed to check API key status.");
     }
   },
@@ -281,7 +347,7 @@ export const handlers = {
     try {
       const rules = recurringRuleRepo.getAllRules();
       return ok(rules);
-    } catch (err) {
+    } catch {
       return fail("DB_READ_FAILED", "Failed to fetch recurring rules.");
     }
   },
@@ -354,7 +420,7 @@ export const handlers = {
         end: timeframeEnd,
       });
       return ok(metrics);
-    } catch (err) {
+    } catch {
       return fail("DB_READ_FAILED", "Failed to compute variance metrics.");
     }
   },
@@ -363,7 +429,7 @@ export const handlers = {
     try {
       const variance = varianceService.getTaskVariance(taskId);
       return ok(variance);
-    } catch (err) {
+    } catch {
       return fail("DB_READ_FAILED", "Failed to compute task variance.");
     }
   },
@@ -372,7 +438,7 @@ export const handlers = {
     try {
       const plan = dailyPlanRepo.getPlanForDate(getStartOfDay(Date.now()));
       return ok(plan);
-    } catch (err) {
+    } catch {
       return fail("DB_READ_FAILED", "Failed to fetch today's plan.");
     }
   },

@@ -1,13 +1,55 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useSettingsStore } from "../settingsStore";
+import type { AiSettings } from "@/shared/models";
 
 type ApiMock = Record<string, ReturnType<typeof vi.fn>>;
 
+const mockSettings: AiSettings = {
+  activeProvider: "deepseek",
+  providers: {
+    deepseek: {
+      providerId: "deepseek",
+      selectedModel: "deepseek-chat",
+      hasKey: false,
+    },
+    openai: {
+      providerId: "openai",
+      selectedModel: "gpt-4o",
+      hasKey: false,
+    },
+    anthropic: {
+      providerId: "anthropic",
+      selectedModel: "claude-3-7-sonnet-latest",
+      hasKey: false,
+    },
+    gemini: {
+      providerId: "gemini",
+      selectedModel: "gemini-2.0-flash",
+      hasKey: false,
+    },
+    custom: {
+      providerId: "custom",
+      selectedModel: "llama3.2",
+      baseUrl: "http://localhost:11434/v1",
+      hasKey: false,
+    },
+  },
+};
+
 function setupApi(overrides: ApiMock = {}): ApiMock {
   const apiMock: ApiMock = {
-    getApiKey: vi.fn().mockResolvedValue({ ok: true, data: { hasKey: false } }),
-    setApiKey: vi.fn().mockResolvedValue({ ok: true, data: { success: true } }),
-    deleteApiKey: vi
+    getAiSettings: vi.fn().mockResolvedValue({ ok: true, data: mockSettings }),
+    updateAiSettings: vi.fn().mockImplementation((input) =>
+      Promise.resolve({
+        ok: true,
+        data: {
+          ...mockSettings,
+          activeProvider: input.activeProvider || mockSettings.activeProvider,
+        },
+      }),
+    ),
+    setAiKey: vi.fn().mockResolvedValue({ ok: true, data: { success: true } }),
+    deleteAiKey: vi
       .fn()
       .mockResolvedValue({ ok: true, data: { success: true } }),
     testConnection: vi
@@ -22,80 +64,86 @@ function setupApi(overrides: ApiMock = {}): ApiMock {
 beforeEach(() => {
   vi.restoreAllMocks();
   useSettingsStore.setState({
+    aiSettings: null,
+    activeProvider: "deepseek",
+    selectedProviderTab: "deepseek",
     hasKey: false,
     isLoading: false,
     isTesting: false,
     error: null,
+    testResults: {
+      deepseek: "idle",
+      openai: "idle",
+      anthropic: "idle",
+      gemini: "idle",
+      custom: "idle",
+    },
     testResult: "idle",
   });
 });
 
 describe("settingsStore", () => {
-  it("loadStatus sets hasKey true when a key exists", async () => {
+  it("loadSettings sets aiSettings and hasKey", async () => {
+    const customSettings: AiSettings = {
+      ...mockSettings,
+      providers: {
+        ...mockSettings.providers,
+        deepseek: { ...mockSettings.providers.deepseek, hasKey: true },
+      },
+    };
     const api = setupApi({
-      getApiKey: vi
+      getAiSettings: vi
         .fn()
-        .mockResolvedValue({ ok: true, data: { hasKey: true } }),
+        .mockResolvedValue({ ok: true, data: customSettings }),
     });
 
-    await useSettingsStore.getState().loadStatus();
+    await useSettingsStore.getState().loadSettings();
 
-    expect(api.getApiKey).toHaveBeenCalled();
+    expect(api.getAiSettings).toHaveBeenCalled();
     expect(useSettingsStore.getState().hasKey).toBe(true);
+    expect(useSettingsStore.getState().aiSettings).toEqual(customSettings);
   });
 
-  it("loadStatus surfaces an error when getApiKey fails", async () => {
-    setupApi({
-      getApiKey: vi
-        .fn()
-        .mockResolvedValue({
-          ok: false,
-          error: { code: "INTERNAL_ERROR", message: "boom" },
-        }),
-    });
-
-    await useSettingsStore.getState().loadStatus();
-
-    expect(useSettingsStore.getState().error).toBe("boom");
-  });
-
-  it("saveKey calls setApiKey and sets hasKey", async () => {
+  it("setActiveProvider updates the active provider in backend and store", async () => {
     const api = setupApi();
 
-    const ok = await useSettingsStore.getState().saveKey("sk-test");
+    const ok = await useSettingsStore.getState().setActiveProvider("openai");
 
     expect(ok).toBe(true);
-    expect(api.setApiKey).toHaveBeenCalledWith({ apiKey: "sk-test" });
-    expect(useSettingsStore.getState().hasKey).toBe(true);
-  });
-
-  it("saveKey surfaces an error when setApiKey fails", async () => {
-    setupApi({
-      setApiKey: vi.fn().mockResolvedValue({
-        ok: false,
-        error: { code: "KEYCHAIN_UNAVAILABLE", message: "keychain down" },
-      }),
+    expect(api.updateAiSettings).toHaveBeenCalledWith({
+      activeProvider: "openai",
     });
-
-    const ok = await useSettingsStore.getState().saveKey("sk-test");
-
-    expect(ok).toBe(false);
-    expect(useSettingsStore.getState().error).toBe("keychain down");
-    expect(useSettingsStore.getState().hasKey).toBe(false);
+    expect(useSettingsStore.getState().activeProvider).toBe("openai");
   });
 
-  it("deleteKey clears hasKey", async () => {
-    useSettingsStore.setState({ hasKey: true });
+  it("saveKey calls setAiKey with target provider and reloads", async () => {
+    const api = setupApi();
+
+    const ok = await useSettingsStore
+      .getState()
+      .saveKey("openai", "sk-openai-key");
+
+    expect(ok).toBe(true);
+    expect(api.setAiKey).toHaveBeenCalledWith({
+      providerId: "openai",
+      apiKey: "sk-openai-key",
+    });
+  });
+
+  it("deleteKey calls deleteAiKey for selected tab", async () => {
+    useSettingsStore.setState({ selectedProviderTab: "anthropic" });
     const api = setupApi();
 
     const ok = await useSettingsStore.getState().deleteKey();
 
     expect(ok).toBe(true);
-    expect(api.deleteApiKey).toHaveBeenCalled();
-    expect(useSettingsStore.getState().hasKey).toBe(false);
+    expect(api.deleteAiKey).toHaveBeenCalledWith({
+      providerId: "anthropic",
+    });
   });
 
-  it("testConnection sets testResult success on true", async () => {
+  it("testConnection sets testResults success on true", async () => {
+    useSettingsStore.setState({ selectedProviderTab: "gemini" });
     setupApi({
       testConnection: vi
         .fn()
@@ -105,10 +153,12 @@ describe("settingsStore", () => {
     const ok = await useSettingsStore.getState().testConnection();
 
     expect(ok).toBe(true);
+    expect(useSettingsStore.getState().testResults.gemini).toBe("success");
     expect(useSettingsStore.getState().testResult).toBe("success");
   });
 
-  it("testConnection sets testResult failed on false", async () => {
+  it("testConnection sets testResults failed on false", async () => {
+    useSettingsStore.setState({ selectedProviderTab: "custom" });
     setupApi({
       testConnection: vi
         .fn()
@@ -118,6 +168,7 @@ describe("settingsStore", () => {
     const ok = await useSettingsStore.getState().testConnection();
 
     expect(ok).toBe(false);
+    expect(useSettingsStore.getState().testResults.custom).toBe("failed");
     expect(useSettingsStore.getState().testResult).toBe("failed");
   });
 });

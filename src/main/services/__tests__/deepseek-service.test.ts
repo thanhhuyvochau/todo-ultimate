@@ -14,6 +14,42 @@ vi.mock("openai", () => ({
 
 vi.mock("@/main/services/keychain-service", () => ({
   getApiKey: () => mockGetApiKey(),
+  getAllKeyStatus: () => ({
+    deepseek: true,
+    openai: false,
+    anthropic: false,
+    gemini: false,
+    custom: false,
+  }),
+}));
+
+vi.mock("@/main/db/settings-repository", () => ({
+  getAiSettings: () => ({
+    activeProvider: "deepseek",
+    providers: {
+      deepseek: {
+        providerId: "deepseek",
+        selectedModel: "deepseek-chat",
+        hasKey: true,
+      },
+      openai: { providerId: "openai", selectedModel: "gpt-4o", hasKey: false },
+      anthropic: {
+        providerId: "anthropic",
+        selectedModel: "claude-3-7-sonnet-latest",
+        hasKey: false,
+      },
+      gemini: {
+        providerId: "gemini",
+        selectedModel: "gemini-2.0-flash",
+        hasKey: false,
+      },
+      custom: {
+        providerId: "custom",
+        selectedModel: "llama3.2",
+        hasKey: false,
+      },
+    },
+  }),
 }));
 
 import {

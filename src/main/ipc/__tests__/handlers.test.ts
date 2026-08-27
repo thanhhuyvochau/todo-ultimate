@@ -23,6 +23,13 @@ vi.mock("../../services/keychain-service", () => ({
   setApiKey: () => undefined,
   deleteApiKey: () => undefined,
   getApiKey: () => null,
+  getAllKeyStatus: () => ({
+    deepseek: false,
+    openai: false,
+    anthropic: false,
+    gemini: false,
+    custom: false,
+  }),
   isEncryptionAvailable: () => true,
 }));
 
@@ -105,6 +112,12 @@ beforeEach(() => {
       plan_json TEXT NOT NULL,
       is_approved INTEGER DEFAULT 0,
       created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
     );
   `);
 
@@ -1153,6 +1166,57 @@ describe("plan handlers", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.code).toBe("NOT_FOUND");
+    }
+  });
+});
+
+describe("ai settings & provider handlers", () => {
+  it("ai:getSettings returns default settings", () => {
+    const result = handlers["ai:getSettings"]({});
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.activeProvider).toBe("deepseek");
+      expect(result.data.providers.deepseek).toBeDefined();
+      expect(result.data.providers.openai).toBeDefined();
+    }
+  });
+
+  it("ai:updateSettings updates active provider and model", () => {
+    const result = handlers["ai:updateSettings"]({
+      activeProvider: "openai",
+      providerConfig: {
+        providerId: "openai",
+        selectedModel: "gpt-4o-mini",
+      },
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.activeProvider).toBe("openai");
+      expect(result.data.providers.openai.selectedModel).toBe("gpt-4o-mini");
+    }
+  });
+
+  it("ai:setKey and ai:deleteKey invoke keychain service", () => {
+    const setResult = handlers["ai:setKey"]({
+      providerId: "openai",
+      apiKey: "test-openai-key",
+    });
+    expect(setResult.ok).toBe(true);
+
+    const deleteResult = handlers["ai:deleteKey"]({
+      providerId: "openai",
+    });
+    expect(deleteResult.ok).toBe(true);
+  });
+
+  it("ai:testConnection delegates to service", async () => {
+    mockTestConnection.mockResolvedValueOnce(true);
+    const result = await handlers["ai:testConnection"]({
+      providerId: "deepseek",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.success).toBe(true);
     }
   });
 });

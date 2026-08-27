@@ -135,6 +135,7 @@ describe("reportStore", () => {
 
     await useReportStore.getState().loadReports();
 
+    expect(api.listReports).toHaveBeenCalledTimes(1);
     expect(useReportStore.getState().reports).toEqual([sampleSummary]);
     expect(useReportStore.getState().isLoadingHistory).toBe(false);
   });

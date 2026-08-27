@@ -46,10 +46,12 @@ beforeEach(() => {
   `);
 
   // Insert test task
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO tasks (id, title, priority, status, estimated_minutes, created_at, updated_at)
     VALUES ('task-1', 'Test Task', 'medium', 'todo', 30, 1000, 1000)
-  `).run();
+  `,
+  ).run();
 
   testDbReady.mockReturnValue(db);
 });
@@ -77,7 +79,9 @@ describe("time-log-repository", () => {
     expect(pausedLog.durationMinutes).toBe(30);
 
     // Check task actual_minutes
-    const taskRow = db.prepare("SELECT actual_minutes FROM tasks WHERE id = 'task-1'").get() as { actual_minutes: number };
+    const taskRow = db
+      .prepare("SELECT actual_minutes FROM tasks WHERE id = 'task-1'")
+      .get() as { actual_minutes: number };
     expect(taskRow.actual_minutes).toBe(30);
   });
 
@@ -95,6 +99,8 @@ describe("time-log-repository", () => {
 
   it("throws NOT_FOUND when pausing non-existent log", async () => {
     const repo = await getRepo();
-    expect(() => repo.pauseTimeLog("invalid-id")).toThrow("Time log not found.");
+    expect(() => repo.pauseTimeLog("invalid-id")).toThrow(
+      "Time log not found.",
+    );
   });
 });

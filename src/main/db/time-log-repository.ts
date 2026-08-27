@@ -44,7 +44,9 @@ export function pauseTimeLog(logId: string, pausedAt?: number): TimeLog {
     .get(logId) as TimeLogRow | undefined;
 
   if (!existing) {
-    throw Object.assign(new Error("Time log not found."), { code: "NOT_FOUND" });
+    throw Object.assign(new Error("Time log not found."), {
+      code: "NOT_FOUND",
+    });
   }
 
   const pauseTime = pausedAt ?? Date.now();

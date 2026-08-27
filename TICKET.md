@@ -212,21 +212,22 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ## Phase 5: AI Integration
 
-### TKT-014: Integrate DeepSeek API Client ✅ Done
+### TKT-014: Integrate Multi-Provider LLM Engine & Client Adapters ✅ Done
 
 - **Spec**: [`14-deepseek-api-client.md`](./spec/14-deepseek-api-client.md)
 
-**As a** system, **I want to** connect to the DeepSeek API with retries and timeouts **so that** AI features can be requested reliably.
+**As a** system, **I want to** connect to multiple AI providers (DeepSeek, OpenAI, Anthropic Claude, Google Gemini, and Custom/Local Ollama) with retries, timeouts, and JSON extraction **so that** AI features can be requested reliably and flexibly.
 
-- **Status**: Complete — `src/main/services/deepseekService.ts` (single client module: `openai` with `baseURL` + `deepseek-chat`, `response_format: json_object`, keychain-loaded API key at call time, 30s timeout, 3-retry exponential backoff with `Retry-After` support, `AI_*` error codes, `validateDailyPlan`/`validatePerformanceReport` response validation, `testConnection`), `src/main/services/prompts/` (versioned `plan-v1.txt`/`report-v1.txt` + `fillTemplate`), `src/shared/models.ts` (`DailyPlanRequest`, `ReportParams`, `PerformanceReportContent`, `DailyPlanSchedule`).
+- **Status**: Complete — `src/main/services/ai/ai-service.ts` (orchestrator: multi-provider resolution, keychain vault loading, 30s timeout, 3-retry exponential backoff with `Retry-After` support, `AI_*` error codes, adaptive JSON extraction, plan/report response validation with provider/model tagging, `testConnection`), `src/main/services/ai/adapters/` (`OpenAiCompatibleAdapter` for OpenAI/DeepSeek/Custom/Ollama, `AnthropicAdapter` for Claude Messages REST API, `GeminiAdapter` for Google Gemini REST API), `src/main/services/ai/json-extractor.ts`, `src/main/db/settings-repository.ts` (persists active provider, curated/custom model selection, custom Base URL), `src/main/services/keychain-service.ts` (encrypted multi-key vault in safeStorage with legacy auto-migration), `src/shared/models.ts` (`AiProviderId`, `ProviderPreset`, `DEFAULT_PROVIDER_PRESETS`, `AiSettings`, `UpdateAiSettingsInput`).
 - **Acceptance Criteria**:
-  - ✅ API key loaded from keychain, never logged.
-  - ✅ 30s timeout enforced.
-  - ✅ Retry with exponential backoff (max 3) on 50x/network errors.
-  - ✅ Responses validated against expected schema.
-  - ✅ Structured error codes returned to renderer.
-  - ✅ `ai:testConnection` handler exposed; UI stays responsive (async IPC).
-- **Tests**: `src/main/services/__tests__/deepseek-service.test.ts`.
+  - ✅ API keys stored encrypted in multi-key vault in safeStorage per provider, never logged.
+  - ✅ Support for DeepSeek, OpenAI, Anthropic Claude, Google Gemini, and Custom/Local (Ollama).
+  - ✅ 30s timeout enforced across all providers.
+  - ✅ Retry with exponential backoff (max 3) on 50x/network/rate-limit errors.
+  - ✅ Adaptive JSON parser strips markdown fences and handles reasoner thoughts.
+  - ✅ Responses validated against expected schema and tagged with provider/model metadata.
+  - ✅ `ai:getSettings`, `ai:updateSettings`, `ai:setKey`, `ai:deleteKey`, `ai:testConnection` exposed across typed IPC.
+- **Tests**: `src/main/services/ai/__tests__/ai-service.test.ts`, `src/main/services/ai/__tests__/adapters.test.ts`, `src/main/services/ai/__tests__/json-extractor.test.ts`, `src/main/services/__tests__/keychain-service.test.ts`, `src/main/db/__tests__/settings-repository.test.ts`, `src/main/ipc/__tests__/handlers.test.ts`.
 
 ### TKT-015: Build Daily AI Planning (Morning Standup) ✅ Done
 
@@ -375,17 +376,18 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 - **Tests**: `src/renderer/src/components/__tests__/Tooltip.test.tsx` (4 cases: renders children, tooltip role + label, default top position, custom side).
 - **INVEST Check**: Independent (standalone component), Valuable (improves discoverability), Small (~30 min, simple component + wiring).
 
-### TKT-025: Settings — API Key Management ✅ Done
+### TKT-025: Settings — Multi-Provider AI Model & Key Management ✅ Done
 
 - **Spec**: [`21-settings-page.md`](./spec/21-settings-page.md)
 
-**As a** user, **I want to** configure and validate my DeepSeek API key from Settings **so that** AI features work without manual console commands.
+**As a** user, **I want to** configure, switch, and test multiple AI providers and models from Settings **so that** AI features work seamlessly with my preferred LLM provider.
 
-- **Status**: Complete — `src/renderer/src/stores/settingsStore.ts` (Zustand: `hasKey`, `loadStatus`, `saveKey`, `deleteKey`, `testConnection`, `clearError`), `src/renderer/src/components/ApiKeySettings.tsx` (masked password input + Save / Test Connection / Delete, status badge, error banner), `src/renderer/src/components/DeleteConfirmationDialog.tsx` (added `itemType="key"` wording), `src/renderer/src/components/SettingsView.tsx` (renders `ApiKeySettings` above recurring rules), `src/renderer/src/components/StatusFooter.tsx` (consumes `settingsStore.hasKey` for a reactive footer indicator).
+- **Status**: Complete — `src/renderer/src/stores/settingsStore.ts` (Zustand: multi-provider `aiSettings`, `activeProvider`, `selectedProviderTab`, `hasKey`, `setActiveProvider`, `updateProviderModel`, `updateProviderBaseUrl`, `saveKey`, `deleteKey`, `testConnection`), `src/renderer/src/components/AiProviderSettings.tsx` (active provider banner, provider selector tabs for DeepSeek/OpenAI/Anthropic/Gemini/Custom Ollama, model dropdown + custom input, custom Base URL input, masked key input, Save / Test / Delete actions, real-time connection status), `src/renderer/src/components/ApiKeySettings.tsx` (re-export wrapper for backward compatibility), `src/renderer/src/components/SettingsView.tsx` (renders `AiProviderSettings`), `src/renderer/src/components/StatusFooter.tsx` (reactive footer indicator showing active provider and model name).
 - **Acceptance Criteria**:
-  - ✅ API key saves and encrypts via safeStorage (`key:set`).
-  - ✅ Test Connection validates the key (`ai:testConnection`; boolean result, frontend-only).
-  - ✅ Delete key removes from keychain (`key:delete`) with confirmation.
-  - ❌ Default focus hours, theme, report timeframe preferences (future tickets).
-  - ❌ Data export / clear-all (future tickets).
+  - ✅ API keys save and encrypt via safeStorage multi-key vault (`ai:setKey` / `ai:deleteKey`).
+  - ✅ Provider settings and model selections persist via SQLite `app_settings` (`ai:getSettings` / `ai:updateSettings`).
+  - ✅ Test Connection validates active or selected provider (`ai:testConnection`).
+  - ✅ Delete key removes specific provider key with confirmation dialog.
+  - ✅ Footer reactively displays active provider and model status.
 - **Tests**: `src/renderer/src/stores/__tests__/settingsStore.test.ts`, `src/renderer/src/components/__tests__/ApiKeySettings.test.tsx`.
+

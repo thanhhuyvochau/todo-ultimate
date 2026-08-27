@@ -51,7 +51,7 @@ describe("recurring-rule-repository", () => {
 
     it("returns rules in created_at DESC order", async () => {
       const repo = await getRepo();
-      const r1 = repo.createRule({
+      const _r1 = repo.createRule({
         title: "Rule 1",
         description: null,
         priority: "high",
@@ -61,7 +61,7 @@ describe("recurring-rule-repository", () => {
         daysOfWeek: null,
         dayOfMonth: null,
       });
-      const r2 = repo.createRule({
+      const _r2 = repo.createRule({
         title: "Rule 2",
         description: null,
         priority: "low",

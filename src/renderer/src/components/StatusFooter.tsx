@@ -5,6 +5,8 @@ import { useNetworkStore } from "../stores/networkStore";
 
 export function StatusFooter() {
   const hasApiKey = useSettingsStore((s) => s.hasKey);
+  const activeProvider = useSettingsStore((s) => s.activeProvider);
+  const aiSettings = useSettingsStore((s) => s.aiSettings);
   const loadStatus = useSettingsStore((s) => s.loadStatus);
   const isOnline = useNetworkStore((s) => s.isOnline);
   const [time, setTime] = useState(new Date());
@@ -22,6 +24,9 @@ export function StatusFooter() {
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  const activeModel =
+    aiSettings?.providers[activeProvider]?.selectedModel || "";
 
   return (
     <footer className="flex h-8 shrink-0 items-center justify-between border-t border-border px-5">
@@ -44,7 +49,9 @@ export function StatusFooter() {
           ) : (
             <Key className="h-3.5 w-3.5 text-warning opacity-60" />
           )}
-          {hasApiKey ? "API ready" : "No API key"}
+          {hasApiKey
+            ? `AI ready (${activeProvider}${activeModel ? `:${activeModel}` : ""})`
+            : "No API key"}
         </span>
         <span className="font-mono text-xs text-text-muted">{timeStr}</span>
       </div>

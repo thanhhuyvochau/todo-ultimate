@@ -12,6 +12,11 @@ import type {
   CreateRuleInput,
   TaskVariance,
   VarianceMetrics,
+  AiSettings,
+  UpdateAiSettingsInput,
+  AiKeyInput,
+  AiKeyDeleteInput,
+  AiProviderId,
 } from "./models";
 
 export interface IpcChannelMap {
@@ -41,7 +46,20 @@ export interface IpcChannelMap {
     request: { timeframeStart: number; timeframeEnd: number };
     response: PerformanceReportContent;
   };
-  "ai:testConnection": { request: object; response: { success: boolean } };
+  "ai:testConnection": {
+    request: { providerId?: AiProviderId } | object;
+    response: { success: boolean; message?: string };
+  };
+  "ai:getSettings": { request: object; response: AiSettings };
+  "ai:updateSettings": {
+    request: UpdateAiSettingsInput;
+    response: AiSettings;
+  };
+  "ai:setKey": { request: AiKeyInput; response: { success: boolean } };
+  "ai:deleteKey": {
+    request: AiKeyDeleteInput;
+    response: { success: boolean };
+  };
   "report:list": { request: object; response: PerformanceReportSummary[] };
   "report:get": { request: { id: string }; response: PerformanceReportContent };
   "report:delete": {

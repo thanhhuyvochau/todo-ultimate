@@ -730,19 +730,33 @@ Key invariants:
 
 ---
 
-## 10. AI Integration Engine (DeepSeek)
+## 10. AI Integration Engine (Multi-Provider LLM)
 
-**File**: `src/main/services/deepseekService.ts`
+**Files**:
+- Orchestrator: `src/main/services/ai/ai-service.ts` (re-exported via `src/main/services/deepseekService.ts`)
+- Adapters: `src/main/services/ai/adapters/` (`OpenAiCompatibleAdapter`, `AnthropicAdapter`, `GeminiAdapter`)
+- Parsing & Errors: `src/main/services/ai/json-extractor.ts`, `src/main/services/ai/ai-errors.ts`
+- Settings Store: `src/main/db/settings-repository.ts` (`app_settings` table)
+- Secure Multi-Key Vault: `src/main/services/keychain-service.ts` (`safeStorage` encryption)
 
-The DeepSeek client is configured via the OpenAI SDK with a custom `baseURL`:
+### Supported Providers & Defaults
+
+| Provider ID | Provider Name | Default Base URL | Default Model | Curated Presets | Client Adapter |
+|---|---|---|---|---|---|
+| `deepseek` | DeepSeek | `https://api.deepseek.com/v1` | `deepseek-chat` | `deepseek-chat`, `deepseek-reasoner` | `OpenAiCompatibleAdapter` |
+| `openai` | OpenAI | `https://api.openai.com/v1` | `gpt-4o` | `gpt-4o`, `gpt-4o-mini`, `gpt-4.5-preview`, `o3-mini` | `OpenAiCompatibleAdapter` |
+| `anthropic` | Anthropic (Claude) | `https://api.anthropic.com/v1` | `claude-3-7-sonnet-latest` | `claude-3-7-sonnet-latest`, `claude-3-5-sonnet-latest`, `claude-3-5-haiku-latest` | `AnthropicAdapter` (REST) |
+| `gemini` | Google Gemini | `https://generativelanguage.googleapis.com/v1beta` | `gemini-2.0-flash` | `gemini-2.0-flash`, `gemini-2.0-flash-lite`, `gemini-1.5-pro` | `GeminiAdapter` (REST) |
+| `custom` | Custom / Local (Ollama) | `http://localhost:11434/v1` | `llama3.2` | `llama3.2`, `mistral`, `qwen2.5`, `deepseek-r1` | `OpenAiCompatibleAdapter` |
+
+### Engine Characteristics
 
 ```
-Base URL:    https://api.deepseek.com/v1
-Model:       deepseek-chat
-Mode:        response_format: { type: "json_object" }
 Timeout:     30,000 ms
 Max Retries: 3 (manual with exponential backoff)
 Backoff:     [1000ms, 2000ms, 4000ms] + Retry-After header support
+JSON Parse:  Adaptive markdown fence stripper & outermost object extractor
+Audit Trail: Generated daily plans and reports tag `provider` and `model` metadata
 ```
 
 ### Error Classification
