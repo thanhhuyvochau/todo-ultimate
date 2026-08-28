@@ -9,12 +9,7 @@ import {
 } from "lucide-react";
 
 export type ViewName =
-  | "backlog"
-  | "today"
-  | "plan"
-  | "reports"
-  | "pomodoro"
-  | "settings";
+  "backlog" | "today" | "plan" | "reports" | "pomodoro" | "settings";
 
 interface NavItem {
   id: ViewName;

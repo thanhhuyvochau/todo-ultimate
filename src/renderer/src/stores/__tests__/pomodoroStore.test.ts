@@ -44,11 +44,16 @@ describe("pomodoroStore", () => {
     expect(state.secondsRemaining).toBe(POMODORO_DURATIONS.shortBreak);
     expect(state.completedFocusSessions).toBe(1);
     expect(state.isRunning).toBe(false);
-    expect(useToastStore.getState().toasts[0]?.message).toContain("short break");
+    expect(useToastStore.getState().toasts[0]?.message).toContain(
+      "short break",
+    );
   });
 
   it("moves to a long break after the fourth focus session", () => {
-    usePomodoroStore.setState({ secondsRemaining: 1, completedFocusSessions: 3 });
+    usePomodoroStore.setState({
+      secondsRemaining: 1,
+      completedFocusSessions: 3,
+    });
     usePomodoroStore.getState().start();
     vi.advanceTimersByTime(1000);
     usePomodoroStore.getState().tick();
