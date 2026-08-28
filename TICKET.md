@@ -402,3 +402,17 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
   - ✅ Footer reactively displays active provider and model status.
 - **Tests**: `src/renderer/src/stores/__tests__/settingsStore.test.ts`, `src/renderer/src/components/__tests__/ApiKeySettings.test.tsx`.
 
+### TKT-026: Configurable Pomodoro Durations ✅ Done
+
+- **Spec**: [`21-settings-page.md`](./spec/21-settings-page.md)
+
+**As a** user, **I want to** configure focus and break durations **so that** the Pomodoro timer matches my working rhythm.
+
+- **Status**: Complete — `src/renderer/src/stores/pomodoroStore.ts` persists validated focus, short-break, and long-break preferences in the existing local Pomodoro payload; active intervals preserve their original total and remaining time. `src/renderer/src/components/PomodoroSettings.tsx` provides Settings inputs and inline validation, while `PomodoroView.tsx` renders configured values.
+- **Acceptance Criteria**:
+  - ✅ Focus duration accepts whole minutes from 1 to 180; each break accepts whole minutes from 1 to 60.
+  - ✅ Defaults remain 25/5/15 and legacy persisted timer payloads migrate safely.
+  - ✅ A running or paused interval remains unchanged; reset, skip, mode selection, and automatic transition use saved values.
+  - ✅ The progress ring retains the current interval total when preferences change.
+- **Tests**: `src/renderer/src/stores/__tests__/pomodoroStore.test.ts`, `src/renderer/src/components/__tests__/PomodoroSettings.test.tsx`.
+

@@ -1,5 +1,6 @@
 import { RecurringRulesPanel } from "./RecurringRulesPanel";
 import { AiProviderSettings } from "./AiProviderSettings";
+import { PomodoroSettings } from "./PomodoroSettings";
 
 export function SettingsView() {
   return (
@@ -11,6 +12,7 @@ export function SettingsView() {
       </div>
       <div className="space-y-8 p-6">
         <AiProviderSettings />
+        <PomodoroSettings />
         <RecurringRulesPanel />
       </div>
     </div>

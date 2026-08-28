@@ -1,9 +1,5 @@
 import { Pause, Play, RotateCcw, SkipForward } from "lucide-react";
-import {
-  POMODORO_DURATIONS,
-  usePomodoroStore,
-  type PomodoroMode,
-} from "../stores/pomodoroStore";
+import { usePomodoroStore, type PomodoroMode } from "../stores/pomodoroStore";
 import { PomodoroProgress } from "./PomodoroProgress";
 import { Tooltip } from "./ui/Tooltip";
 
@@ -19,6 +15,8 @@ export function PomodoroView() {
     secondsRemaining,
     isRunning,
     completedFocusSessions,
+    durations,
+    intervalTotalSeconds,
     start,
     pause,
     reset,
@@ -63,7 +61,7 @@ export function PomodoroView() {
             <PomodoroProgress
               label={activeMode.label}
               secondsRemaining={secondsRemaining}
-              totalSeconds={POMODORO_DURATIONS[mode]}
+              totalSeconds={intervalTotalSeconds}
             />
           </div>
           <div className="flex items-center gap-3">
@@ -116,8 +114,9 @@ export function PomodoroView() {
             </p>
           </div>
           <p className="mt-5 text-center text-xs text-text-muted">
-            25 min focus · 5 min short break · 15 min long break after four
-            sessions
+            {durations.focusMinutes} min focus · {durations.shortBreakMinutes}{" "}
+            min short break · {durations.longBreakMinutes} min long break after{" "}
+            four sessions
           </p>
         </div>
       </div>

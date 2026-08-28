@@ -18,14 +18,21 @@ Centralized settings panel for API key management, default preferences (focus ho
 - **Theme**: radio buttons for Light / Dark / System.
 - **Default timeframe for reports**: dropdown (7 / 14 / 30 days).
 
-### 3. Recurring Rules Management
+### 3. Pomodoro Timer
+- **Focus time**: whole-minute number input (1–180). Default: 25.
+- **Short break**: whole-minute number input (1–60). Default: 5.
+- **Long break**: whole-minute number input (1–60). Default: 15.
+- Save button persists all three values locally under the existing Pomodoro state.
+- A running or paused interval keeps its remaining time and original progress total; saved values apply to the next reset, skip, manual mode change, or automatic transition.
+
+### 4. Recurring Rules Management
 - List of all recurring rules (from Feature 8).
 - Toggle per rule to enable/disable.
 - Add new rule button → opens rule creation form.
 - Edit/delete actions per rule.
 - Empty state: "No recurring rules yet."
 
-### 4. Data Management
+### 5. Data Management
 - **Export all data**: download tasks + time logs as JSON file.
 - **Clear all data**: delete all tasks, logs, plans, and reports. Confirmation dialog with "type DELETE to confirm" pattern.
 - App version display.
@@ -34,6 +41,7 @@ Centralized settings panel for API key management, default preferences (focus ho
 - Form saves auto-persist to appropriate stores.
 - API key save triggers encryption in main process.
 - Theme changes apply immediately (swap CSS classes).
+- Pomodoro durations validate before saving and show inline errors for non-integer or out-of-range values.
 - Test connection shows loading spinner then success/failure toast.
 
 ## IPC Channels Used
@@ -54,6 +62,7 @@ Centralized settings panel for API key management, default preferences (focus ho
 - [ ] Delete key removes from keychain.
 - [ ] Focus hours persist across sessions.
 - [ ] Theme changes apply immediately.
+- [x] Pomodoro durations persist locally and apply to new intervals.
 - [ ] Recurring rules CRUD works from settings.
 - [ ] Export downloads JSON file.
 - [ ] Clear all data requires confirmation.

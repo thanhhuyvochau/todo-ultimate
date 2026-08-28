@@ -411,7 +411,7 @@ One special channel bypasses the request/response model: `timer:tick` is a **pus
 
 ### 6.1 Application Shell & Routing
 
-The Renderer uses **in-memory state routing** (no React Router). The `AppShell` component holds the active view name in `useState` and conditionally renders one of five views.
+The Renderer uses **in-memory state routing** (no React Router). The `AppShell` component holds the active view name in `useState` and conditionally renders the application views.
 
 ```
 App.tsx
@@ -434,6 +434,8 @@ App.tsx
 1. `useTimerStore.getState().initTimer()` — fetches active timer state from Main via `timer:getActive`, subscribes to `timer:tick` push events.
 2. `useNetworkStore.getState().initNetwork()` — attaches `online`/`offline` listeners with 1-second debounce.
 
+Pomodoro initialization also calls `usePomodoroStore.getState().initPomodoro()` to restore renderer-local state, including configured durations, and reconcile any deadline-based countdown.
+
 ### 6.2 Zustand State Stores
 
 All stores are in `src/renderer/src/stores/`. They are the **single source of truth** for UI state. Components never call `window.api` directly.
@@ -448,6 +450,7 @@ All stores are in `src/renderer/src/stores/`. They are the **single source of tr
 | `settingsStore` | `hasKey` | `saveKey`, `deleteKey`, `testConnection` |
 | `networkStore` | `isOnline` | `initNetwork` |
 | `themeStore` | `theme` ("dark"\|"light") | `toggleTheme`, `initTheme` |
+| `pomodoroStore` | mode, countdown, interval total, configurable durations | `start`, `pause`, `reset`, `skip`, `selectMode`, `saveDurations` |
 | `toastStore` | `toasts[]` | `addToast`, `removeToast` |
 
 **Store interaction model:**

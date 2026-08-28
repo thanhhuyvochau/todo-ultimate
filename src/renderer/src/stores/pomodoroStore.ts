@@ -3,10 +3,27 @@ import { useToastStore } from "./toastStore";
 
 export type PomodoroMode = "focus" | "shortBreak" | "longBreak";
 
+export interface PomodoroDurations {
+  focusMinutes: number;
+  shortBreakMinutes: number;
+  longBreakMinutes: number;
+}
+
+export type PomodoroDurationField = keyof PomodoroDurations;
+export type PomodoroDurationErrors = Partial<
+  Record<PomodoroDurationField, string>
+>;
+
+export const DEFAULT_POMODORO_DURATIONS: PomodoroDurations = {
+  focusMinutes: 25,
+  shortBreakMinutes: 5,
+  longBreakMinutes: 15,
+};
+
 export const POMODORO_DURATIONS: Record<PomodoroMode, number> = {
-  focus: 25 * 60,
-  shortBreak: 5 * 60,
-  longBreak: 15 * 60,
+  focus: DEFAULT_POMODORO_DURATIONS.focusMinutes * 60,
+  shortBreak: DEFAULT_POMODORO_DURATIONS.shortBreakMinutes * 60,
+  longBreak: DEFAULT_POMODORO_DURATIONS.longBreakMinutes * 60,
 };
 
 const STORAGE_KEY = "app.pomodoro";
@@ -14,10 +31,13 @@ const STORAGE_KEY = "app.pomodoro";
 interface PersistedPomodoroState {
   mode: PomodoroMode;
   secondsRemaining: number;
+  intervalTotalSeconds: number;
+  hasStartedCurrentInterval: boolean;
   isRunning: boolean;
   endsAt: number | null;
   completedFocusSessions: number;
   sessionDate: string;
+  durations: PomodoroDurations;
 }
 
 interface PomodoroStore extends PersistedPomodoroState {
@@ -27,7 +47,44 @@ interface PomodoroStore extends PersistedPomodoroState {
   reset: () => void;
   skip: () => void;
   selectMode: (mode: PomodoroMode) => void;
+  saveDurations: (durations: PomodoroDurations) => boolean;
   tick: (now?: number) => void;
+}
+
+export function getPomodoroDurationSeconds(
+  mode: PomodoroMode,
+  durations: PomodoroDurations,
+): number {
+  switch (mode) {
+    case "focus":
+      return durations.focusMinutes * 60;
+    case "shortBreak":
+      return durations.shortBreakMinutes * 60;
+    case "longBreak":
+      return durations.longBreakMinutes * 60;
+  }
+}
+
+export function validatePomodoroDurations(
+  durations: PomodoroDurations,
+): PomodoroDurationErrors {
+  const errors: PomodoroDurationErrors = {};
+  const fields: [PomodoroDurationField, number, number][] = [
+    ["focusMinutes", 1, 180],
+    ["shortBreakMinutes", 1, 60],
+    ["longBreakMinutes", 1, 60],
+  ];
+
+  for (const [field, minimum, maximum] of fields) {
+    const value = durations[field];
+    if (!Number.isInteger(value)) {
+      errors[field] = "Enter a whole number of minutes.";
+    } else if (value < minimum || value > maximum) {
+      errors[field] = `Enter a value from ${minimum} to ${maximum} minutes.`;
+    }
+  }
+
+  return errors;
 }
 
 function getLocalDateKey(now = new Date()): string {
@@ -41,15 +98,42 @@ function getDefaultState(): PersistedPomodoroState {
   return {
     mode: "focus",
     secondsRemaining: POMODORO_DURATIONS.focus,
+    intervalTotalSeconds: POMODORO_DURATIONS.focus,
+    hasStartedCurrentInterval: false,
     isRunning: false,
     endsAt: null,
     completedFocusSessions: 0,
     sessionDate: getLocalDateKey(),
+    durations: { ...DEFAULT_POMODORO_DURATIONS },
   };
 }
 
 function isPomodoroMode(value: unknown): value is PomodoroMode {
   return value === "focus" || value === "shortBreak" || value === "longBreak";
+}
+
+function parseStoredDurations(value: unknown): PomodoroDurations {
+  const candidate = value as Partial<PomodoroDurations> | null;
+  const defaults = DEFAULT_POMODORO_DURATIONS;
+  const durations: PomodoroDurations = {
+    focusMinutes: candidate?.focusMinutes ?? defaults.focusMinutes,
+    shortBreakMinutes:
+      candidate?.shortBreakMinutes ?? defaults.shortBreakMinutes,
+    longBreakMinutes: candidate?.longBreakMinutes ?? defaults.longBreakMinutes,
+  };
+  const errors = validatePomodoroDurations(durations);
+
+  return {
+    focusMinutes: errors.focusMinutes
+      ? defaults.focusMinutes
+      : durations.focusMinutes,
+    shortBreakMinutes: errors.shortBreakMinutes
+      ? defaults.shortBreakMinutes
+      : durations.shortBreakMinutes,
+    longBreakMinutes: errors.longBreakMinutes
+      ? defaults.longBreakMinutes
+      : durations.longBreakMinutes,
+  };
 }
 
 function readStoredState(): PersistedPomodoroState {
@@ -60,22 +144,45 @@ function readStoredState(): PersistedPomodoroState {
     const parsed = JSON.parse(raw) as Partial<PersistedPomodoroState>;
     if (!isPomodoroMode(parsed.mode)) return fallback;
 
+    const durations = parseStoredDurations(parsed.durations);
+    const defaultIntervalTotal = getPomodoroDurationSeconds(
+      parsed.mode,
+      durations,
+    );
+    const intervalTotalSeconds =
+      typeof parsed.intervalTotalSeconds === "number" &&
+      Number.isFinite(parsed.intervalTotalSeconds) &&
+      parsed.intervalTotalSeconds > 0
+        ? Math.floor(parsed.intervalTotalSeconds)
+        : defaultIntervalTotal;
+    const secondsRemaining =
+      typeof parsed.secondsRemaining === "number" &&
+      Number.isFinite(parsed.secondsRemaining) &&
+      parsed.secondsRemaining >= 0
+        ? Math.min(Math.floor(parsed.secondsRemaining), intervalTotalSeconds)
+        : intervalTotalSeconds;
+    const isRunning =
+      parsed.isRunning === true && typeof parsed.endsAt === "number";
     const sessionDate = getLocalDateKey();
+
     return {
       mode: parsed.mode,
-      secondsRemaining:
-        typeof parsed.secondsRemaining === "number" &&
-        parsed.secondsRemaining >= 0
-          ? Math.min(parsed.secondsRemaining, POMODORO_DURATIONS[parsed.mode])
-          : POMODORO_DURATIONS[parsed.mode],
-      isRunning: parsed.isRunning === true && typeof parsed.endsAt === "number",
+      secondsRemaining,
+      intervalTotalSeconds,
+      hasStartedCurrentInterval:
+        typeof parsed.hasStartedCurrentInterval === "boolean"
+          ? parsed.hasStartedCurrentInterval
+          : isRunning || secondsRemaining < intervalTotalSeconds,
+      isRunning,
       endsAt: typeof parsed.endsAt === "number" ? parsed.endsAt : null,
       completedFocusSessions:
         parsed.sessionDate === sessionDate &&
-        typeof parsed.completedFocusSessions === "number"
+        typeof parsed.completedFocusSessions === "number" &&
+        Number.isFinite(parsed.completedFocusSessions)
           ? Math.max(0, Math.floor(parsed.completedFocusSessions))
           : 0,
       sessionDate,
+      durations,
     };
   } catch {
     return fallback;
@@ -86,18 +193,24 @@ function persistedSlice(state: PomodoroStore): PersistedPomodoroState {
   const {
     mode,
     secondsRemaining,
+    intervalTotalSeconds,
+    hasStartedCurrentInterval,
     isRunning,
     endsAt,
     completedFocusSessions,
     sessionDate,
+    durations,
   } = state;
   return {
     mode,
     secondsRemaining,
+    intervalTotalSeconds,
+    hasStartedCurrentInterval,
     isRunning,
     endsAt,
     completedFocusSessions,
     sessionDate,
+    durations,
   };
 }
 
@@ -112,6 +225,15 @@ function persistState(state: PersistedPomodoroState): void {
 function nextMode(mode: PomodoroMode, completedSessions: number): PomodoroMode {
   if (mode !== "focus") return "focus";
   return completedSessions % 4 === 0 ? "longBreak" : "shortBreak";
+}
+
+function getFreshInterval(mode: PomodoroMode, durations: PomodoroDurations) {
+  const intervalTotalSeconds = getPomodoroDurationSeconds(mode, durations);
+  return {
+    intervalTotalSeconds,
+    secondsRemaining: intervalTotalSeconds,
+    hasStartedCurrentInterval: false,
+  };
 }
 
 const initialState = readStoredState();
@@ -130,6 +252,7 @@ export const usePomodoroStore = create<PomodoroStore>((set, get) => ({
     set({
       isRunning: true,
       endsAt: Date.now() + state.secondsRemaining * 1000,
+      hasStartedCurrentInterval: true,
     });
     persistState(persistedSlice(get()));
   },
@@ -149,11 +272,11 @@ export const usePomodoroStore = create<PomodoroStore>((set, get) => ({
   },
 
   reset: () => {
-    const { mode } = get();
+    const { mode, durations } = get();
     set({
       isRunning: false,
       endsAt: null,
-      secondsRemaining: POMODORO_DURATIONS[mode],
+      ...getFreshInterval(mode, durations),
     });
     persistState(persistedSlice(get()));
   },
@@ -163,21 +286,40 @@ export const usePomodoroStore = create<PomodoroStore>((set, get) => ({
     const mode = nextMode(state.mode, state.completedFocusSessions);
     set({
       mode,
-      secondsRemaining: POMODORO_DURATIONS[mode],
       isRunning: false,
       endsAt: null,
+      ...getFreshInterval(mode, state.durations),
     });
     persistState(persistedSlice(get()));
   },
 
   selectMode: (mode) => {
+    const { durations } = get();
     set({
       mode,
-      secondsRemaining: POMODORO_DURATIONS[mode],
       isRunning: false,
       endsAt: null,
+      ...getFreshInterval(mode, durations),
     });
     persistState(persistedSlice(get()));
+  },
+
+  saveDurations: (durations) => {
+    if (Object.keys(validatePomodoroDurations(durations)).length > 0) {
+      return false;
+    }
+
+    const state = get();
+    const shouldRefreshCurrentInterval =
+      !state.isRunning && !state.hasStartedCurrentInterval;
+    set({
+      durations,
+      ...(shouldRefreshCurrentInterval
+        ? getFreshInterval(state.mode, durations)
+        : {}),
+    });
+    persistState(persistedSlice(get()));
+    return true;
   },
 
   tick: (now = Date.now()) => {
@@ -208,10 +350,10 @@ export const usePomodoroStore = create<PomodoroStore>((set, get) => ({
     const mode = nextMode(current.mode, completedFocusSessions);
     set({
       mode,
-      secondsRemaining: POMODORO_DURATIONS[mode],
       isRunning: false,
       endsAt: null,
       completedFocusSessions,
+      ...getFreshInterval(mode, current.durations),
     });
     persistState(persistedSlice(get()));
     const message =
