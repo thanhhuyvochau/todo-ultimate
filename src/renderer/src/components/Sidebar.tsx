@@ -1,7 +1,20 @@
 import type { LucideIcon } from "lucide-react";
-import { Inbox, Calendar, Lightbulb, BarChart2, Settings } from "lucide-react";
+import {
+  Inbox,
+  Calendar,
+  Lightbulb,
+  BarChart2,
+  Settings,
+  Timer,
+} from "lucide-react";
 
-export type ViewName = "backlog" | "today" | "plan" | "reports" | "settings";
+export type ViewName =
+  | "backlog"
+  | "today"
+  | "plan"
+  | "reports"
+  | "pomodoro"
+  | "settings";
 
 interface NavItem {
   id: ViewName;
@@ -15,6 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "today", label: "Today", icon: Calendar, enabled: true },
   { id: "plan", label: "Daily Plan", icon: Lightbulb, enabled: true },
   { id: "reports", label: "Reports", icon: BarChart2, enabled: true },
+  { id: "pomodoro", label: "Pomodoro", icon: Timer, enabled: true },
   { id: "settings", label: "Settings", icon: Settings, enabled: true },
 ];
 

@@ -7,12 +7,20 @@ import { TodayView } from "./TodayView";
 import { PlanView } from "./PlanView";
 import { SettingsView } from "./SettingsView";
 import { ReportsView } from "./ReportsView";
+import { PomodoroView } from "./PomodoroView";
 import { StatusFooter } from "./StatusFooter";
 import { ToastContainer } from "./ToastContainer";
 import { useTimerStore } from "../stores/timerStore";
 import { useNetworkStore } from "../stores/networkStore";
+import { usePomodoroStore } from "../stores/pomodoroStore";
 
-const ENABLED_VIEWS: ViewName[] = ["backlog", "today", "plan", "reports"];
+const KEYBOARD_VIEWS: ViewName[] = [
+  "backlog",
+  "today",
+  "plan",
+  "reports",
+  "pomodoro",
+];
 
 export function AppShell() {
   const [activeView, setActiveView] = useState<ViewName>("backlog");
@@ -20,15 +28,20 @@ export function AppShell() {
   useEffect(() => {
     useTimerStore.getState().initTimer();
     useNetworkStore.getState().initNetwork();
+    usePomodoroStore.getState().initPomodoro();
+    const pomodoroTicker = window.setInterval(() => {
+      usePomodoroStore.getState().tick();
+    }, 250);
+    return () => window.clearInterval(pomodoroTicker);
   }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!e.ctrlKey) return;
       const index = Number(e.key) - 1;
-      if (index >= 0 && index < ENABLED_VIEWS.length) {
+      if (index >= 0 && index < KEYBOARD_VIEWS.length) {
         e.preventDefault();
-        setActiveView(ENABLED_VIEWS[index]!);
+        setActiveView(KEYBOARD_VIEWS[index]!);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -47,6 +60,7 @@ export function AppShell() {
             <PlanView onApproved={() => setActiveView("today")} />
           )}
           {activeView === "reports" && <ReportsView />}
+          {activeView === "pomodoro" && <PomodoroView />}
           {activeView === "settings" && <SettingsView />}
         </main>
       </div>
