@@ -256,6 +256,9 @@ Any other transition throws `VALIDATION_ERROR: STATE_TRANSITION_ILLEGAL`.
 
 ---
 
+`in_progress` additionally requires a persisted non-null `scheduled_date`.
+Scheduling and starting cannot be combined to bypass this repository guard.
+
 ### 4.3 Service Layer
 
 Services orchestrate business logic above the raw repository level. They are the **only callers of the DeepSeek API** and the only place where cross-repository transactions happen.
@@ -332,6 +335,11 @@ The handler map is a single exported constant typed against `IpcChannelMap`. Eve
 **Special orchestration in `tasks:update`**: When status transitions to `in_progress`, the handler automatically calls `timerService.startTimer()`. When transitioning to `completed`, it closes any unclosed time log first to ensure `actual_minutes` is complete before variance is computed.
 
 ---
+
+Timer-affecting `tasks:update` mutations are delegated to
+`timerService.updateTaskWithTimerEffects()`. Start, handoff, completion, and
+active-task return-to-Backlog writes run transactionally before in-memory timer
+state or renderer tick state changes.
 
 ## 5. IPC Bridge Layer (Shared / Preload)
 
@@ -723,7 +731,11 @@ let tickInterval: NodeJS.Timeout | null = null;
 ```
 
 Key invariants:
+- **Today-only starts.** Both `tasks:update` and `timer:start` reject a task whose
+  persisted `scheduled_date` is null before touching the current timer.
 - **Only one active timer at a time.** `startTimer()` pauses any other in-progress task's unclosed log before starting.
+- **Atomic timer mutations.** Logs, accumulated minutes, task statuses, and
+  scheduling changes commit together; renderer broadcasts happen afterward.
 - **Drift-free elapsed time**: `elapsedSeconds = floor((Date.now() - startedAt) / 1000)` — always computed from the absolute start timestamp, never accumulated.
 - **App quit safety**: `stopTimerEngine()` is called in the `before-quit` event, closing any open log.
 - **Crash recovery**: On startup, `getActiveTimer()` scans for unclosed `task_time_logs` and reconstructs `activeTimer` in memory.

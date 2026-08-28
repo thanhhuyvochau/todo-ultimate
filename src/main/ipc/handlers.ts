@@ -2,7 +2,6 @@ import type { IpcChannelMap } from "@/shared/ipcChannels";
 import type { IpcErrorCode, IpcResult } from "@/shared/ipcResult";
 import { ok, fail } from "@/shared/ipcResult";
 import * as taskRepo from "@/main/db/task-repository";
-import * as timeLogRepo from "@/main/db/time-log-repository";
 import * as recurringRuleRepo from "@/main/db/recurring-rule-repository";
 import * as keychainService from "@/main/services/keychain-service";
 import * as timerService from "@/main/services/timer-service";
@@ -68,22 +67,7 @@ export const handlers = {
 
   "tasks:update": (data) => {
     try {
-      if (data.status === "in_progress") {
-        timerService.startTimer(data.id);
-      }
-      if (data.status === "todo") {
-        const unclosed = timeLogRepo.getUnclosedTimeLog(data.id);
-        if (unclosed) {
-          timerService.pauseTimer(data.id);
-        }
-      }
-      if (data.status === "completed") {
-        const unclosed = timeLogRepo.getUnclosedTimeLog(data.id);
-        if (unclosed) {
-          timerService.pauseTimer(data.id);
-        }
-      }
-      const task = taskRepo.updateTask(data);
+      const task = timerService.updateTaskWithTimerEffects(data);
       return ok(task);
     } catch (err) {
       const error = err as { code?: string; message?: string };
@@ -124,6 +108,12 @@ export const handlers = {
       const error = err as { code?: string; message?: string };
       if (error.code === "NOT_FOUND") {
         return fail("NOT_FOUND", error.message ?? "Task not found.");
+      }
+      if (error.code === "STATE_TRANSITION_ILLEGAL") {
+        return fail(
+          "STATE_TRANSITION_ILLEGAL",
+          error.message ?? "Invalid status transition.",
+        );
       }
       return fail("TIMER_START_FAILED", "Failed to start timer.");
     }

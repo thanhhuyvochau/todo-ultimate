@@ -132,6 +132,14 @@ afterAll(() => {
   if (db && db.open) db.close();
 });
 
+function scheduleTask(id: string): void {
+  const result = handlers["tasks:update"]({
+    id,
+    scheduledDate: 1_700_000_000_000,
+  });
+  expect(result.ok).toBe(true);
+}
+
 describe("tasks:getAll", () => {
   it("returns empty array when no tasks", () => {
     const result = handlers["tasks:getAll"]({});
@@ -399,6 +407,31 @@ describe("tasks:update", () => {
     }
   });
 
+  it("rejects starting a backlog task with STATE_TRANSITION_ILLEGAL", () => {
+    const task = handlers["tasks:create"]({
+      title: "Backlog Task",
+      description: null,
+      priority: "medium",
+      estimatedMinutes: 30,
+    });
+    expect(task.ok).toBe(true);
+    if (!task.ok) return;
+
+    const result = handlers["tasks:update"]({
+      id: task.data.id,
+      status: "in_progress",
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        code: "STATE_TRANSITION_ILLEGAL",
+        message:
+          "Cannot start a task that is in the backlog. Move it to Today first.",
+      },
+    });
+  });
+
   it("auto-pauses previous in_progress task when starting another", () => {
     const a = handlers["tasks:create"]({
       title: "Task A",
@@ -415,6 +448,8 @@ describe("tasks:update", () => {
     expect(a.ok).toBe(true);
     expect(b.ok).toBe(true);
     if (!a.ok || !b.ok) return;
+    scheduleTask(a.data.id);
+    scheduleTask(b.data.id);
 
     const startA = handlers["tasks:update"]({
       id: a.data.id,
@@ -959,6 +994,7 @@ describe("timer IPC handlers", () => {
     });
     expect(taskRes.ok).toBe(true);
     if (!taskRes.ok) return;
+    scheduleTask(taskRes.data.id);
 
     const startRes = handlers["timer:start"]({ taskId: taskRes.data.id });
     expect(startRes.ok).toBe(true);
@@ -981,6 +1017,7 @@ describe("timer IPC handlers", () => {
       estimatedMinutes: 15,
     });
     if (!taskRes.ok) return;
+    scheduleTask(taskRes.data.id);
 
     handlers["timer:start"]({ taskId: taskRes.data.id });
 
@@ -995,6 +1032,70 @@ describe("timer IPC handlers", () => {
     if (activeRes.ok) {
       expect(activeRes.data).toBeNull();
     }
+  });
+
+  it("timer:start rejects Backlog tasks without disturbing an active timer", () => {
+    const activeTask = handlers["tasks:create"]({
+      title: "Active Task",
+      description: null,
+      priority: "high",
+      estimatedMinutes: 20,
+    });
+    const backlogTask = handlers["tasks:create"]({
+      title: "Backlog Task",
+      description: null,
+      priority: "low",
+      estimatedMinutes: 10,
+    });
+    expect(activeTask.ok).toBe(true);
+    expect(backlogTask.ok).toBe(true);
+    if (!activeTask.ok || !backlogTask.ok) return;
+    scheduleTask(activeTask.data.id);
+    expect(handlers["timer:start"]({ taskId: activeTask.data.id }).ok).toBe(
+      true,
+    );
+
+    const result = handlers["timer:start"]({ taskId: backlogTask.data.id });
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        code: "STATE_TRANSITION_ILLEGAL",
+        message:
+          "Cannot start a task that is in the backlog. Move it to Today first.",
+      },
+    });
+    const active = handlers["timer:getActive"]({});
+    expect(active.ok && active.data?.taskId).toBe(activeTask.data.id);
+  });
+
+  it("returning the active task to Backlog pauses it and resets its status", () => {
+    const task = handlers["tasks:create"]({
+      title: "Return Me",
+      description: null,
+      priority: "medium",
+      estimatedMinutes: 25,
+    });
+    expect(task.ok).toBe(true);
+    if (!task.ok) return;
+    scheduleTask(task.data.id);
+    expect(handlers["timer:start"]({ taskId: task.data.id }).ok).toBe(true);
+
+    const result = handlers["tasks:update"]({
+      id: task.data.id,
+      scheduledDate: null,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.status).toBe("todo");
+    expect(result.data.scheduledDate).toBeNull();
+    const active = handlers["timer:getActive"]({});
+    expect(active.ok && active.data).toBeNull();
+    const log = db
+      .prepare("SELECT paused_at FROM task_time_logs WHERE task_id = ?")
+      .get(task.data.id) as { paused_at: number | null };
+    expect(log.paused_at).not.toBeNull();
   });
 });
 
@@ -1043,6 +1144,7 @@ describe("metrics handlers", () => {
     });
     expect(create.ok).toBe(true);
     if (!create.ok) return;
+    scheduleTask(create.data.id);
 
     db.prepare("UPDATE tasks SET actual_minutes = 45 WHERE id = ?").run(
       create.data.id,

@@ -1,10 +1,13 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { ChevronDown, ChevronRight, Lock, X } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronRight, Lock } from "lucide-react";
 import type { Task, TaskStatus } from "@shared/models";
 import { useTaskStore } from "../stores/taskStore";
+import { useTimerStore } from "../stores/timerStore";
+import { useToastStore } from "../stores/toastStore";
 import { TaskItem } from "./TaskItem";
 import { TaskForm } from "./TaskForm";
 import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
+import { getOverdueTasks, getStartToastMessage } from "./today-view-utils";
 import {
   DndContext,
   PointerSensor,
@@ -18,6 +21,12 @@ import { CSS } from "@dnd-kit/utilities";
 function getTodayMidnight(): number {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+function getTomorrowMidnight(today: number): number {
+  const d = new Date(today);
+  d.setDate(d.getDate() + 1);
   return d.getTime();
 }
 
@@ -102,27 +111,21 @@ export function TodayView() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
-  const [toast, setToast] = useState<{
-    msg: string;
-    type: "success" | "error";
-  } | null>(null);
   const [orderedIds, setOrderedIds] = useState<string[]>([]);
+  const activeTaskId = useTimerStore((s) => s.activeTaskId);
+  const startTimer = useTimerStore((s) => s.startTimer);
+  const addToast = useToastStore((s) => s.addToast);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
   const today = getTodayMidnight();
+  const tomorrow = getTomorrowMidnight(today);
 
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 4000);
-    return () => clearTimeout(t);
-  }, [toast]);
 
   const todayTasks = useMemo(
     () =>
@@ -130,8 +133,13 @@ export function TodayView() {
         (t) =>
           t.scheduledDate !== null &&
           t.scheduledDate >= today &&
-          t.scheduledDate < today + 86_400_000,
+          t.scheduledDate < tomorrow,
       ),
+    [tasks, today, tomorrow],
+  );
+
+  const overdueTasks = useMemo(
+    () => getOverdueTasks(tasks, today),
     [tasks, today],
   );
 
@@ -186,24 +194,48 @@ export function TodayView() {
     });
   }, []);
 
-  const handleReturnToBacklog = (task: Task) =>
-    updateTask(task.id, { scheduledDate: null });
+  const handleReturnToBacklog = async (task: Task) => {
+    const success = await updateTask(task.id, { scheduledDate: null });
+    if (success) {
+      addToast("success", `Returned "${task.title}" to Backlog`);
+      return;
+    }
+    addToast(
+      "error",
+      useTaskStore.getState().error ?? "Failed to return task to Backlog.",
+    );
+  };
 
   const handleStatusChange = async (task: Task, newStatus: TaskStatus) => {
+    if (newStatus === "in_progress") {
+      const previousTask = tasks.find((item) => item.id === activeTaskId);
+      const success = await startTimer(task.id);
+      if (!success) {
+        addToast(
+          "error",
+          useTimerStore.getState().error ?? "Failed to start task.",
+        );
+        return;
+      }
+
+      await fetchTasks();
+      addToast("success", getStartToastMessage(previousTask, task));
+      return;
+    }
+
     const success = await updateTask(task.id, { status: newStatus });
     if (!success) {
-      setToast({
-        msg: useTaskStore.getState().error ?? "Status change failed.",
-        type: "error",
-      });
+      addToast(
+        "error",
+        useTaskStore.getState().error ?? "Status change failed.",
+      );
       return;
     }
     const labels: Record<string, string> = {
-      in_progress: `Started "${task.title}"`,
       completed: `Completed "${task.title}"`,
       todo: `Paused "${task.title}"`,
     };
-    setToast({ msg: labels[newStatus] ?? "Status updated.", type: "success" });
+    addToast("success", labels[newStatus] ?? "Status updated.");
   };
 
   const handleDelete = (task: Task) => setDeletingTask(task);
@@ -235,9 +267,9 @@ export function TodayView() {
           <span className="text-sm text-text-muted">
             {formatDateHeader(new Date())}
           </span>
-          {activeTasks.length > 0 && (
+          {activeTasks.length + overdueTasks.length > 0 && (
             <span className="text-sm text-text-muted">
-              · {activeTasks.length} remaining
+              · {activeTasks.length + overdueTasks.length} remaining
             </span>
           )}
         </div>
@@ -258,15 +290,34 @@ export function TodayView() {
 
       {/* ── Content ── */}
       <div className="flex-1 overflow-y-auto">
-        {isLoading && todayTasks.length === 0 ? (
+        {isLoading && todayTasks.length === 0 && overdueTasks.length === 0 ? (
           <EmptyState message="Loading…" />
-        ) : todayTasks.length === 0 ? (
+        ) : todayTasks.length === 0 && overdueTasks.length === 0 ? (
           <EmptyState
             message="Nothing scheduled for today."
             sublabel="Move tasks from Backlog or let the AI planner fill your day."
           />
         ) : (
           <div>
+            {overdueTasks.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 border-b border-warning/20 bg-warning-subtle px-5 py-2 text-sm text-warning">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  <span>Overdue ({overdueTasks.length})</span>
+                </div>
+                {overdueTasks.map((task) => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onStatusChange={handleStatusChange}
+                    onReturnToBacklog={handleReturnToBacklog}
+                  />
+                ))}
+              </div>
+            )}
+
             {/* Anchored (fixed-time) tasks */}
             {anchoredTasks.map((task) => (
               <div key={task.id}>
@@ -345,26 +396,6 @@ export function TodayView() {
           </div>
         )}
       </div>
-
-      {/* ── Toast ── */}
-      {toast && (
-        <div
-          className={[
-            "fixed bottom-10 right-4 z-50 flex items-center gap-3 rounded-md border px-3 py-2 text-sm shadow-lg",
-            toast.type === "error"
-              ? "border-danger/20 bg-danger-subtle text-danger"
-              : "border-success/20 bg-success-subtle text-success",
-          ].join(" ")}
-        >
-          <span>{toast.msg}</span>
-          <button
-            onClick={() => setToast(null)}
-            className="opacity-60 hover:opacity-100"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
 
       <TaskForm
         isOpen={isFormOpen}

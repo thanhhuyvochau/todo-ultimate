@@ -10,6 +10,17 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 - [`TECHNICAL_STACK.md`](./TECHNICAL_STACK.md) — Full engineering stack reference
 - [`spec/`](./spec/) — 27 detailed feature specification files across 7 phases
 
+## Cross-Ticket Amendments (Today-Only Starts)
+
+- **TKT-006**: Backlog start controls are disabled, and both task/timer IPC paths
+  require a non-null persisted schedule before entering `in_progress`.
+- **TKT-007**: Unfinished past tasks appear oldest-first in a dedicated Overdue
+  section while retaining their original scheduled timestamps.
+- **TKT-009**: Untimed recurring children are scheduled at today's local midnight;
+  fixed-time children retain their anchored time.
+- **TKT-011**: Timer handoff and active-task return to Backlog are atomic, and a
+  rejected Backlog start leaves the current timer untouched.
+
 ### Status Legend
 
 | Icon | Status          | Meaning                                                |

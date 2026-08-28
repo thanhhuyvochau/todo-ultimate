@@ -57,7 +57,7 @@ interface TaskItemProps {
   task: Task;
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
-  onStatusChange: (task: Task, newStatus: TaskStatus) => void;
+  onStatusChange?: (task: Task, newStatus: TaskStatus) => void;
   onInlineSave?: (task: Task, values: InlineEditValues) => void;
   onMoveToToday?: (task: Task) => void;
   onReturnToBacklog?: (task: Task) => void;
@@ -79,7 +79,9 @@ export function TaskItem({
   const [editMinutes, setEditMinutes] = useState(String(task.estimatedMinutes));
   const menuRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const actions = STATUS_ACTIONS[task.status];
+  const isBacklog = task.scheduledDate === null;
+  const actions =
+    isBacklog || !onStatusChange ? [] : STATUS_ACTIONS[task.status];
   const CheckMark = CheckIcon[task.status];
 
   useEffect(() => {
@@ -179,20 +181,26 @@ export function TaskItem({
       <button
         onClick={() => {
           if (actions.length === 1) {
-            onStatusChange(task, actions[0]!.nextStatus);
+            onStatusChange?.(task, actions[0]!.nextStatus);
           } else if (actions.length > 1) {
             setStatusOpen(!statusOpen);
           }
         }}
-        disabled={isCompleted || isEditing}
-        aria-label={`Status: ${task.status}`}
+        disabled={isCompleted || isEditing || isBacklog}
+        aria-label={
+          isBacklog
+            ? "Move task to Today before starting"
+            : `Status: ${task.status}`
+        }
         className={[
           "shrink-0 transition-colors duration-100",
           isCompleted
             ? "cursor-default text-success"
-            : isInProgress
-              ? "cursor-pointer text-accent hover:text-accent-hover"
-              : "cursor-pointer text-text-muted hover:text-text-secondary",
+            : isBacklog
+              ? "cursor-not-allowed text-text-muted"
+              : isInProgress
+                ? "cursor-pointer text-accent hover:text-accent-hover"
+                : "cursor-pointer text-text-muted hover:text-text-secondary",
         ].join(" ")}
       >
         <CheckMark className="h-5 w-5" strokeWidth={1.5} />
@@ -329,7 +337,7 @@ export function TaskItem({
                       <button
                         key={action.nextStatus}
                         onClick={() => {
-                          onStatusChange(task, action.nextStatus);
+                          onStatusChange?.(task, action.nextStatus);
                           setStatusOpen(false);
                         }}
                         className="flex w-full items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-bg-tertiary"

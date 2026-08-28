@@ -1,6 +1,8 @@
 import { BrowserWindow } from "electron";
+import { getDb } from "@/main/db/database";
 import * as timeLogRepo from "@/main/db/time-log-repository";
 import * as taskRepo from "@/main/db/task-repository";
+import type { Task } from "@/shared/models";
 
 export interface ActiveTimerState {
   taskId: string;
@@ -45,63 +47,130 @@ function stopTickLoop() {
   }
 }
 
-export function startTimer(taskId: string): { logId: string } {
-  const tasks = taskRepo.getTasks();
-  const task = tasks.find((t) => t.id === taskId);
-  if (!task) {
-    throw Object.assign(new Error("Task not found."), { code: "NOT_FOUND" });
+function applyActiveTimer(
+  nextTimer: ActiveTimerState | null,
+  stoppedTaskIds: string[] = [],
+) {
+  stopTickLoop();
+
+  for (const taskId of stoppedTaskIds) {
+    broadcastTick(taskId, 0);
   }
 
-  // Pause and reset any other task still marked in_progress in the DB. The
-  // DB is the single source of truth for "one active task", so this also
-  // cleans up stale in_progress tasks left behind when the in-memory timer
-  // was lost (e.g. app restart) or when a previous start only flipped status.
-  for (const other of tasks) {
-    if (other.id === taskId || other.status !== "in_progress") {
-      continue;
-    }
-    const unclosed = timeLogRepo.getUnclosedTimeLog(other.id);
-    if (unclosed) {
-      timeLogRepo.pauseTimeLog(unclosed.id);
-    }
-    taskRepo.updateTask({ id: other.id, status: "todo" });
-  }
-
-  // Reconcile the in-memory timer if it pointed at a task we just reset.
-  if (activeTimer && activeTimer.taskId !== taskId) {
-    stopTickLoop();
-    activeTimer = null;
-  }
-
-  // If already active for this task, return logId
-  if (activeTimer && activeTimer.taskId === taskId) {
-    return { logId: activeTimer.logId };
-  }
-
-  // Check for existing unclosed log
-  let unclosed = timeLogRepo.getUnclosedTimeLog(taskId);
-  if (!unclosed) {
-    unclosed = timeLogRepo.createTimeLog(taskId);
-  }
-
-  activeTimer = {
-    taskId,
-    logId: unclosed.id,
-    startedAt: unclosed.startedAt,
-  };
-
-  // Ensure task is in_progress
-  if (task.status !== "in_progress") {
-    taskRepo.updateTask({ id: taskId, status: "in_progress" });
-  }
+  activeTimer = nextTimer;
+  if (!activeTimer) return;
 
   startTickLoop();
   const elapsedSeconds = Math.floor(
     (Date.now() - activeTimer.startedAt) / 1000,
   );
-  broadcastTick(taskId, elapsedSeconds);
+  broadcastTick(activeTimer.taskId, elapsedSeconds);
+}
 
-  return { logId: activeTimer.logId };
+function closeUnclosedLog(taskId: string, pausedAt: number): boolean {
+  const unclosed = timeLogRepo.getUnclosedTimeLog(taskId);
+  if (!unclosed) return false;
+  timeLogRepo.pauseTimeLog(unclosed.id, pausedAt);
+  return true;
+}
+
+interface StartTaskResult {
+  task: Task;
+  logId: string;
+}
+
+export function startTask(
+  patch: Partial<Task> & { id: string },
+): StartTaskResult {
+  const db = getDb();
+  const stoppedTaskIds: string[] = [];
+
+  const start = db.transaction(() => {
+    // Updating the target first validates the full patch, including the
+    // Today-only guard, before the current timer is disturbed.
+    const startedTask = taskRepo.updateTask({
+      ...patch,
+      status: "in_progress",
+    });
+    const now = Date.now();
+
+    for (const other of taskRepo.getTasks()) {
+      if (other.id === patch.id || other.status !== "in_progress") continue;
+
+      closeUnclosedLog(other.id, now);
+      taskRepo.updateTask({ id: other.id, status: "todo" });
+      stoppedTaskIds.push(other.id);
+    }
+
+    const startedLog =
+      timeLogRepo.getUnclosedTimeLog(patch.id) ??
+      timeLogRepo.createTimeLog(patch.id, now);
+
+    return { task: startedTask, log: startedLog };
+  });
+
+  const { task: startedTask, log: startedLog } = start();
+
+  applyActiveTimer(
+    {
+      taskId: patch.id,
+      logId: startedLog.id,
+      startedAt: startedLog.startedAt,
+    },
+    stoppedTaskIds,
+  );
+
+  return { task: startedTask, logId: startedLog.id };
+}
+
+export function updateTaskWithTimerEffects(
+  patch: Partial<Task> & { id: string },
+): Task {
+  if (patch.status === "in_progress") {
+    return startTask(patch).task;
+  }
+
+  const existing = taskRepo.getTaskById(patch.id);
+  const isReturningToBacklog =
+    "scheduledDate" in patch && patch.scheduledDate === null;
+  const isLeavingInProgress =
+    existing.status === "in_progress" &&
+    (patch.status === "todo" || patch.status === "completed");
+
+  if (!isReturningToBacklog && !isLeavingInProgress) {
+    return taskRepo.updateTask(patch);
+  }
+
+  const db = getDb();
+  const shouldStopTimer =
+    existing.status === "in_progress" ||
+    timeLogRepo.getUnclosedTimeLog(existing.id) !== null;
+
+  const update = db.transaction((): Task => {
+    if (shouldStopTimer) {
+      closeUnclosedLog(existing.id, Date.now());
+    }
+
+    return taskRepo.updateTask({
+      ...patch,
+      ...(isReturningToBacklog && existing.status === "in_progress"
+        ? { status: "todo" as const }
+        : {}),
+    });
+  });
+
+  const updatedTask = update();
+
+  if (shouldStopTimer && activeTimer?.taskId === existing.id) {
+    applyActiveTimer(null, [existing.id]);
+  }
+
+  return updatedTask;
+}
+
+export function startTimer(taskId: string): { logId: string } {
+  const result = startTask({ id: taskId });
+  return { logId: result.logId };
 }
 
 export function pauseTimer(taskId?: string): { durationMinutes: number } {
@@ -129,13 +198,14 @@ export function pauseTimer(taskId?: string): { durationMinutes: number } {
     });
   }
 
-  const pausedLog = timeLogRepo.pauseTimeLog(logToPauseId);
+  const pause = getDb().transaction(() =>
+    timeLogRepo.pauseTimeLog(logToPauseId),
+  );
+  const pausedLog = pause();
   const durationMinutes = pausedLog.durationMinutes ?? 0;
 
   if (activeTimer && activeTimer.taskId === targetTaskId) {
-    stopTickLoop();
-    broadcastTick(targetTaskId, 0);
-    activeTimer = null;
+    applyActiveTimer(null, [targetTaskId]);
   }
 
   return { durationMinutes };
@@ -151,7 +221,11 @@ export function getActiveTimer(): {
     const unclosed = timeLogRepo.getUnclosedTimeLog();
     if (unclosed) {
       const task = taskRepo.getTasks().find((t) => t.id === unclosed.taskId);
-      if (task && task.status === "in_progress") {
+      if (
+        task &&
+        task.status === "in_progress" &&
+        task.scheduledDate !== null
+      ) {
         activeTimer = {
           taskId: unclosed.taskId,
           logId: unclosed.id,
@@ -160,6 +234,9 @@ export function getActiveTimer(): {
         startTickLoop();
       } else {
         timeLogRepo.pauseTimeLog(unclosed.id);
+        if (task?.status === "in_progress") {
+          taskRepo.updateTask({ id: task.id, status: "todo" });
+        }
         return null;
       }
     } else {

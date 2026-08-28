@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { Plus, Search, SlidersHorizontal, X } from "lucide-react";
-import type { Task, TaskPriority, TaskStatus } from "@shared/models";
+import type { Task, TaskPriority } from "@shared/models";
 import { useTaskStore } from "../stores/taskStore";
+import { useToastStore } from "../stores/toastStore";
 import { TaskItem } from "./TaskItem";
 import { TaskForm } from "./TaskForm";
 import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
@@ -73,20 +74,11 @@ export function BacklogView() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
-  const [toast, setToast] = useState<{
-    msg: string;
-    type: "success" | "error";
-  } | null>(null);
+  const addToast = useToastStore((s) => s.addToast);
 
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 4000);
-    return () => clearTimeout(t);
-  }, [toast]);
 
   const filteredTasks = useMemo(() => {
     let result = tasks.filter(
@@ -121,22 +113,18 @@ export function BacklogView() {
 
   const handleDelete = (task: Task) => setDeletingTask(task);
 
-  const handleStatusChange = async (task: Task, newStatus: TaskStatus) => {
-    const success = await updateTask(task.id, { status: newStatus });
-    if (!success) {
-      setToast({ msg: error ?? "Status change failed.", type: "error" });
+  const handleMoveToToday = async (task: Task) => {
+    const success = await updateTask(task.id, {
+      scheduledDate: getTodayMidnight(),
+    });
+    if (success) {
+      addToast("success", `Moved "${task.title}" to Today`);
       return;
     }
-    const labels: Record<string, string> = {
-      in_progress: `Started "${task.title}"`,
-      completed: `Completed "${task.title}"`,
-      todo: `Returned "${task.title}" to backlog`,
-    };
-    setToast({ msg: labels[newStatus] ?? "Status updated.", type: "success" });
-  };
-
-  const handleMoveToToday = async (task: Task) => {
-    await updateTask(task.id, { scheduledDate: getTodayMidnight() });
+    addToast(
+      "error",
+      useTaskStore.getState().error ?? "Failed to move task to Today.",
+    );
   };
   const handleConfirmDelete = async () => {
     if (!deletingTask) return;
@@ -262,7 +250,6 @@ export function BacklogView() {
                 task={task}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
-                onStatusChange={handleStatusChange}
                 onInlineSave={handleInlineSave}
                 onMoveToToday={handleMoveToToday}
               />
@@ -288,26 +275,6 @@ export function BacklogView() {
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeletingTask(null)}
       />
-
-      {/* ── Toast ── */}
-      {toast && (
-        <div
-          className={[
-            "fixed bottom-10 right-4 z-50 flex items-center gap-3 rounded-md border px-3 py-2 text-sm shadow-lg",
-            toast.type === "error"
-              ? "border-danger/20 bg-danger-subtle text-danger"
-              : "border-success/20 bg-success-subtle text-success",
-          ].join(" ")}
-        >
-          <span>{toast.msg}</span>
-          <button
-            onClick={() => setToast(null)}
-            className="opacity-60 hover:opacity-100"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
     </div>
   );
 }

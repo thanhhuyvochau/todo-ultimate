@@ -46,10 +46,22 @@ Task status → todo/completed OR manual pause
 - `timer:start` with already-active timer → auto-pause previous, start new. Return warning in response.
 - `timer:pause` with no active timer → return `NOT_FOUND`.
 
+## Today-Only and Transactional Behavior
+
+- Starting requires a non-null persisted `scheduled_date`; the current timer is
+  not disturbed when this validation fails.
+- A task handoff closes the prior log, updates actual minutes, resets the prior
+  task to `todo`, and starts the new task in one SQLite transaction.
+- Returning an active task to Backlog closes its log, updates actual minutes,
+  resets it to `todo`, and clears its schedule in one transaction.
+- In-memory timer state and renderer tick broadcasts change only after commit.
+
 ## Dependencies
 - Feature 6 (Status Workflow), Feature 2 (IPC Bridge)
 
 ## Acceptance Criteria
+- [ ] Backlog timer starts return `STATE_TRANSITION_ILLEGAL` with the stable message.
+- [ ] Active-task handoff and return to Backlog cannot partially persist.
 - [ ] Timer starts on `in_progress` status change.
 - [ ] Timer pauses on status change away from `in_progress`.
 - [ ] Manual pause via UI button works.

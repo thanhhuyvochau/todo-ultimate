@@ -23,6 +23,9 @@ interface TaskRow {
   updated_at: number;
 }
 
+export const BACKLOG_START_ERROR_MESSAGE =
+  "Cannot start a task that is in the backlog. Move it to Today first.";
+
 function rowToTask(row: TaskRow): Task {
   return {
     id: row.id,
@@ -108,6 +111,17 @@ export function getTasks(filters?: {
   return rows.map(rowToTask);
 }
 
+export function getTaskById(id: string): Task {
+  const row = getDb().prepare("SELECT * FROM tasks WHERE id = ?").get(id) as
+    TaskRow | undefined;
+
+  if (!row) {
+    throw Object.assign(new Error("Task not found."), { code: "NOT_FOUND" });
+  }
+
+  return rowToTask(row);
+}
+
 export function createTask(input: CreateTaskInput): Task {
   const db = getDb();
   const validationError = validateTaskInput(
@@ -159,7 +173,7 @@ export function createRecurringChildTask(rule: {
   const scheduledDate =
     rule.timeAnchor !== null
       ? applyTimeAnchor(rule.startOfDay, rule.timeAnchor)
-      : null;
+      : rule.startOfDay;
 
   const stmt = db.prepare(`
     INSERT INTO tasks (id, title, description, priority, status, estimated_minutes, actual_minutes, is_recurring_child, recurring_rule_id, scheduled_date, created_at, updated_at)
@@ -216,6 +230,16 @@ export function updateTask(patch: Partial<Task> & { id: string }): Task {
     throw Object.assign(new Error("Task not found."), { code: "NOT_FOUND" });
   }
 
+  if (
+    patch.status === "in_progress" &&
+    existing.status !== "in_progress" &&
+    existing.scheduled_date === null
+  ) {
+    throw Object.assign(new Error(BACKLOG_START_ERROR_MESSAGE), {
+      code: "STATE_TRANSITION_ILLEGAL",
+    });
+  }
+
   if (patch.status !== undefined && patch.status !== existing.status) {
     validateStatusTransition(existing.status, patch.status);
   }
@@ -235,6 +259,12 @@ export function updateTask(patch: Partial<Task> & { id: string }): Task {
     "scheduledDate" in patch
       ? (patch as { scheduledDate: number | null }).scheduledDate
       : existing.scheduled_date;
+
+  if (status === "in_progress" && scheduledDate === null) {
+    throw Object.assign(new Error(BACKLOG_START_ERROR_MESSAGE), {
+      code: "STATE_TRANSITION_ILLEGAL",
+    });
+  }
   const completedAt =
     patch.status === "completed" && existing.status !== "completed"
       ? now

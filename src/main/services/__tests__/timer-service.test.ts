@@ -58,15 +58,15 @@ beforeEach(() => {
   // Insert two test tasks
   db.prepare(
     `
-    INSERT INTO tasks (id, title, priority, status, estimated_minutes, created_at, updated_at)
-    VALUES ('task-1', 'Task One', 'medium', 'todo', 30, 1000, 1000)
+    INSERT INTO tasks (id, title, priority, status, estimated_minutes, scheduled_date, created_at, updated_at)
+    VALUES ('task-1', 'Task One', 'medium', 'todo', 30, 1000, 1000, 1000)
   `,
   ).run();
 
   db.prepare(
     `
-    INSERT INTO tasks (id, title, priority, status, estimated_minutes, created_at, updated_at)
-    VALUES ('task-2', 'Task Two', 'high', 'todo', 45, 1000, 1000)
+    INSERT INTO tasks (id, title, priority, status, estimated_minutes, scheduled_date, created_at, updated_at)
+    VALUES ('task-2', 'Task Two', 'high', 'todo', 45, 1000, 1000, 1000)
   `,
   ).run();
 
@@ -119,6 +119,59 @@ describe("timer-service", () => {
       .prepare("SELECT * FROM task_time_logs WHERE task_id = 'task-1'")
       .get() as { paused_at: number | null };
     expect(logsRow.paused_at).not.toBeNull();
+
+    const taskRows = db
+      .prepare("SELECT id, status FROM tasks ORDER BY id")
+      .all() as Array<{ id: string; status: string }>;
+    expect(taskRows).toEqual([
+      { id: "task-1", status: "todo" },
+      { id: "task-2", status: "in_progress" },
+    ]);
+  });
+
+  it("rejects a backlog start without disturbing the active task", async () => {
+    const service = await getTimerService();
+    const taskRepo = await getTaskRepo();
+    service.startTimer("task-1");
+    taskRepo.updateTask({ id: "task-2", scheduledDate: null });
+
+    expect(() => service.startTimer("task-2")).toThrow(
+      "Cannot start a task that is in the backlog. Move it to Today first.",
+    );
+
+    expect(service.getActiveTimer()?.taskId).toBe("task-1");
+    expect(taskRepo.getTaskById("task-1").status).toBe("in_progress");
+    expect(taskRepo.getTaskById("task-2").status).toBe("todo");
+  });
+
+  it("starting the active task again reuses its open log", async () => {
+    const service = await getTimerService();
+    const first = service.startTimer("task-1");
+    const second = service.startTimer("task-1");
+
+    expect(second.logId).toBe(first.logId);
+    const count = db
+      .prepare("SELECT COUNT(*) AS count FROM task_time_logs")
+      .get() as { count: number };
+    expect(count.count).toBe(1);
+  });
+
+  it("atomically returns an active task to Backlog", async () => {
+    const service = await getTimerService();
+    service.startTimer("task-1");
+
+    const updated = service.updateTaskWithTimerEffects({
+      id: "task-1",
+      scheduledDate: null,
+    });
+
+    expect(updated.status).toBe("todo");
+    expect(updated.scheduledDate).toBeNull();
+    expect(service.getActiveTimer()).toBeNull();
+    const log = db
+      .prepare("SELECT paused_at FROM task_time_logs WHERE task_id = ?")
+      .get("task-1") as { paused_at: number | null };
+    expect(log.paused_at).not.toBeNull();
   });
 
   it("throws NOT_FOUND when starting timer for non-existent task", async () => {
@@ -143,5 +196,23 @@ describe("timer-service", () => {
   it("throws NOT_FOUND when pausing non-active timer", async () => {
     const service = await getTimerService();
     expect(() => service.pauseTimer()).toThrow("No active timer to pause.");
+  });
+
+  it("does not recover a legacy Backlog timer as active", async () => {
+    const service = await getTimerService();
+    const taskRepo = await getTaskRepo();
+    db.prepare(
+      "UPDATE tasks SET status = 'in_progress', scheduled_date = NULL WHERE id = ?",
+    ).run("task-1");
+    db.prepare(
+      "INSERT INTO task_time_logs (id, task_id, started_at) VALUES (?, ?, ?)",
+    ).run("legacy-log", "task-1", Date.now() - 60_000);
+
+    expect(service.getActiveTimer()).toBeNull();
+    expect(taskRepo.getTaskById("task-1").status).toBe("todo");
+    const log = db
+      .prepare("SELECT paused_at FROM task_time_logs WHERE id = ?")
+      .get("legacy-log") as { paused_at: number | null };
+    expect(log.paused_at).not.toBeNull();
   });
 });

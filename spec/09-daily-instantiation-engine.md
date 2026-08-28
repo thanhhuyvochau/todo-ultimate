@@ -48,6 +48,12 @@ async function instantiateDailyTasks(): Promise<void> {
 }
 ```
 
+## Today Scheduling
+
+- Every generated recurring child is scheduled for Today.
+- Untimed rules use today's local midnight as `scheduled_date`.
+- Fixed-time rules apply their time anchor to today's local date.
+
 ## Frequency Matching
 - `daily`: always matches.
 - `weekly`: matches on the rule's configured day(s) of week.
@@ -61,6 +67,7 @@ async function instantiateDailyTasks(): Promise<void> {
 - Feature 1 (Database), Feature 8 (Recurring Rules)
 
 ## Acceptance Criteria
+- [ ] Untimed recurring tasks have `scheduled_date` set to local midnight.
 - [ ] App startup creates today's recurring tasks.
 - [ ] Only one task per rule per day (no duplicates).
 - [ ] Inactive rules produce no tasks.

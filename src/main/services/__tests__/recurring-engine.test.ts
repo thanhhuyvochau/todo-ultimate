@@ -184,7 +184,7 @@ describe("instantiateDailyTasks", () => {
     expect(task.estimated_minutes).toBe(30);
     expect(task.is_recurring_child).toBe(1);
     expect(task.recurring_rule_id).toBeTruthy();
-    expect(task.scheduled_date).toBeNull();
+    expect(task.scheduled_date).toBe(engine.getStartOfDay(now));
   });
 
   it("skips already instantiated rules (dedup)", async () => {

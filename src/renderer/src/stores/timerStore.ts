@@ -43,7 +43,7 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
     set({ error: null });
     const result = await window.api.startTimer({ taskId });
     if (result.ok) {
-      set({ activeTaskId: taskId });
+      set({ activeTaskId: taskId, elapsedSeconds: 0 });
       return true;
     }
     set({ error: result.error.message });
