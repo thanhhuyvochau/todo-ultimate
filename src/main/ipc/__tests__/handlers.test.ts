@@ -1322,3 +1322,22 @@ describe("ai settings & provider handlers", () => {
     }
   });
 });
+
+describe("calendar settings handlers", () => {
+  it("accepts calendar selection updates without a user Client ID", () => {
+    const result = handlers["calendar:updateSettings"]({
+      selectedCalendarIds: [],
+    });
+
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects the retired user-provided Client ID field", () => {
+    const result = handlers["calendar:updateSettings"]({
+      clientId: "legacy.apps.googleusercontent.com",
+    } as never);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("VALIDATION_ERROR");
+  });
+});

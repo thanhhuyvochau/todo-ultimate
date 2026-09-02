@@ -132,7 +132,7 @@ export interface GoogleCalendarInfo {
 }
 
 export interface GoogleCalendarSettings {
-  clientId: string;
+  isAvailable: boolean;
   isConnected: boolean;
   calendars: GoogleCalendarInfo[];
   selectedCalendarIds: string[];
@@ -141,7 +141,6 @@ export interface GoogleCalendarSettings {
 }
 
 export interface UpdateGoogleCalendarSettingsInput {
-  clientId?: string;
   selectedCalendarIds?: string[];
 }
 

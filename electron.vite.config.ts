@@ -4,6 +4,11 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   main: {
+    define: {
+      __GOOGLE_CALENDAR_CLIENT_ID__: JSON.stringify(
+        process.env.GOOGLE_CALENDAR_CLIENT_ID ?? "",
+      ),
+    },
     plugins: [externalizeDepsPlugin()],
     resolve: {
       alias: {

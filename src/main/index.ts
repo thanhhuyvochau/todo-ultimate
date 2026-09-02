@@ -10,6 +10,7 @@ import { getActiveTimer, stopTimerEngine } from "./services/timer-service";
 import {
   GOOGLE_CALENDAR_REDIRECT_URI,
   handleGoogleCalendarCallback,
+  migrateLegacyGoogleCalendarCredentials,
   startGoogleCalendarSync,
   stopGoogleCalendarSync,
 } from "./services/google-calendar-service";
@@ -95,6 +96,7 @@ app.whenReady().then(() => {
     initDb();
     instantiateDailyTasks();
     getActiveTimer(); // Restore timer state if unclosed log exists
+    migrateLegacyGoogleCalendarCredentials();
     startGoogleCalendarSync();
   } catch (err) {
     console.error(

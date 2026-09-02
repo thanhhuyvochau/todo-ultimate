@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   CalendarDays,
   Check,
@@ -22,32 +22,11 @@ export function GoogleCalendarSettings() {
     clearError,
   } = useGoogleCalendarStore();
   const addToast = useToastStore((state) => state.addToast);
-  const [clientId, setClientId] = useState("");
-
   useEffect(() => {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    if (settings) setClientId(settings.clientId);
-  }, [settings]);
-
-  useEffect(() => {
-    if (!settings?.clientId || settings.isConnected) return;
-    const refresh = window.setInterval(() => void load(), 5_000);
-    return () => window.clearInterval(refresh);
-  }, [load, settings?.clientId, settings?.isConnected]);
-
-  const saveClientId = async () => {
-    if (await update({ clientId }))
-      addToast("success", "Google client ID saved.");
-  };
-
   const startConnection = async () => {
-    if (clientId.trim() !== settings?.clientId) {
-      const saved = await update({ clientId });
-      if (!saved) return;
-    }
     if (await connect()) {
       addToast(
         "success",
@@ -63,6 +42,8 @@ export function GoogleCalendarSettings() {
       : settings.selectedCalendarIds.filter((calendarId) => calendarId !== id);
     if (await update({ selectedCalendarIds })) await sync();
   };
+
+  if (!settings?.isAvailable) return null;
 
   return (
     <section className="rounded-lg border border-border bg-bg-surface p-5">
@@ -83,35 +64,6 @@ export function GoogleCalendarSettings() {
         )}
       </div>
 
-      <div className="mt-5 space-y-3">
-        <label
-          className="block text-sm text-text-secondary"
-          htmlFor="google-client-id"
-        >
-          OAuth client ID
-        </label>
-        <div className="flex gap-2">
-          <input
-            id="google-client-id"
-            value={clientId}
-            onChange={(event) => setClientId(event.target.value)}
-            placeholder="…apps.googleusercontent.com"
-            className="min-w-0 flex-1 rounded-md border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
-          />
-          <button
-            onClick={() => void saveClientId()}
-            disabled={isSaving || clientId === settings?.clientId}
-            className="rounded-md border border-border px-3 py-2 text-sm text-text-secondary hover:bg-bg-tertiary disabled:opacity-50"
-          >
-            Save
-          </button>
-        </div>
-        <p className="text-xs text-text-muted">
-          Configure an installed-app OAuth client with{" "}
-          <code>com.ai-task-planner:/oauth2callback</code> as its redirect URI.
-        </p>
-      </div>
-
       {error && (
         <div className="mt-4 flex items-center justify-between gap-3 rounded-md bg-danger-subtle px-3 py-2 text-sm text-danger">
           <span>{error}</span>
@@ -129,7 +81,7 @@ export function GoogleCalendarSettings() {
       <div className="mt-5 flex flex-wrap gap-2">
         <button
           onClick={() => void startConnection()}
-          disabled={isSaving || !clientId.trim()}
+          disabled={isSaving}
           className="flex items-center gap-2 rounded-md bg-accent px-3 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
         >
           {isSaving ? (

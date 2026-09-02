@@ -5,6 +5,10 @@ import * as dailyPlanRepo from "@/main/db/daily-plan-repository";
 import * as settingsRepo from "@/main/db/settings-repository";
 import * as keychainService from "@/main/services/keychain-service";
 import { getStartOfDay } from "@/main/services/recurring-engine";
+import {
+  GOOGLE_CALENDAR_CLIENT_ID,
+  isGoogleCalendarAvailable,
+} from "@/main/config/google-calendar-config";
 import type {
   CalendarConflict,
   CalendarEvent,
@@ -25,7 +29,6 @@ const SYNC_INTERVAL_MS = 15 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 interface GoogleCalendarConfig {
-  clientId: string;
   calendars: GoogleCalendarInfo[];
   selectedCalendarIds: string[];
   lastSyncedAt: number | null;
@@ -58,28 +61,19 @@ interface GoogleEventResponse {
 let pendingAuthorization: { state: string; verifier: string } | null = null;
 let syncTimer: ReturnType<typeof setInterval> | null = null;
 
-function defaultConfig(): GoogleCalendarConfig {
-  return {
-    clientId: "",
-    calendars: [],
-    selectedCalendarIds: [],
-    lastSyncedAt: null,
-    syncError: null,
-  };
-}
-
 function getConfig(): GoogleCalendarConfig {
   const config = settingsRepo.getSetting<Partial<GoogleCalendarConfig>>(
     GOOGLE_CALENDAR_SETTINGS_KEY,
     {},
   );
   return {
-    ...defaultConfig(),
-    ...config,
     calendars: Array.isArray(config.calendars) ? config.calendars : [],
     selectedCalendarIds: Array.isArray(config.selectedCalendarIds)
       ? config.selectedCalendarIds
       : [],
+    lastSyncedAt:
+      typeof config.lastSyncedAt === "number" ? config.lastSyncedAt : null,
+    syncError: typeof config.syncError === "string" ? config.syncError : null,
   };
 }
 
@@ -88,6 +82,7 @@ function saveConfig(config: GoogleCalendarConfig): void {
 }
 
 function isConnected(): boolean {
+  if (!isGoogleCalendarAvailable()) return false;
   try {
     return Boolean(keychainService.getApiKey(GOOGLE_TOKEN_VAULT_KEY));
   } catch {
@@ -98,7 +93,7 @@ function isConnected(): boolean {
 function toSettings(config = getConfig()): GoogleCalendarSettings {
   const selectedIds = new Set(config.selectedCalendarIds);
   return {
-    clientId: config.clientId,
+    isAvailable: isGoogleCalendarAvailable(),
     isConnected: isConnected(),
     calendars: config.calendars.map((calendar) => ({
       ...calendar,
@@ -178,15 +173,14 @@ async function getValidAccessToken(): Promise<string> {
   const token = getToken();
   if (token.expiresAt > Date.now() + 60_000) return token.accessToken;
 
-  const config = getConfig();
-  if (!token.refreshToken || !config.clientId) {
+  if (!token.refreshToken || !isGoogleCalendarAvailable()) {
     throw calendarError(
       "Google Calendar authorization expired. Reconnect to continue.",
     );
   }
   const refreshed = await postToken(
     new URLSearchParams({
-      client_id: config.clientId,
+      client_id: GOOGLE_CALENDAR_CLIENT_ID,
       grant_type: "refresh_token",
       refresh_token: token.refreshToken,
     }),
@@ -319,15 +313,39 @@ export function getGoogleCalendarSettings(): GoogleCalendarSettings {
   return toSettings();
 }
 
+/**
+ * Moves installations that previously stored a user-provided Client ID onto
+ * the app-owned OAuth client. Tokens cannot safely be reused across clients.
+ */
+export function migrateLegacyGoogleCalendarCredentials(): void {
+  if (!isGoogleCalendarAvailable()) return;
+
+  const stored = settingsRepo.getSetting<{ clientId?: unknown }>(
+    GOOGLE_CALENDAR_SETTINGS_KEY,
+    {},
+  );
+  if (typeof stored.clientId !== "string") return;
+
+  const config = getConfig();
+  keychainService.deleteApiKey(GOOGLE_TOKEN_VAULT_KEY);
+  saveConfig({
+    calendars: config.calendars,
+    selectedCalendarIds: config.selectedCalendarIds,
+    lastSyncedAt: config.lastSyncedAt,
+    syncError: "Reconnect Google Calendar to continue syncing.",
+  });
+}
+
 export function updateGoogleCalendarSettings(
   input: UpdateGoogleCalendarSettingsInput,
 ): GoogleCalendarSettings {
   const config = getConfig();
-  if (input.clientId !== undefined && typeof input.clientId !== "string") {
-    throw calendarError(
-      "Google OAuth client ID must be a string.",
-      "VALIDATION_ERROR",
-    );
+  if (
+    typeof input !== "object" ||
+    input === null ||
+    Object.keys(input).some((key) => key !== "selectedCalendarIds")
+  ) {
+    throw calendarError("Invalid calendar settings.", "VALIDATION_ERROR");
   }
   if (
     input.selectedCalendarIds !== undefined &&
@@ -336,14 +354,6 @@ export function updateGoogleCalendarSettings(
   ) {
     throw calendarError(
       "Selected calendar IDs must be a list of strings.",
-      "VALIDATION_ERROR",
-    );
-  }
-  const clientId =
-    input.clientId === undefined ? config.clientId : input.clientId.trim();
-  if (clientId.length > 500) {
-    throw calendarError(
-      "Google OAuth client ID must be 500 characters or fewer.",
       "VALIDATION_ERROR",
     );
   }
@@ -356,7 +366,7 @@ export function updateGoogleCalendarSettings(
             input.selectedCalendarIds.filter((id) => validIds.has(id)),
           ),
         ];
-  const nextConfig = { ...config, clientId, selectedCalendarIds };
+  const nextConfig = { ...config, selectedCalendarIds };
   saveConfig(nextConfig);
   return toSettings(nextConfig);
 }
@@ -364,11 +374,10 @@ export function updateGoogleCalendarSettings(
 export async function beginGoogleCalendarAuthorization(): Promise<{
   authorizationStarted: boolean;
 }> {
-  const config = getConfig();
-  if (!config.clientId) {
+  if (!isGoogleCalendarAvailable()) {
     throw calendarError(
-      "Add your Google OAuth client ID before connecting.",
-      "VALIDATION_ERROR",
+      "Google Calendar is not available in this build.",
+      "CALENDAR_UNAVAILABLE",
     );
   }
   const state = base64Url(randomBytes(32));
@@ -377,7 +386,7 @@ export async function beginGoogleCalendarAuthorization(): Promise<{
   pendingAuthorization = { state, verifier };
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   url.search = new URLSearchParams({
-    client_id: config.clientId,
+    client_id: GOOGLE_CALENDAR_CLIENT_ID,
     redirect_uri: GOOGLE_CALENDAR_REDIRECT_URI,
     response_type: "code",
     scope: GOOGLE_CALENDAR_SCOPE,
@@ -419,11 +428,10 @@ export async function handleGoogleCalendarCallback(
     return;
   }
   try {
-    const config = getConfig();
     const token = await postToken(
       new URLSearchParams({
         code,
-        client_id: config.clientId,
+        client_id: GOOGLE_CALENDAR_CLIENT_ID,
         redirect_uri: GOOGLE_CALENDAR_REDIRECT_URI,
         grant_type: "authorization_code",
         code_verifier: authorization.verifier,
@@ -453,6 +461,12 @@ export async function handleGoogleCalendarCallback(
 
 export async function syncGoogleCalendar(): Promise<GoogleCalendarSettings> {
   try {
+    if (!isGoogleCalendarAvailable()) {
+      throw calendarError(
+        "Google Calendar is not available in this build.",
+        "CALENDAR_UNAVAILABLE",
+      );
+    }
     let config = getConfig();
     if (!isConnected()) {
       throw calendarError(
@@ -490,7 +504,7 @@ export async function syncGoogleCalendar(): Promise<GoogleCalendarSettings> {
 }
 
 export function startGoogleCalendarSync(): void {
-  if (syncTimer) return;
+  if (syncTimer || !isGoogleCalendarAvailable()) return;
   syncTimer = setInterval(() => {
     void syncGoogleCalendar().catch(() => undefined);
   }, SYNC_INTERVAL_MS);

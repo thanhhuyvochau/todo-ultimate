@@ -7,6 +7,7 @@ Import Google Calendar events as fixed time blocks to ensure the AI Planner sche
 ## Requirements
 
 - **Authentication**: OAuth2 with PKCE using the registered reverse-DNS custom protocol handler (`com.ai-task-planner:/oauth2callback`). Google requires custom schemes for installed apps to contain a period; the earlier `todo-ultimate://oauth2callback` example is retained only as a product naming reference and cannot be used as a Google redirect URI.
+- **App-Owned OAuth Client**: The release build injects the public `GOOGLE_CALENDAR_CLIENT_ID`; users only sign in and never enter OAuth configuration. OAuth tokens remain encrypted locally via `safeStorage`.
 - **Scopes**: Requires `https://www.googleapis.com/auth/calendar.events.readonly` scope.
 - **Syncing Strategy**: Background sync every 15 minutes for a rolling window of the current day plus the next 7 days.
 - **Event Filtering**: Only import events marked as "Busy", that are NOT all-day, and are NOT declined.

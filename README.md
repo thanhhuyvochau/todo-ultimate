@@ -13,7 +13,9 @@
 Most task managers either overwhelm you with features or leave you to figure out what to do next. The **AI Task & Performance Planner** acts as your personal productivity coach. It takes your backlog, evaluates your available time and historical estimation accuracy, and builds a realistic daily schedule that you actually have a chance of completing.
 
 ### 🛡️ Privacy & Security First (Local-First Architecture)
+
 Your data belongs to you.
+
 - **100% Offline Capable**: Your tasks, rich notes, and time logs are stored locally on your machine using an embedded SQLite database. The core app works flawlessly without an internet connection.
 - **Secure API Key Storage**: The application connects to the DeepSeek AI API for intelligent planning and analysis. Your API key is encrypted using your native OS keychain (Windows DPAPI, macOS Keychain, Linux Secret Service) and is never written to disk in plain text.
 - **No Cloud Tracking**: We don't have servers. We don't sync your data. What happens on your machine, stays on your machine.
@@ -23,6 +25,7 @@ Your data belongs to you.
 ## ✨ Features
 
 ### 📅 Morning Standup (AI Planning)
+
 Tell the AI how many hours you have to focus today and what your primary goal is. The AI will evaluate your backlog, respect your fixed recurring commitments, and propose a balanced schedule. You always retain total control to review, adjust, and approve the plan before starting your day.
 
 <div align="center">
@@ -30,6 +33,7 @@ Tell the AI how many hours you have to focus today and what your primary goal is
 </div>
 
 ### ⏱️ Precision Time Tracking
+
 Track the exact time spent on tasks without worrying about browser tabs or drifting timers. The background-safe timer pauses automatically when you switch tasks and recovers seamlessly even if you close the app.
 
 <div align="center">
@@ -37,6 +41,7 @@ Track the exact time spent on tasks without worrying about browser tabs or drift
 </div>
 
 ### 📊 Performance Coaching & Reports
+
 Are you constantly underestimating how long tasks take? The AI Performance Review analyzes your completed tasks, calculates the variance between your estimates and actual time, and delivers structured advice to improve your future planning.
 
 <div align="center">
@@ -44,6 +49,7 @@ Are you constantly underestimating how long tasks take? The AI Performance Revie
 </div>
 
 ### 🔁 Smart Recurring Tasks
+
 Define rules for your habits (e.g., "Read for 30 mins every day at 8 PM"). The daily instantiation engine automatically populates your "Today" view with your habits, treating fixed-time tasks as non-negotiable blocks during AI scheduling.
 
 <div align="center">
@@ -51,6 +57,7 @@ Define rules for your habits (e.g., "Read for 30 mins every day at 8 PM"). The d
 </div>
 
 ### 📝 Rich Markdown Notes
+
 Jot down ideas, format checklists, or paste code blocks with a fully integrated TipTap-powered Markdown editor directly inside your task cards.
 
 ---
@@ -74,6 +81,7 @@ The easiest way to get started is to download the pre-packaged installer for you
 If you prefer to build the app from source or want to contribute to development, follow these steps:
 
 ### Prerequisites
+
 - Node.js (v18 or higher)
 - npm
 
@@ -92,11 +100,18 @@ npm run start
 ```
 
 ### Build Executables
+
 To create standalone installers for your local machine:
+
 ```bash
 npm run package
 ```
+
 The output files will be located in the `dist/` directory. For more technical details on the architecture, refer to our [Architecture Overview](./ARCHITECTURE.md).
+
+### Google Calendar release configuration
+
+Google Calendar uses one app-owned, public Desktop OAuth Client ID so end users only need to sign in. Before starting or packaging a build, set `GOOGLE_CALENDAR_CLIENT_ID` from the app's Google Cloud project (see [`.env.example`](./.env.example)). Configure the Google OAuth redirect URI as `com.ai-task-planner:/oauth2callback`, enable Google Calendar API, and request only the Calendar events read-only and calendar-list read-only scopes. Do not distribute an OAuth client secret; individual users' access and refresh tokens are encrypted locally by the app.
 
 ---
 
