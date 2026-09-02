@@ -55,7 +55,9 @@ export function AppShell() {
         <Sidebar activeView={activeView} onNavigate={setActiveView} />
         <main className="flex-1 overflow-hidden">
           {activeView === "backlog" && <BacklogView />}
-          {activeView === "today" && <TodayView />}
+          {activeView === "today" && (
+            <TodayView onReplan={() => setActiveView("plan")} />
+          )}
           {activeView === "plan" && (
             <PlanView onApproved={() => setActiveView("today")} />
           )}

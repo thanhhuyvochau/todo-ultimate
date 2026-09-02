@@ -101,7 +101,56 @@ export interface AIScheduleInput {
     startTime: number;
     durationMinutes: number;
   }[];
+  calendarEvents?: CalendarEventBlock[];
   historicalVariance?: VarianceMetrics;
+}
+
+export interface CalendarEvent {
+  id: string;
+  calendarId: string;
+  gcalEventId: string;
+  title: string;
+  startTime: number;
+  endTime: number;
+  status: "confirmed" | "tentative";
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface CalendarEventBlock {
+  eventId: string;
+  title: string;
+  startTime: number;
+  endTime: number;
+}
+
+export interface GoogleCalendarInfo {
+  id: string;
+  summary: string;
+  primary: boolean;
+  selected: boolean;
+}
+
+export interface GoogleCalendarSettings {
+  clientId: string;
+  isConnected: boolean;
+  calendars: GoogleCalendarInfo[];
+  selectedCalendarIds: string[];
+  lastSyncedAt: number | null;
+  syncError: string | null;
+}
+
+export interface UpdateGoogleCalendarSettingsInput {
+  clientId?: string;
+  selectedCalendarIds?: string[];
+}
+
+export interface CalendarConflict {
+  event: CalendarEvent;
+  taskId: string;
+  taskTitle: string;
+  scheduledStart: number;
+  scheduledEnd: number;
 }
 
 export interface PlannedTaskBlock {
@@ -136,6 +185,7 @@ export interface DailyPlanRequest {
     estimatedMinutes: number;
   }[];
   fixedBlocks?: AIScheduleInput["fixedBlocks"];
+  calendarEvents?: CalendarEventBlock[];
   historicalVariance?: VarianceMetrics;
 }
 

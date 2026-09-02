@@ -1,6 +1,17 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { AlertTriangle, ChevronDown, ChevronRight, Lock } from "lucide-react";
-import type { Task, TaskStatus } from "@shared/models";
+import {
+  AlertTriangle,
+  CalendarDays,
+  ChevronDown,
+  ChevronRight,
+  Lock,
+} from "lucide-react";
+import type {
+  CalendarConflict,
+  CalendarEvent,
+  Task,
+  TaskStatus,
+} from "@shared/models";
 import { useTaskStore } from "../stores/taskStore";
 import { useTimerStore } from "../stores/timerStore";
 import { useToastStore } from "../stores/toastStore";
@@ -96,7 +107,7 @@ function SortableTaskItem({ id, ...props }: SortableTaskItemProps) {
   );
 }
 
-export function TodayView() {
+export function TodayView({ onReplan }: { onReplan?: () => void }) {
   const {
     tasks,
     isLoading,
@@ -112,6 +123,10 @@ export function TodayView() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
   const [orderedIds, setOrderedIds] = useState<string[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [calendarConflicts, setCalendarConflicts] = useState<
+    CalendarConflict[]
+  >([]);
   const activeTaskId = useTimerStore((s) => s.activeTaskId);
   const startTimer = useTimerStore((s) => s.startTimer);
   const addToast = useToastStore((s) => s.addToast);
@@ -126,6 +141,18 @@ export function TodayView() {
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
+
+  useEffect(() => {
+    const loadCalendar = async () => {
+      const [eventsResult, conflictsResult] = await Promise.all([
+        window.api.getTodayCalendarEvents(),
+        window.api.getTodayCalendarConflicts(),
+      ]);
+      if (eventsResult.ok) setCalendarEvents(eventsResult.data);
+      if (conflictsResult.ok) setCalendarConflicts(conflictsResult.data);
+    };
+    void loadCalendar();
+  }, []);
 
   const todayTasks = useMemo(
     () =>
@@ -290,15 +317,54 @@ export function TodayView() {
 
       {/* ── Content ── */}
       <div className="flex-1 overflow-y-auto">
-        {isLoading && todayTasks.length === 0 && overdueTasks.length === 0 ? (
+        {isLoading &&
+        todayTasks.length === 0 &&
+        overdueTasks.length === 0 &&
+        calendarEvents.length === 0 ? (
           <EmptyState message="Loading…" />
-        ) : todayTasks.length === 0 && overdueTasks.length === 0 ? (
+        ) : todayTasks.length === 0 &&
+          overdueTasks.length === 0 &&
+          calendarEvents.length === 0 ? (
           <EmptyState
             message="Nothing scheduled for today."
             sublabel="Move tasks from Backlog or let the AI planner fill your day."
           />
         ) : (
           <div>
+            {calendarConflicts.length > 0 && (
+              <div className="flex items-center gap-2 border-b border-warning/20 bg-warning-subtle px-5 py-2.5 text-sm text-warning">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span className="flex-1">
+                  {calendarConflicts.length} calendar{" "}
+                  {calendarConflicts.length === 1
+                    ? "event conflicts"
+                    : "events conflict"}{" "}
+                  with this plan.
+                </span>
+                {onReplan && (
+                  <button
+                    onClick={onReplan}
+                    className="rounded px-2 py-1 text-sm font-medium underline hover:bg-warning-subtle"
+                  >
+                    Re-plan
+                  </button>
+                )}
+              </div>
+            )}
+
+            {calendarEvents.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 border-b border-info/20 bg-info-subtle px-5 py-2 text-sm text-info">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  <span>Calendar ({calendarEvents.length})</span>
+                  <span className="text-xs opacity-80">fixed blocks</span>
+                </div>
+                {calendarEvents.map((event) => (
+                  <CalendarEventRow key={event.id} event={event} />
+                ))}
+              </div>
+            )}
+
             {overdueTasks.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 border-b border-warning/20 bg-warning-subtle px-5 py-2 text-sm text-warning">
@@ -413,6 +479,19 @@ export function TodayView() {
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeletingTask(null)}
       />
+    </div>
+  );
+}
+
+function CalendarEventRow({ event }: { event: CalendarEvent }) {
+  return (
+    <div className="flex items-center gap-3 border-b border-border bg-info-subtle/40 px-5 py-3">
+      <CalendarDays className="h-4 w-4 shrink-0 text-info" />
+      <span className="w-32 shrink-0 font-mono text-sm text-text-muted">
+        {formatAnchorTime(event.startTime)} – {formatAnchorTime(event.endTime)}
+      </span>
+      <span className="truncate text-sm text-text-primary">{event.title}</span>
+      <span className="ml-auto text-xs text-text-muted">Busy</span>
     </div>
   );
 }

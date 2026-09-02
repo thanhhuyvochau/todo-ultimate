@@ -1,0 +1,208 @@
+import { useEffect, useState } from "react";
+import {
+  CalendarDays,
+  Check,
+  ExternalLink,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
+import { useGoogleCalendarStore } from "../stores/googleCalendarStore";
+import { useToastStore } from "../stores/toastStore";
+
+export function GoogleCalendarSettings() {
+  const {
+    settings,
+    isLoading,
+    isSaving,
+    error,
+    load,
+    update,
+    connect,
+    sync,
+    clearError,
+  } = useGoogleCalendarStore();
+  const addToast = useToastStore((state) => state.addToast);
+  const [clientId, setClientId] = useState("");
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    if (settings) setClientId(settings.clientId);
+  }, [settings]);
+
+  useEffect(() => {
+    if (!settings?.clientId || settings.isConnected) return;
+    const refresh = window.setInterval(() => void load(), 5_000);
+    return () => window.clearInterval(refresh);
+  }, [load, settings?.clientId, settings?.isConnected]);
+
+  const saveClientId = async () => {
+    if (await update({ clientId }))
+      addToast("success", "Google client ID saved.");
+  };
+
+  const startConnection = async () => {
+    if (clientId.trim() !== settings?.clientId) {
+      const saved = await update({ clientId });
+      if (!saved) return;
+    }
+    if (await connect()) {
+      addToast(
+        "success",
+        "Complete Google authorization in your browser, then return here.",
+      );
+    }
+  };
+
+  const toggleCalendar = async (id: string, selected: boolean) => {
+    if (!settings) return;
+    const selectedCalendarIds = selected
+      ? [...settings.selectedCalendarIds, id]
+      : settings.selectedCalendarIds.filter((calendarId) => calendarId !== id);
+    if (await update({ selectedCalendarIds })) await sync();
+  };
+
+  return (
+    <section className="rounded-lg border border-border bg-bg-surface p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex gap-3">
+          <CalendarDays className="mt-0.5 h-5 w-5 text-accent" />
+          <div>
+            <h2 className="font-semibold text-text-primary">Google Calendar</h2>
+            <p className="mt-1 text-sm text-text-muted">
+              Import busy meetings as read-only fixed blocks for daily planning.
+            </p>
+          </div>
+        </div>
+        {settings?.isConnected && (
+          <span className="rounded-full bg-success-subtle px-2.5 py-1 text-xs font-medium text-success">
+            Connected
+          </span>
+        )}
+      </div>
+
+      <div className="mt-5 space-y-3">
+        <label
+          className="block text-sm text-text-secondary"
+          htmlFor="google-client-id"
+        >
+          OAuth client ID
+        </label>
+        <div className="flex gap-2">
+          <input
+            id="google-client-id"
+            value={clientId}
+            onChange={(event) => setClientId(event.target.value)}
+            placeholder="…apps.googleusercontent.com"
+            className="min-w-0 flex-1 rounded-md border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+          />
+          <button
+            onClick={() => void saveClientId()}
+            disabled={isSaving || clientId === settings?.clientId}
+            className="rounded-md border border-border px-3 py-2 text-sm text-text-secondary hover:bg-bg-tertiary disabled:opacity-50"
+          >
+            Save
+          </button>
+        </div>
+        <p className="text-xs text-text-muted">
+          Configure an installed-app OAuth client with{" "}
+          <code>com.ai-task-planner:/oauth2callback</code> as its redirect URI.
+        </p>
+      </div>
+
+      {error && (
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-md bg-danger-subtle px-3 py-2 text-sm text-danger">
+          <span>{error}</span>
+          <button onClick={clearError} className="underline">
+            Dismiss
+          </button>
+        </div>
+      )}
+      {settings?.syncError && !error && (
+        <p className="mt-4 rounded-md bg-warning-subtle px-3 py-2 text-sm text-warning">
+          {settings.syncError}
+        </p>
+      )}
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        <button
+          onClick={() => void startConnection()}
+          disabled={isSaving || !clientId.trim()}
+          className="flex items-center gap-2 rounded-md bg-accent px-3 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+        >
+          {isSaving ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ExternalLink className="h-4 w-4" />
+          )}
+          {settings?.isConnected ? "Reconnect" : "Connect Google Calendar"}
+        </button>
+        {settings?.isConnected && (
+          <button
+            onClick={() => void sync()}
+            disabled={isSaving}
+            className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-text-secondary hover:bg-bg-tertiary disabled:opacity-50"
+          >
+            <RefreshCw className="h-4 w-4" /> Sync now
+          </button>
+        )}
+      </div>
+
+      {isLoading ? (
+        <p className="mt-5 text-sm text-text-muted">
+          Loading calendar settings…
+        </p>
+      ) : (
+        settings?.isConnected && (
+          <div className="mt-5 border-t border-border pt-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium text-text-primary">
+                Calendars to sync
+              </h3>
+              {settings.lastSyncedAt && (
+                <span className="text-xs text-text-muted">
+                  Synced {new Date(settings.lastSyncedAt).toLocaleString()}
+                </span>
+              )}
+            </div>
+            {settings.calendars.length === 0 ? (
+              <p className="mt-2 text-sm text-text-muted">
+                Finish authorization, then refresh this page to choose
+                calendars.
+              </p>
+            ) : (
+              <div className="mt-2 divide-y divide-border">
+                {settings.calendars.map((calendar) => (
+                  <label
+                    key={calendar.id}
+                    className="flex cursor-pointer items-center gap-3 py-2.5 text-sm text-text-primary"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={settings.selectedCalendarIds.includes(
+                        calendar.id,
+                      )}
+                      onChange={(event) =>
+                        void toggleCalendar(calendar.id, event.target.checked)
+                      }
+                      className="h-4 w-4 accent-accent"
+                    />
+                    <span className="flex-1">{calendar.summary}</span>
+                    {calendar.primary && (
+                      <Check
+                        className="h-4 w-4 text-accent"
+                        aria-label="Primary calendar"
+                      />
+                    )}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      )}
+    </section>
+  );
+}

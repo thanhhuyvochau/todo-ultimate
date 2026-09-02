@@ -7,6 +7,41 @@ import { handlers } from "./ipc/handlers";
 import { isEncryptionAvailable } from "./services/keychain-service";
 import { instantiateDailyTasks } from "./services/recurring-engine";
 import { getActiveTimer, stopTimerEngine } from "./services/timer-service";
+import {
+  GOOGLE_CALENDAR_REDIRECT_URI,
+  handleGoogleCalendarCallback,
+  startGoogleCalendarSync,
+  stopGoogleCalendarSync,
+} from "./services/google-calendar-service";
+
+const GOOGLE_CALENDAR_PROTOCOL = "com.ai-task-planner";
+
+function handleProtocolUrl(url: string): void {
+  if (!url.startsWith(GOOGLE_CALENDAR_REDIRECT_URI)) return;
+  void handleGoogleCalendarCallback(url).catch((error: unknown) => {
+    console.warn(
+      "Google Calendar callback could not be processed:",
+      error instanceof Error ? error.message : "unknown error",
+    );
+  });
+}
+
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+}
+
+app.on("second-instance", (_event, commandLine) => {
+  const callbackUrl = commandLine.find((argument) =>
+    argument.startsWith(GOOGLE_CALENDAR_REDIRECT_URI),
+  );
+  if (callbackUrl) handleProtocolUrl(callbackUrl);
+});
+
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  handleProtocolUrl(url);
+});
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -42,6 +77,7 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId("com.ai-task-planner");
+  app.setAsDefaultProtocolClient(GOOGLE_CALENDAR_PROTOCOL);
 
   app.on("browser-window-created", (_, window) => {
     optimizer.watchWindowShortcuts(window);
@@ -59,6 +95,7 @@ app.whenReady().then(() => {
     initDb();
     instantiateDailyTasks();
     getActiveTimer(); // Restore timer state if unclosed log exists
+    startGoogleCalendarSync();
   } catch (err) {
     console.error(
       "Failed to initialize application database. The app will not function correctly.",
@@ -86,6 +123,7 @@ app.whenReady().then(() => {
 
 app.on("before-quit", () => {
   stopTimerEngine();
+  stopGoogleCalendarSync();
 });
 
 app.on("window-all-closed", () => {

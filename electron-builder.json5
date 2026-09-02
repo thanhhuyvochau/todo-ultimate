@@ -2,6 +2,12 @@
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   "appId": "com.ai-task-planner.app",
   "productName": "AI Task Planner",
+  "protocols": [
+    {
+      "name": "AI Task Planner OAuth",
+      "schemes": ["com.ai-task-planner"]
+    }
+  ],
   "directories": {
     "output": "dist"
   },

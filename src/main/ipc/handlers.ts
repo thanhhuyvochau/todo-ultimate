@@ -13,6 +13,7 @@ import * as planApprovalService from "@/main/services/plan-approval-service";
 import * as reportService from "@/main/services/report-service";
 import * as settingsRepo from "@/main/db/settings-repository";
 import { getStartOfDay } from "@/main/services/recurring-engine";
+import * as googleCalendarService from "@/main/services/google-calendar-service";
 
 const AI_IPC_ERROR_CODES = new Set<string>([
   "AI_TIMEOUT",
@@ -449,6 +450,78 @@ export const handlers = {
         return fail("NOT_FOUND", error.message ?? "A planned task is missing.");
       }
       return fail("DB_WRITE_FAILED", "Failed to approve the plan.");
+    }
+  },
+
+  "calendar:getSettings": (_request) => {
+    try {
+      return ok(googleCalendarService.getGoogleCalendarSettings());
+    } catch {
+      return fail("DB_READ_FAILED", "Failed to read Google Calendar settings.");
+    }
+  },
+
+  "calendar:updateSettings": (input) => {
+    try {
+      return ok(googleCalendarService.updateGoogleCalendarSettings(input));
+    } catch (err) {
+      const error = err as { code?: string; message?: string };
+      if (error.code === "VALIDATION_ERROR") {
+        return fail(
+          "VALIDATION_ERROR",
+          error.message ?? "Invalid calendar settings.",
+        );
+      }
+      return fail(
+        "DB_WRITE_FAILED",
+        "Failed to save Google Calendar settings.",
+      );
+    }
+  },
+
+  "calendar:connect": async (_request) => {
+    try {
+      return ok(await googleCalendarService.beginGoogleCalendarAuthorization());
+    } catch (err) {
+      const error = err as { code?: string; message?: string };
+      if (error.code === "VALIDATION_ERROR") {
+        return fail(
+          "VALIDATION_ERROR",
+          error.message ?? "Invalid calendar settings.",
+        );
+      }
+      return fail(
+        "INTERNAL_ERROR",
+        error.message ?? "Unable to connect Google Calendar.",
+      );
+    }
+  },
+
+  "calendar:sync": async (_request) => {
+    try {
+      return ok(await googleCalendarService.syncGoogleCalendar());
+    } catch (err) {
+      const error = err as { message?: string };
+      return fail(
+        "INTERNAL_ERROR",
+        error.message ?? "Google Calendar sync failed.",
+      );
+    }
+  },
+
+  "calendar:getTodayEvents": (_request) => {
+    try {
+      return ok(googleCalendarService.getTodayCalendarEvents());
+    } catch {
+      return fail("DB_READ_FAILED", "Failed to read calendar events.");
+    }
+  },
+
+  "calendar:getTodayConflicts": (_request) => {
+    try {
+      return ok(googleCalendarService.getTodayCalendarConflicts());
+    } catch {
+      return fail("DB_READ_FAILED", "Failed to read calendar conflicts.");
     }
   },
 } satisfies HandlerMap;

@@ -46,6 +46,16 @@ const api: RendererApi = {
     ipcRenderer.invoke("metrics:getTaskVariance", params),
   getTodayPlan: () => ipcRenderer.invoke("plan:getToday", {}),
   approvePlan: (schedule) => ipcRenderer.invoke("plan:approve", { schedule }),
+  getGoogleCalendarSettings: () =>
+    ipcRenderer.invoke("calendar:getSettings", {}),
+  updateGoogleCalendarSettings: (input) =>
+    ipcRenderer.invoke("calendar:updateSettings", input),
+  connectGoogleCalendar: () => ipcRenderer.invoke("calendar:connect", {}),
+  syncGoogleCalendar: () => ipcRenderer.invoke("calendar:sync", {}),
+  getTodayCalendarEvents: () =>
+    ipcRenderer.invoke("calendar:getTodayEvents", {}),
+  getTodayCalendarConflicts: () =>
+    ipcRenderer.invoke("calendar:getTodayConflicts", {}),
 };
 
 contextBridge.exposeInMainWorld("api", api);

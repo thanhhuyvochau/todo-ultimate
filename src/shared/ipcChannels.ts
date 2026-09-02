@@ -17,6 +17,10 @@ import type {
   AiKeyInput,
   AiKeyDeleteInput,
   AiProviderId,
+  CalendarConflict,
+  CalendarEvent,
+  GoogleCalendarSettings,
+  UpdateGoogleCalendarSettingsInput,
 } from "./models";
 
 export interface IpcChannelMap {
@@ -101,6 +105,21 @@ export interface IpcChannelMap {
   "plan:approve": {
     request: { schedule: DailyPlanSchedule };
     response: DailyPlan;
+  };
+  "calendar:getSettings": { request: object; response: GoogleCalendarSettings };
+  "calendar:updateSettings": {
+    request: UpdateGoogleCalendarSettingsInput;
+    response: GoogleCalendarSettings;
+  };
+  "calendar:connect": {
+    request: object;
+    response: { authorizationStarted: boolean };
+  };
+  "calendar:sync": { request: object; response: GoogleCalendarSettings };
+  "calendar:getTodayEvents": { request: object; response: CalendarEvent[] };
+  "calendar:getTodayConflicts": {
+    request: object;
+    response: CalendarConflict[];
   };
 }
 

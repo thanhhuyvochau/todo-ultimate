@@ -242,6 +242,7 @@ export async function generateDailyPlan(
     focusHours: String(input.focusHours),
     primaryGoal: input.primaryGoal,
     fixedBlocksJson: JSON.stringify(input.fixedBlocks ?? []),
+    calendarEventsJson: JSON.stringify(input.calendarEvents ?? []),
     tasksJson: JSON.stringify(input.tasks),
     historicalVarianceContext: input.historicalVariance
       ? formatVarianceContext(input.historicalVariance)

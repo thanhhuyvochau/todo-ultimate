@@ -7,6 +7,9 @@ Primary goal: {{primaryGoal}}
 Fixed (non-negotiable) time blocks — schedule nothing over these:
 {{fixedBlocksJson}}
 
+Google Calendar busy events — these are also non-negotiable; schedule nothing over these:
+{{calendarEventsJson}}
+
 Backlog tasks (each with id, title, priority, estimatedMinutes):
 {{tasksJson}}
 

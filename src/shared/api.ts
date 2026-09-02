@@ -90,4 +90,22 @@ export interface RendererApi {
   approvePlan: (
     schedule: IpcChannelMap["plan:approve"]["request"]["schedule"],
   ) => Promise<IpcResult<IpcChannelMap["plan:approve"]["response"]>>;
+  getGoogleCalendarSettings: () => Promise<
+    IpcResult<IpcChannelMap["calendar:getSettings"]["response"]>
+  >;
+  updateGoogleCalendarSettings: (
+    input: IpcChannelMap["calendar:updateSettings"]["request"],
+  ) => Promise<IpcResult<IpcChannelMap["calendar:updateSettings"]["response"]>>;
+  connectGoogleCalendar: () => Promise<
+    IpcResult<IpcChannelMap["calendar:connect"]["response"]>
+  >;
+  syncGoogleCalendar: () => Promise<
+    IpcResult<IpcChannelMap["calendar:sync"]["response"]>
+  >;
+  getTodayCalendarEvents: () => Promise<
+    IpcResult<IpcChannelMap["calendar:getTodayEvents"]["response"]>
+  >;
+  getTodayCalendarConflicts: () => Promise<
+    IpcResult<IpcChannelMap["calendar:getTodayConflicts"]["response"]>
+  >;
 }

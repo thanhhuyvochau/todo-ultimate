@@ -3,6 +3,7 @@ import { getStartOfDay } from "@/main/services/recurring-engine";
 import { getTasks } from "@/main/db/task-repository";
 import { getVarianceMetrics } from "@/main/services/variance-service";
 import * as deepseekService from "@/main/services/deepseekService";
+import * as calendarEventRepo from "@/main/db/calendar-event-repository";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
@@ -31,6 +32,13 @@ export async function generateDailyPlan(
   const todoTasks = getTasks({ status: "todo" });
 
   const fixedBlocks: DailyPlanRequest["fixedBlocks"] = [];
+  const calendarEvents: NonNullable<DailyPlanRequest["calendarEvents"]> =
+    calendarEventRepo.getEventsInRange(todayStart, todayEnd).map((event) => ({
+      eventId: event.id,
+      title: event.title,
+      startTime: event.startTime,
+      endTime: event.endTime,
+    }));
   const availableTasks: DailyPlanRequest["tasks"] = [];
 
   for (const task of todoTasks) {
@@ -68,6 +76,7 @@ export async function generateDailyPlan(
     primaryGoal: params.primaryGoal.trim(),
     tasks: availableTasks,
     fixedBlocks,
+    calendarEvents,
     historicalVariance,
   });
 }

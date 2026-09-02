@@ -73,28 +73,31 @@ The application is a **local-first desktop productivity tool** built on Electron
 
 Electron enforces a **hard security boundary** between the two processes. The Renderer cannot directly access Node.js APIs, the file system, or the database.
 
-| Property | Main Process | Renderer Process |
-|---|---|---|
-| Runtime | Node.js + V8 | Chromium (sandboxed) |
-| `nodeIntegration` | N/A | `false` |
-| `contextIsolation` | N/A | `true` |
-| `sandbox` | N/A | `true` |
-| DB Access | ✅ Direct (synchronous) | ❌ None |
-| OS APIs | ✅ Full | ❌ None |
-| Network | ✅ (DeepSeek via OpenAI SDK) | ❌ (navigator.onLine check only) |
-| Communication | IPC via `ipcMain.handle` | IPC via `window.api.*` (contextBridge) |
+| Property           | Main Process                 | Renderer Process                       |
+| ------------------ | ---------------------------- | -------------------------------------- |
+| Runtime            | Node.js + V8                 | Chromium (sandboxed)                   |
+| `nodeIntegration`  | N/A                          | `false`                                |
+| `contextIsolation` | N/A                          | `true`                                 |
+| `sandbox`          | N/A                          | `true`                                 |
+| DB Access          | ✅ Direct (synchronous)      | ❌ None                                |
+| OS APIs            | ✅ Full                      | ❌ None                                |
+| Network            | ✅ (DeepSeek via OpenAI SDK) | ❌ (navigator.onLine check only)       |
+| Communication      | IPC via `ipcMain.handle`     | IPC via `window.api.*` (contextBridge) |
 
 Window configuration (`src/main/index.ts`):
+
 ```typescript
 new BrowserWindow({
-  width: 1200, height: 800,
-  minWidth: 900, minHeight: 600,
+  width: 1200,
+  height: 800,
+  minWidth: 900,
+  minHeight: 600,
   webPreferences: {
-    preload: join(__dirname, '../preload/index.js'),
+    preload: join(__dirname, "../preload/index.js"),
     sandbox: true,
     contextIsolation: true,
     nodeIntegration: false,
-  }
+  },
 });
 ```
 
@@ -132,6 +135,7 @@ sequenceDiagram
 ```
 
 **Key startup invariants:**
+
 - If `safeStorage.isEncryptionAvailable()` returns `false`, the app throws immediately — API keys cannot be stored securely.
 - Recurring tasks are instantiated atomically in a SQLite transaction (dedup guard via `last_instantiated_date`).
 - Timer recovery restores the in-memory `activeTimer` state from any unclosed `task_time_logs` row, preventing lost time tracking after unexpected quit.
@@ -153,7 +157,9 @@ src/main/db/
 │   ├── 001_init.sql         ← 6 tables: tasks, task_time_logs, recurring_rules,
 │   │                            daily_plans, performance_reports, schema_version
 │   ├── 002_recurring_config.sql ← days_of_week, day_of_month columns
-│   └── 003_task_completed_at.sql ← completed_at column on tasks
+│   ├── 003_task_completed_at.sql ← completed_at column on tasks
+│   ├── 004_app_settings.sql      ← persisted non-secret app preferences
+│   └── 005_calendar_events.sql   ← Google Calendar busy-event cache
 └── *-repository.ts          ← One repository per aggregate (see 4.2)
 ```
 
@@ -212,6 +218,17 @@ erDiagram
         TEXT prompt_version
         INTEGER created_at
     }
+    calendar_events {
+        TEXT id PK
+        TEXT calendar_id
+        TEXT gcal_event_id
+        TEXT title
+        INTEGER start_time
+        INTEGER end_time
+        TEXT status
+        INTEGER created_at
+        INTEGER updated_at
+    }
     schema_version {
         INTEGER version PK
         INTEGER applied_at
@@ -222,6 +239,7 @@ erDiagram
 ```
 
 **Storage conventions:**
+
 - All timestamps: Unix epoch **milliseconds** (`Date.now()`).
 - All durations: integer **minutes**.
 - IDs: `crypto.randomUUID()`.
@@ -234,13 +252,14 @@ erDiagram
 
 Each database aggregate has its own typed repository module. No raw SQL is scattered outside these files.
 
-| File | Aggregate | Key Operations |
-|---|---|---|
-| `task-repository.ts` | `Task` | `getTasks(filters)`, `createTask`, `updateTask`, `deleteTask`, `createRecurringChildTask`, `getCompletedTasks(timeframe?)`, `validateStatusTransition` |
-| `time-log-repository.ts` | `TimeLog` | `createTimeLog`, `pauseTimeLog` (computes duration, aggregates to `tasks.actual_minutes`), `getUnclosedTimeLog` |
-| `recurring-rule-repository.ts` | `RecurringRule` | `getAllRules`, `createRule`, `updateRule`, `deleteRule`, `toggleRule`, duplicate time-anchor validation |
-| `daily-plan-repository.ts` | `DailyPlan` | `getPlanForDate`, `saveApprovedPlan` (upsert) |
-| `performance-report-repository.ts` | `PerformanceReport` | `saveReport` (upsert by timeframe), `listAll`, `getById`, `findByTimeframe`, `deleteById` |
+| File                               | Aggregate           | Key Operations                                                                                                                                         |
+| ---------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `task-repository.ts`               | `Task`              | `getTasks(filters)`, `createTask`, `updateTask`, `deleteTask`, `createRecurringChildTask`, `getCompletedTasks(timeframe?)`, `validateStatusTransition` |
+| `time-log-repository.ts`           | `TimeLog`           | `createTimeLog`, `pauseTimeLog` (computes duration, aggregates to `tasks.actual_minutes`), `getUnclosedTimeLog`                                        |
+| `recurring-rule-repository.ts`     | `RecurringRule`     | `getAllRules`, `createRule`, `updateRule`, `deleteRule`, `toggleRule`, duplicate time-anchor validation                                                |
+| `daily-plan-repository.ts`         | `DailyPlan`         | `getPlanForDate`, `saveApprovedPlan` (upsert)                                                                                                          |
+| `performance-report-repository.ts` | `PerformanceReport` | `saveReport` (upsert by timeframe), `listAll`, `getById`, `findByTimeframe`, `deleteById`                                                              |
+| `calendar-event-repository.ts`     | `CalendarEvent`     | range query and atomic replacement of a synced calendar window                                                                                         |
 
 **State Transition Guard** (in `task-repository.ts`):
 
@@ -273,6 +292,7 @@ src/main/services/
 ├── plan-approval-service.ts  ← Atomic approvePlan: schedule tasks + persist plan_json
 ├── report-service.ts         ← Orchestrate AI report: gather tasks + variance + cache
 ├── deepseekService.ts        ← DeepSeek HTTP client (retry, backoff, validation)
+├── google-calendar-service.ts ← OAuth PKCE, encrypted token refresh, 15-minute event sync
 └── prompts/
     ├── plan-v1.txt           ← Versioned plan prompt template
     └── report-v1.txt         ← Versioned report prompt template
@@ -289,6 +309,7 @@ graph TD
     Handlers --> dailyPlanSvc[daily-plan-service]
     Handlers --> planApprovalSvc[plan-approval-service]
     Handlers --> reportSvc[report-service]
+    Handlers --> calendarSvc[google-calendar-service]
 
     timerSvc --> timeLogRepo[time-log-repository]
     timerSvc --> taskRepo
@@ -297,6 +318,10 @@ graph TD
     dailyPlanSvc --> recurringRuleRepo[recurring-rule-repository]
     dailyPlanSvc --> varianceSvc
     dailyPlanSvc --> deepseekSvc[deepseekService]
+    dailyPlanSvc --> calendarEventRepo[calendar-event-repository]
+
+    calendarSvc --> calendarEventRepo
+    calendarSvc --> keychainSvc
 
     planApprovalSvc --> taskRepo
     planApprovalSvc --> dailyPlanRepo[daily-plan-repository]
@@ -358,25 +383,27 @@ src/preload/index.ts  ← contextBridge.exposeInMainWorld('api', { ... })
 
 ### 5.1 Typed Channel Map
 
-Every IPC channel is declared with its exact request and response types. The full channel list covers 23 channels across 7 namespaces:
+Every IPC channel is declared with its exact request and response types. The full channel list covers the application namespaces below:
 
-| Namespace | Channels | Purpose |
-|---|---|---|
-| `tasks:*` | getAll, create, update, delete | Task CRUD + status transitions |
-| `timer:*` | start, pause, getActive | Background-safe time tracking |
-| `ai:*` | generatePlan, generateReport, testConnection | DeepSeek API features |
-| `report:*` | list, get, delete | Cached report history |
-| `key:*` | set, get, delete | API key management |
-| `recurring:*` | getAll, create, update, delete, toggle | Recurring rule CRUD |
-| `metrics:*` | getVariance, getTaskVariance | Estimation analytics |
-| `plan:*` | getToday, approve | Plan persistence |
+| Namespace     | Channels                                                                      | Purpose                               |
+| ------------- | ----------------------------------------------------------------------------- | ------------------------------------- |
+| `tasks:*`     | getAll, create, update, delete                                                | Task CRUD + status transitions        |
+| `timer:*`     | start, pause, getActive                                                       | Background-safe time tracking         |
+| `ai:*`        | generatePlan, generateReport, testConnection                                  | DeepSeek API features                 |
+| `report:*`    | list, get, delete                                                             | Cached report history                 |
+| `key:*`       | set, get, delete                                                              | API key management                    |
+| `recurring:*` | getAll, create, update, delete, toggle                                        | Recurring rule CRUD                   |
+| `metrics:*`   | getVariance, getTaskVariance                                                  | Estimation analytics                  |
+| `plan:*`      | getToday, approve                                                             | Plan persistence                      |
+| `calendar:*`  | getSettings, updateSettings, connect, sync, getTodayEvents, getTodayConflicts | Read-only Google Calendar integration |
 
 ### 5.2 Standardised IpcResult
 
 All responses are wrapped in a discriminated union. This eliminates try/catch in the Renderer:
 
 ```typescript
-export type IpcResult<T> = { ok: true; data: T } | { ok: false; error: IpcError };
+export type IpcResult<T> =
+  { ok: true; data: T } | { ok: false; error: IpcError };
 
 // Usage in renderer:
 const result = await window.api.createTask(data);
@@ -389,15 +416,15 @@ if (result.ok) {
 
 **Full error code set (`IpcErrorCode`):**
 
-| Category | Codes |
-|---|---|
-| Database | `DB_READ_FAILED`, `DB_WRITE_FAILED` |
-| Validation | `VALIDATION_ERROR`, `STATE_TRANSITION_ILLEGAL`, `NOT_FOUND` |
-| AI | `AI_TIMEOUT`, `AI_RATE_LIMITED`, `AI_AUTH_FAILED`, `AI_PARSE_ERROR`, `AI_NETWORK_ERROR`, `AI_REQUEST_FAILED` |
-| Keychain | `KEYCHAIN_UNAVAILABLE`, `KEYCHAIN_WRITE_FAILED` |
-| Timer | `TASK_ALREADY_ACTIVE`, `TIMER_START_FAILED`, `TIMER_PAUSE_FAILED`, `TIMER_READ_FAILED` |
-| Report | `REPORT_CORRUPTED` |
-| General | `NOT_IMPLEMENTED`, `INTERNAL_ERROR` |
+| Category   | Codes                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------ |
+| Database   | `DB_READ_FAILED`, `DB_WRITE_FAILED`                                                                          |
+| Validation | `VALIDATION_ERROR`, `STATE_TRANSITION_ILLEGAL`, `NOT_FOUND`                                                  |
+| AI         | `AI_TIMEOUT`, `AI_RATE_LIMITED`, `AI_AUTH_FAILED`, `AI_PARSE_ERROR`, `AI_NETWORK_ERROR`, `AI_REQUEST_FAILED` |
+| Keychain   | `KEYCHAIN_UNAVAILABLE`, `KEYCHAIN_WRITE_FAILED`                                                              |
+| Timer      | `TASK_ALREADY_ACTIVE`, `TIMER_START_FAILED`, `TIMER_PAUSE_FAILED`, `TIMER_READ_FAILED`                       |
+| Report     | `REPORT_CORRUPTED`                                                                                           |
+| General    | `NOT_IMPLEMENTED`, `INTERNAL_ERROR`                                                                          |
 
 ### 5.3 contextBridge Exposure
 
@@ -431,6 +458,7 @@ App.tsx
 **Keyboard navigation**: `Ctrl+1` → Backlog, `Ctrl+2` → Today, `Ctrl+3` → Daily Plan, `Ctrl+4` → Reports.
 
 **Initialization on mount** (`useEffect`):
+
 1. `useTimerStore.getState().initTimer()` — fetches active timer state from Main via `timer:getActive`, subscribes to `timer:tick` push events.
 2. `useNetworkStore.getState().initNetwork()` — attaches `online`/`offline` listeners with 1-second debounce.
 
@@ -440,18 +468,18 @@ Pomodoro initialization also calls `usePomodoroStore.getState().initPomodoro()` 
 
 All stores are in `src/renderer/src/stores/`. They are the **single source of truth** for UI state. Components never call `window.api` directly.
 
-| Store | State | Key Actions |
-|---|---|---|
-| `taskStore` | `tasks[]`, `isLoading`, `error` | `fetchTasks`, `createTask`, `updateTask`, `deleteTask` |
-| `timerStore` | `activeTaskId`, `elapsedSeconds` | `initTimer`, `startTimer`, `pauseTimer` |
-| `planStore` | `proposal`, `status` | `generate`, `updateBudget`, `reorder`, `remove`, `approve` |
-| `recurringRuleStore` | `rules[]` | `fetchRules`, `createRule`, `updateRule`, `deleteRule`, `toggleRule` |
-| `reportStore` | `reports[]`, `currentReport` | `generate`, `loadReports`, `viewReport`, `deleteReport` |
-| `settingsStore` | `hasKey` | `saveKey`, `deleteKey`, `testConnection` |
-| `networkStore` | `isOnline` | `initNetwork` |
-| `themeStore` | `theme` ("dark"\|"light") | `toggleTheme`, `initTheme` |
-| `pomodoroStore` | mode, countdown, interval total, configurable durations | `start`, `pause`, `reset`, `skip`, `selectMode`, `saveDurations` |
-| `toastStore` | `toasts[]` | `addToast`, `removeToast` |
+| Store                | State                                                   | Key Actions                                                          |
+| -------------------- | ------------------------------------------------------- | -------------------------------------------------------------------- |
+| `taskStore`          | `tasks[]`, `isLoading`, `error`                         | `fetchTasks`, `createTask`, `updateTask`, `deleteTask`               |
+| `timerStore`         | `activeTaskId`, `elapsedSeconds`                        | `initTimer`, `startTimer`, `pauseTimer`                              |
+| `planStore`          | `proposal`, `status`                                    | `generate`, `updateBudget`, `reorder`, `remove`, `approve`           |
+| `recurringRuleStore` | `rules[]`                                               | `fetchRules`, `createRule`, `updateRule`, `deleteRule`, `toggleRule` |
+| `reportStore`        | `reports[]`, `currentReport`                            | `generate`, `loadReports`, `viewReport`, `deleteReport`              |
+| `settingsStore`      | `hasKey`                                                | `saveKey`, `deleteKey`, `testConnection`                             |
+| `networkStore`       | `isOnline`                                              | `initNetwork`                                                        |
+| `themeStore`         | `theme` ("dark"\|"light")                               | `toggleTheme`, `initTheme`                                           |
+| `pomodoroStore`      | mode, countdown, interval total, configurable durations | `start`, `pause`, `reset`, `skip`, `selectMode`, `saveDurations`     |
+| `toastStore`         | `toasts[]`                                              | `addToast`, `removeToast`                                            |
 
 **Store interaction model:**
 
@@ -541,22 +569,22 @@ AppShell
 
 `src/shared/models.ts` defines all domain types used by both processes. Key types:
 
-| Type | Purpose |
-|---|---|
-| `Task` | Core task entity with status, priority, time estimates, scheduling |
-| `TimeLog` | Start/pause interval for a single work session |
-| `RecurringRule` | Template for auto-generated daily tasks |
-| `DailyPlan` | AI-proposed + user-approved daily schedule (DB row) |
-| `DailyPlanSchedule` | The structured output of `ai:generatePlan` |
-| `PlannedTaskBlock` | A single scheduled item in a daily plan |
-| `PerformanceReport` | Cached AI report with JSON blob |
-| `PerformanceReportContent` | Parsed content: metrics, patterns, advice, summary |
-| `VarianceMetrics` | Aggregate estimation accuracy statistics |
-| `TaskVariance` | Per-task delta = actual minus estimated |
-| `AIScheduleInput` | What the Renderer sends to trigger AI planning |
-| `ReportMetrics` | Efficiency score, trend direction, priority breakdown |
-| `ReportPattern` | AI-detected pattern with severity (info/warning/positive) |
-| `ReportAdvice` | Actionable recommendation per category (estimation/priority/scheduling/focus) |
+| Type                       | Purpose                                                                       |
+| -------------------------- | ----------------------------------------------------------------------------- |
+| `Task`                     | Core task entity with status, priority, time estimates, scheduling            |
+| `TimeLog`                  | Start/pause interval for a single work session                                |
+| `RecurringRule`            | Template for auto-generated daily tasks                                       |
+| `DailyPlan`                | AI-proposed + user-approved daily schedule (DB row)                           |
+| `DailyPlanSchedule`        | The structured output of `ai:generatePlan`                                    |
+| `PlannedTaskBlock`         | A single scheduled item in a daily plan                                       |
+| `PerformanceReport`        | Cached AI report with JSON blob                                               |
+| `PerformanceReportContent` | Parsed content: metrics, patterns, advice, summary                            |
+| `VarianceMetrics`          | Aggregate estimation accuracy statistics                                      |
+| `TaskVariance`             | Per-task delta = actual minus estimated                                       |
+| `AIScheduleInput`          | What the Renderer sends to trigger AI planning                                |
+| `ReportMetrics`            | Efficiency score, trend direction, priority breakdown                         |
+| `ReportPattern`            | AI-detected pattern with severity (info/warning/positive)                     |
+| `ReportAdvice`             | Actionable recommendation per category (estimation/priority/scheduling/focus) |
 
 ---
 
@@ -716,10 +744,12 @@ These services run in the Main process without user interaction.
 ### Recurring Task Engine (`recurring-engine.ts`)
 
 Triggered on:
+
 1. **App startup** — `instantiateDailyTasks()` called in `app.whenReady()`.
 2. **Every 60 seconds** — midnight date-rollover check: if `new Date().toDateString()` changed, re-run instantiation.
 
 Logic per active rule:
+
 - Skip if `last_instantiated_date >= startOfToday` (dedup guard).
 - Check `matchesTodayFrequency(rule, today)` for daily / weekly / monthly match.
 - If matched: `createRecurringChildTask()` sets `scheduled_date = startOfToday`, `is_recurring_child = 1`.
@@ -728,12 +758,14 @@ Logic per active rule:
 ### Timer Service (`timer-service.ts`)
 
 Module-level singletons (in-memory):
+
 ```typescript
 let activeTimer: ActiveTimerState | null = null; // { taskId, logId, startedAt }
 let tickInterval: NodeJS.Timeout | null = null;
 ```
 
 Key invariants:
+
 - **Today-only starts.** Both `tasks:update` and `timer:start` reject a task whose
   persisted `scheduled_date` is null before touching the current timer.
 - **Only one active timer at a time.** `startTimer()` pauses any other in-progress task's unclosed log before starting.
@@ -748,6 +780,7 @@ Key invariants:
 ## 10. AI Integration Engine (Multi-Provider LLM)
 
 **Files**:
+
 - Orchestrator: `src/main/services/ai/ai-service.ts` (re-exported via `src/main/services/deepseekService.ts`)
 - Adapters: `src/main/services/ai/adapters/` (`OpenAiCompatibleAdapter`, `AnthropicAdapter`, `GeminiAdapter`)
 - Parsing & Errors: `src/main/services/ai/json-extractor.ts`, `src/main/services/ai/ai-errors.ts`
@@ -756,13 +789,13 @@ Key invariants:
 
 ### Supported Providers & Defaults
 
-| Provider ID | Provider Name | Default Base URL | Default Model | Curated Presets | Client Adapter |
-|---|---|---|---|---|---|
-| `deepseek` | DeepSeek | `https://api.deepseek.com/v1` | `deepseek-chat` | `deepseek-chat`, `deepseek-reasoner` | `OpenAiCompatibleAdapter` |
-| `openai` | OpenAI | `https://api.openai.com/v1` | `gpt-4o` | `gpt-4o`, `gpt-4o-mini`, `gpt-4.5-preview`, `o3-mini` | `OpenAiCompatibleAdapter` |
-| `anthropic` | Anthropic (Claude) | `https://api.anthropic.com/v1` | `claude-3-7-sonnet-latest` | `claude-3-7-sonnet-latest`, `claude-3-5-sonnet-latest`, `claude-3-5-haiku-latest` | `AnthropicAdapter` (REST) |
-| `gemini` | Google Gemini | `https://generativelanguage.googleapis.com/v1beta` | `gemini-2.0-flash` | `gemini-2.0-flash`, `gemini-2.0-flash-lite`, `gemini-1.5-pro` | `GeminiAdapter` (REST) |
-| `custom` | Custom / Local (Ollama) | `http://localhost:11434/v1` | `llama3.2` | `llama3.2`, `mistral`, `qwen2.5`, `deepseek-r1` | `OpenAiCompatibleAdapter` |
+| Provider ID | Provider Name           | Default Base URL                                   | Default Model              | Curated Presets                                                                   | Client Adapter            |
+| ----------- | ----------------------- | -------------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------- | ------------------------- |
+| `deepseek`  | DeepSeek                | `https://api.deepseek.com/v1`                      | `deepseek-chat`            | `deepseek-chat`, `deepseek-reasoner`                                              | `OpenAiCompatibleAdapter` |
+| `openai`    | OpenAI                  | `https://api.openai.com/v1`                        | `gpt-4o`                   | `gpt-4o`, `gpt-4o-mini`, `gpt-4.5-preview`, `o3-mini`                             | `OpenAiCompatibleAdapter` |
+| `anthropic` | Anthropic (Claude)      | `https://api.anthropic.com/v1`                     | `claude-3-7-sonnet-latest` | `claude-3-7-sonnet-latest`, `claude-3-5-sonnet-latest`, `claude-3-5-haiku-latest` | `AnthropicAdapter` (REST) |
+| `gemini`    | Google Gemini           | `https://generativelanguage.googleapis.com/v1beta` | `gemini-2.0-flash`         | `gemini-2.0-flash`, `gemini-2.0-flash-lite`, `gemini-1.5-pro`                     | `GeminiAdapter` (REST)    |
+| `custom`    | Custom / Local (Ollama) | `http://localhost:11434/v1`                        | `llama3.2`                 | `llama3.2`, `mistral`, `qwen2.5`, `deepseek-r1`                                   | `OpenAiCompatibleAdapter` |
 
 ### Engine Characteristics
 
@@ -776,14 +809,14 @@ Audit Trail: Generated daily plans and reports tag `provider` and `model` metada
 
 ### Error Classification
 
-| HTTP Status | Error Code | Retryable |
-|---|---|---|
-| 401 | `AI_AUTH_FAILED` | No |
-| 429 | `AI_RATE_LIMITED` | Yes (+ Retry-After header) |
-| 4xx other | `AI_REQUEST_FAILED` | No |
-| 5xx | `AI_REQUEST_FAILED` | Yes |
-| Timeout / AbortError | `AI_TIMEOUT` | Yes |
-| Network error | `AI_NETWORK_ERROR` | Yes |
+| HTTP Status          | Error Code          | Retryable                  |
+| -------------------- | ------------------- | -------------------------- |
+| 401                  | `AI_AUTH_FAILED`    | No                         |
+| 429                  | `AI_RATE_LIMITED`   | Yes (+ Retry-After header) |
+| 4xx other            | `AI_REQUEST_FAILED` | No                         |
+| 5xx                  | `AI_REQUEST_FAILED` | Yes                        |
+| Timeout / AbortError | `AI_TIMEOUT`        | Yes                        |
+| Network error        | `AI_NETWORK_ERROR`  | Yes                        |
 
 ### Prompt System
 
@@ -837,6 +870,7 @@ graph TD
 ```
 
 **Key security properties:**
+
 - API key is **never** logged, sent to the Renderer, or stored in `localStorage`.
 - The Renderer only ever sees `{ hasKey: boolean }` — never the actual key value.
 - If `safeStorage.isEncryptionAvailable()` returns `false` at startup, the app **hard-fails** with a clear error rather than silently degrading to plaintext.
@@ -870,21 +904,21 @@ dist/                   ← electron-builder distributable installers
 
 **Key npm scripts:**
 
-| Command | Purpose |
-|---|---|
-| `npm run start` | Dev mode with HMR (Vite + Electron) |
-| `npm run typecheck` | TypeScript type-check both main + renderer |
-| `npm run lint` | ESLint report |
-| `npm run lint:fix` | ESLint auto-fix |
-| `npm run format` | Prettier write |
-| `npm test` | Vitest all tests |
-| `npm run test:coverage` | Vitest with coverage |
-| `npm run build` | Production compile |
-| `npm run package` | Full distributable (build + electron-builder) |
+| Command                 | Purpose                                       |
+| ----------------------- | --------------------------------------------- |
+| `npm run start`         | Dev mode with HMR (Vite + Electron)           |
+| `npm run typecheck`     | TypeScript type-check both main + renderer    |
+| `npm run lint`          | ESLint report                                 |
+| `npm run lint:fix`      | ESLint auto-fix                               |
+| `npm run format`        | Prettier write                                |
+| `npm test`              | Vitest all tests                              |
+| `npm run test:coverage` | Vitest with coverage                          |
+| `npm run build`         | Production compile                            |
+| `npm run package`       | Full distributable (build + electron-builder) |
 
 > [!NOTE]
 > After running `npm run package`, run `npm rebuild better-sqlite3` to restore the system-Node build for `npm test`.
 
 ---
 
-*Last updated: 2026-08-25 — reflects TKT-001 through TKT-025 (all 25 tickets complete).*
+_Last updated: 2026-09-02 — reflects TKT-001 through TKT-027, including Google Calendar integration._

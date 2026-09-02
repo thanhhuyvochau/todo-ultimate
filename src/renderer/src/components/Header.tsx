@@ -1,8 +1,10 @@
-import { Zap, Pause, Sun, Moon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Zap, Pause, Sun, Moon, TriangleAlert } from "lucide-react";
 import { useTimerStore } from "../stores/timerStore";
 import { useTaskStore } from "../stores/taskStore";
 import { useThemeStore } from "../stores/themeStore";
 import { Tooltip } from "./ui/Tooltip";
+import { useGoogleCalendarStore } from "../stores/googleCalendarStore";
 
 function formatSeconds(totalSec: number): string {
   const hours = Math.floor(totalSec / 3600);
@@ -22,6 +24,18 @@ export function Header() {
   const updateTask = useTaskStore((s) => s.updateTask);
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const calendarSettings = useGoogleCalendarStore((s) => s.settings);
+  const loadCalendarSettings = useGoogleCalendarStore((s) => s.load);
+  const [showCalendarWarning, setShowCalendarWarning] = useState(false);
+
+  useEffect(() => {
+    void loadCalendarSettings();
+    const refresh = window.setInterval(
+      () => void loadCalendarSettings(),
+      60_000,
+    );
+    return () => window.clearInterval(refresh);
+  }, [loadCalendarSettings]);
 
   const activeTask = tasks.find((t) => t.id === activeTaskId);
   const themeLabel =
@@ -47,6 +61,27 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-3">
+        {calendarSettings?.syncError && (
+          <div className="relative">
+            <Tooltip label="Google Calendar needs attention" side="bottom">
+              <button
+                onClick={() => setShowCalendarWarning((visible) => !visible)}
+                className="flex h-8 w-8 items-center justify-center rounded text-warning hover:bg-warning-subtle"
+                aria-label="Show Google Calendar sync warning"
+              >
+                <TriangleAlert className="h-4 w-4" />
+              </button>
+            </Tooltip>
+            {showCalendarWarning && (
+              <div className="absolute right-0 top-10 z-20 w-72 rounded-md border border-warning/20 bg-bg-elevated p-3 text-sm text-text-secondary shadow-lg">
+                <p className="font-medium text-warning">
+                  Google Calendar sync paused
+                </p>
+                <p className="mt-1">{calendarSettings.syncError}</p>
+              </div>
+            )}
+          </div>
+        )}
         {activeTaskId ? (
           <div className="flex items-center gap-2.5 rounded-full border border-border bg-bg-secondary px-4 py-1.5 text-sm">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />

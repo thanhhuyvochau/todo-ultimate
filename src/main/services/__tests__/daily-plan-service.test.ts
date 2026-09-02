@@ -76,6 +76,18 @@ beforeEach(() => {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS calendar_events (
+      id TEXT PRIMARY KEY,
+      calendar_id TEXT NOT NULL,
+      gcal_event_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      start_time INTEGER NOT NULL,
+      end_time INTEGER NOT NULL,
+      status TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
   `);
 
   testDbReady.mockReturnValue(db);
@@ -166,6 +178,40 @@ describe("daily-plan-service", () => {
     expect(request.tasks.map((t) => t.id)).toEqual([
       "recurring-flex",
       "yesterday-fixed",
+    ]);
+  });
+
+  it("passes busy calendar events as non-negotiable planning input", async () => {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    db.prepare(
+      `INSERT INTO calendar_events (
+        id, calendar_id, gcal_event_id, title, start_time, end_time, status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      "primary:meeting",
+      "primary",
+      "meeting",
+      "Planning meeting",
+      todayStart.getTime() + 9 * 60 * 60 * 1000,
+      todayStart.getTime() + 10 * 60 * 60 * 1000,
+      "confirmed",
+      1000,
+      1000,
+    );
+
+    const service = await getService();
+    await service.generateDailyPlan({ focusHours: 2, primaryGoal: "" });
+
+    const request = mockGenerateDailyPlan.mock
+      .calls[0]?.[0] as DailyPlanRequest;
+    expect(request.calendarEvents).toEqual([
+      {
+        eventId: "primary:meeting",
+        title: "Planning meeting",
+        startTime: todayStart.getTime() + 9 * 60 * 60 * 1000,
+        endTime: todayStart.getTime() + 10 * 60 * 60 * 1000,
+      },
     ]);
   });
 });

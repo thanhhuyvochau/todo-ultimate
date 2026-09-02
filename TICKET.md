@@ -420,15 +420,15 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
 
 ## Phase 8: Integrations
 
-### TKT-027: Google Calendar Integration ❌ Not Started
+### TKT-027: Google Calendar Integration ✅ Complete
 
 - **Spec**: [`28-google-calendar-integration.md`](./spec/28-google-calendar-integration.md)
 
 **As a** user, **I want to** sync my Google Calendar events into the app as fixed time blocks **so that** the AI Planner schedules tasks around my meetings.
 
-- **Status**: Not Started
+- **Status**: Complete — `src/main/services/google-calendar-service.ts` implements OAuth2 PKCE with the Google-compatible custom protocol `com.ai-task-planner:/oauth2callback` (the original `todo-ultimate://oauth2callback` cannot be registered as a Google installed-app redirect because its scheme lacks a required period), safeStorage-backed encrypted token persistence/refresh, a 15-minute rolling sync, and busy-event filtering. `src/main/db/migrations/005_calendar_events.sql` plus `calendar-event-repository.ts` cache the current day and next seven days atomically. Typed `calendar:*` IPC is exposed through preload and `useGoogleCalendarStore`; `GoogleCalendarSettings.tsx` configures the client ID and calendar selection; `TodayView.tsx` renders immutable calendar blocks and conflict warnings with a Re-plan route. The daily planner includes calendar events as non-negotiable input.
 - **Acceptance Criteria**:
-  - Implement OAuth2 with PKCE using a custom protocol handler (`todo-ultimate://oauth2callback`).
+  - Implement OAuth2 with PKCE using the registered Google-compatible custom protocol handler (`com.ai-task-planner:/oauth2callback`).
   - Store token securely in `safeStorage`.
   - Create `calendar_events` table and background syncing (every 15m) for the next 7 days.
   - Expose UI settings to select calendars to sync.
