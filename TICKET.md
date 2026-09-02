@@ -416,3 +416,22 @@ Based on the [`spec/`](./spec/) folder and architecture guidelines in [`AGENTS.m
   - ✅ The progress ring retains the current interval total when preferences change.
 - **Tests**: `src/renderer/src/stores/__tests__/pomodoroStore.test.ts`, `src/renderer/src/components/__tests__/PomodoroSettings.test.tsx`.
 
+---
+
+## Phase 8: Integrations
+
+### TKT-027: Google Calendar Integration ❌ Not Started
+
+- **Spec**: [`28-google-calendar-integration.md`](./spec/28-google-calendar-integration.md)
+
+**As a** user, **I want to** sync my Google Calendar events into the app as fixed time blocks **so that** the AI Planner schedules tasks around my meetings.
+
+- **Status**: Not Started
+- **Acceptance Criteria**:
+  - Implement OAuth2 with PKCE using a custom protocol handler (`todo-ultimate://oauth2callback`).
+  - Store token securely in `safeStorage`.
+  - Create `calendar_events` table and background syncing (every 15m) for the next 7 days.
+  - Expose UI settings to select calendars to sync.
+  - Pass events as non-negotiable fixed blocks to the AI Planner.
+  - Today View visually flags conflicts and displays calendar events.
+- **INVEST Check**: Independent (new system), Valuable (solves real user need), Estimable (well-scoped), Small (isolated to new table and IPC), Testable.

@@ -196,7 +196,8 @@ This file serves as the core rules and principles guide. For detailed domain spe
 - [`DESIGN.md`](./DESIGN.md) — UI design system & component guidelines: dual-theme color tokens, typography scale, shell wireframe layout, Lucide React icon system, and component standards.
 - [`TECHNICAL_STACK.md`](./TECHNICAL_STACK.md) — Full engineering stack: desktop shell, frontend (React/Tailwind/Zustand/TipTap), SQLite, DeepSeek AI engine, safeStorage security, IPC channels, and QA toolchain.
 - [`TICKET.md`](./TICKET.md) — Agile ticket tracker: 23 INVEST stories across 7 phases with implementation status, acceptance criteria, and file references.
-- [`spec/`](./spec/) — Detailed feature specifications: 27 feature files across 7 phases, each covering requirements, data models, UI/UX, error handling, and acceptance criteria.
+- [`spec/`](./spec/) — Detailed feature specifications: 28 feature files, each covering requirements, data models, UI/UX, error handling, and acceptance criteria.
+  - [`28-google-calendar-integration.md`](./spec/28-google-calendar-integration.md) — Specification for the Google Calendar integration (OAuth2, sync, and AI planner integration).
 - [`docs/design/TKT-004-backlog-crud/`](./docs/design/TKT-004-backlog-crud/) — UI component designs for Task Backlog CRUD:
   - [`BacklogView.md`](./docs/design/TKT-004-backlog-crud/BacklogView.md) — Backlog list view design.
   - [`DeleteConfirmationDialog.md`](./docs/design/TKT-004-backlog-crud/DeleteConfirmationDialog.md) — Destructive action safety dialog design.
